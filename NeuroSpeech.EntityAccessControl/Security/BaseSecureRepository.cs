@@ -19,7 +19,8 @@ namespace NeuroSpeech.EntityAccessControl.Security
         where TDbContext: DbContext
     {
         private readonly TDbContext db;
-        private readonly TC client;
+        public readonly TC AssociatedUser;
+        private readonly BaseSecurityRules<TC> rules;
 
         public abstract bool SecurityDisabled {  get; }
 
@@ -29,10 +30,12 @@ namespace NeuroSpeech.EntityAccessControl.Security
 
         public BaseSecureRepository(
             TDbContext db, 
-            TC client)
+            TC client,
+            BaseSecurityRules<TC> rules)
         {
             this.db = db;
-            this.client = client;
+            this.AssociatedUser = client;
+            this.rules = rules;
         }
 
         public IQueryable<T?> Query<T>()
@@ -40,7 +43,7 @@ namespace NeuroSpeech.EntityAccessControl.Security
         {
             if(SecurityDisabled)
                 return db.Set<T>();
-            return Rules<T, TC>.Apply(db.Set<T>(), client);
+            return rules.Apply<T>(db.Set<T>(), AssociatedUser);
         }
 
         public IQueryable<T> FromSqlRaw<T>(string sql, params object[] parameters)
@@ -51,7 +54,7 @@ namespace NeuroSpeech.EntityAccessControl.Security
             {
                 return q;
             }
-            return Rules<T, TC>.Apply(q, client);
+            return rules.Apply<T>(q, AssociatedUser);
         }
 
         public void Remove(object entity) => db.Remove(entity);
@@ -192,13 +195,13 @@ namespace NeuroSpeech.EntityAccessControl.Security
             switch (entity.State)
             {
                 case EntityState.Added:
-                    q = Rules<T, TC>.ApplyInsert(q, client);
+                    q = rules.ApplyInsert<T>(q, AssociatedUser);
                     break;
                 case EntityState.Deleted:
-                    q = Rules<T, TC>.ApplyDelete(q, client);
+                    q = rules.ApplyDelete<T>(q, AssociatedUser);
                     break;
                 case EntityState.Modified:
-                    q = Rules<T, TC>.ApplyUpdate(q, client);
+                    q = rules.ApplyUpdate<T>(q, AssociatedUser);
                     break;
                 default:
                     return;
