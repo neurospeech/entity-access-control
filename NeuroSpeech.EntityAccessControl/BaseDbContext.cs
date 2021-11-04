@@ -4,6 +4,8 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -98,19 +100,73 @@ namespace NeuroSpeech.EntityAccessControl
             return OnDeleted(bt, entity);
         }
 
+        protected virtual void Validate()
+        {
+            var entities = from e in ChangeTracker.Entries()
+                           where e.State == EntityState.Added
+                               || e.State == EntityState.Modified
+                           select e.Entity;
+            var errors = new List<ValidationResult>();
+            foreach (var entity in entities)
+            {
+                var validationContext = new ValidationContext(entity);
+                Validator.TryValidateObject(entity, validationContext, errors);
+
+                //foreach (var property in entity.GetType()
+                //    .GetProperties()
+                //    .Where(x => x.PropertyType == typeof(DateTime)))
+                //{
+                //    if (property.CanRead)
+                //    {
+                //        try
+                //        {
+                //            var v = property.GetValue(entity);
+                //            if (v != null)
+                //            {
+                //                DateTime dv = (DateTime)v;
+                //                if (dv == DateTime.MinValue)
+                //                {
+                //                    errors.Add(new ValidationResult("Invalid Date", new string[] { property.Name }));
+                //                }
+                //            }
+                //        }
+                //        catch
+                //        {
+                //        }
+                //    }
+                //}
+            }
+
+            if (errors.Any())
+            {
+                throw new AppValidationException(new AppValidationErrors
+                {
+                    Message = $"Invalid model { string.Join(", ", errors.Select(x => x.ErrorMessage + ": " + string.Join(", ", x.MemberNames))) }",
+                    Errors = errors.Select(x => new AppValidationError
+                    {
+                        Name = string.Join(", ", x.MemberNames),
+                        Error = x.ErrorMessage!
+                    })
+                });
+            }
+
+        }
 
         public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
         {
+            this.ChangeTracker.DetectChanges();
             if (!RaiseEvents)
             {
+                Validate();
                 return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
             }
-            this.ChangeTracker.DetectChanges();
             var pending = new List<(EntityState State, object item, Type type)>();
+            var errors = new List<ValidationResult>();
             foreach(var e in this.ChangeTracker.Entries())
             {
                 var item = e.Entity;
                 var type = item.GetType();
+                Validator.TryValidateObject(item, new ValidationContext(item), errors);
                 switch (e.State)
                 {
                     case EntityState.Added:
@@ -126,6 +182,18 @@ namespace NeuroSpeech.EntityAccessControl
                         await OnDeleting(type, item);
                         break;
                 }
+            }
+            if (errors.Any())
+            {
+                throw new AppValidationException(new AppValidationErrors
+                {
+                    Message = $"Invalid model { string.Join(", ", errors.Select(x => x.ErrorMessage + ": " + string.Join(", ", x.MemberNames))) }",
+                    Errors = errors.Select(x => new AppValidationError
+                    {
+                        Name = string.Join(", ", x.MemberNames),
+                        Error = x.ErrorMessage!
+                    })
+                });
             }
             var r = await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
             foreach (var (state, item, type) in pending)
