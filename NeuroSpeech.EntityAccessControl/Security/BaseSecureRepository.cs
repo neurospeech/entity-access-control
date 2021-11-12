@@ -65,11 +65,11 @@ namespace NeuroSpeech.EntityAccessControl.Security
 
         public EntityEntry Entry(object entity) => db.Entry(entity);
 
-        public async Task<object?> FindByKeysAsync(IEntityType t, JsonElement keys, CancellationToken token = default)
+        public async Task<object?> FindByKeysAsync(Type t, JsonElement keys, CancellationToken token = default)
         {
             var r = this.GetType()
                 .GetMethod(nameof(FindByKeysGenericAsync))!
-                .MakeGenericMethod(t.ClrType)
+                .MakeGenericMethod(t)
                 .Invoke(this, new object?[] { keys, token}) as Task;
             await r!;
             return r.GetType().GetProperty("Result")!.GetValue(r);

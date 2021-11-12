@@ -40,21 +40,25 @@ namespace NeuroSpeech.EntityAccessControl
                 .MakeGenericMethod(type.ClrType)!.Invoke(this, null) as IQueryable;
         }
 
-        protected async Task<object> LoadOrCreateAsync(
+        protected async Task<object> LoadOrCreateAsync(Type type,
             JsonElement body, bool isChild = false)
         {
-            if(!body.TryGetStringProperty("$type", out var type))
+            IEntityType t;
+            if(body.TryGetStringProperty("$type", out var typeName))
             {
-                throw new ArgumentNullException("$type cannot be null");
+                t = FindEntityType(typeName);
+                type = t.ClrType;
+            } else
+            {
+                t = db.Model.FindEntityType(type);
             }
 
-            if (type.EqualsIgnoreCase("null"))
+            if (typeName.EqualsIgnoreCase("null"))
                 return null!;
 
             object? e = null;
             Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry? entry = null;
-            var t = FindEntityType(type);
-            e = await db.FindByKeysAsync(t, body, HttpContext.RequestAborted);
+            e = await db.FindByKeysAsync(type, body, HttpContext.RequestAborted);
             if(e != null)
             {
                 entry = db.Entry(e);
@@ -62,7 +66,7 @@ namespace NeuroSpeech.EntityAccessControl
             bool insert = false;
             if (e == null)
             {
-                e = Activator.CreateInstance(t.ClrType)!;
+                e = Activator.CreateInstance(type)!;
                 insert = true;
             }
             var properties = t.GetProperties();
@@ -76,7 +80,8 @@ namespace NeuroSpeech.EntityAccessControl
                 }
                 if(navProperties.TryGetFirst(p.Name, (x, name) => x.Name.EqualsIgnoreCase(name), out var navProperty))
                 {
-                    if(navProperty.IsCollection)
+                    var pt = navProperty.ClrType;
+                    if (navProperty.IsCollection)
                     {
                         // what to do in collection...
                         // get or create...
@@ -88,99 +93,74 @@ namespace NeuroSpeech.EntityAccessControl
                         }
                         foreach (var item in p.Value.EnumerateArray())
                         {
-                            coll.Add(await LoadOrCreateAsync(item, true));
+                            coll.Add(await LoadOrCreateAsync(pt, item, true));
                         }
                         continue;
                     }
-                    navProperty.PropertyInfo.SaveJsonOrValue(e, await LoadOrCreateAsync(p.Value, true));
+                    navProperty.PropertyInfo.SaveJsonOrValue(e, await LoadOrCreateAsync(pt, p.Value, true));
                 }
             }
 
-            //foreach (var p in properties)
-            //{
-            //    if (p.IsKey())
-            //    {
-            //        if (body.TryGetPropertyCaseInsensitive(p.Name, out value))
-            //        {
-            //            p.PropertyInfo.SaveJsonOrValue(e, value);
-            //        }
-            //        continue;
-            //    }
-            //    if (body.TryGetPropertyCaseInsensitive(p.Name, out value))
-            //    {
-            //        p.PropertyInfo.SaveJsonOrValue(e, value);
-            //    }
-            //}
-            //foreach(var np in t.GetNavigations())
-            //{
-            //    if (np.IsCollection)
-            //        continue;
-            //    if(body.TryGetPropertyCaseInsensitive(np.Name, out value))
-            //    {
-            //        var ce = await LoadOrCreateAsync(value, true);
-            //        np.PropertyInfo.SetValue(e, ce);
-            //    }
-            //}
             if (insert && !isChild)
             {
                 db.Add(e);
             }
             if(!body.TryGetProperty("$navigations", out var nav))  
                 return e!;
-            var clrType = t.ClrType;
-            if (!(nav is JsonElement je))
-                return e!;
-            foreach (var n in je.EnumerateObject())
-            {
-                var nv = n.Value;
-                var name = n.Name;
+            //var clrType = t.ClrType;
+            //if (!(nav is JsonElement je))
+            //    return e!;
+            //foreach (var n in je.EnumerateObject())
+            //{
+            //    var nv = n.Value;
+            //    var name = n.Name;
 
-                var np = clrType.GetProperties().FirstOrDefault(x => x.Name.EqualsIgnoreCase(name));
-                if (np == null)
-                {
-                    throw new ArgumentOutOfRangeException($"{name} navigation property not found on {clrType}");
-                }
-                var navValue = np.GetValue(e);
-                if (nv.TryGetPropertyCaseInsensitive("Add", out var add)) {
-                    if (navValue == null)
-                    {
-                        navValue = np.PropertyType.CreateClassInstance()!;
-                        np.SetValue(e, navValue);
-                    }
-                    foreach (var child in add.EnumerateArray())
-                    {
-                        navValue.InvokeMethod("Add", await LoadOrCreateAsync(child, true));
-                    }
-                    continue;
-                }
-                if(nv.TryGetPropertyCaseInsensitive("Remove", out var remove))
-                {
-                    if (entry != null) {
-                        await entry.Navigation(np.Name).LoadAsync();
-                    }
-                    navValue = np.GetValue(e);
-                    if (navValue == null)
-                        continue;
-                    foreach (var child in nv.EnumerateArray())
-                    {
-                        navValue.InvokeMethod("Remove", await LoadOrCreateAsync(child, true));
-                    }
-                    continue;
-                }
-                if (nv.TryGetPropertyCaseInsensitive("Clear", out var clear)) {
-                    if (entry != null)
-                    {
-                        // load 
-                        await entry.Navigation(np.Name).LoadAsync();
-                    }
-                    np.SetValue(e, null);
-                    continue;
-                }
-                if(nv.TryGetPropertyCaseInsensitive("Set", out var @set))
-                {
-                    np.SetValue(e, await LoadOrCreateAsync(@set, true));
-                }
-            }
+            //    var np = clrType.GetProperties().FirstOrDefault(x => x.Name.EqualsIgnoreCase(name));
+            //    if (np == null)
+            //    {
+            //        throw new ArgumentOutOfRangeException($"{name} navigation property not found on {clrType}");
+            //    }
+            //    var navValue = np.GetValue(e);
+            //    if (nv.TryGetPropertyCaseInsensitive("Add", out var add)) {
+            //        if (navValue == null)
+            //        {
+            //            navValue = np.PropertyType.CreateClassInstance()!;
+            //            np.SetValue(e, navValue);
+            //        }
+            //        foreach (var child in add.EnumerateArray())
+            //        {
+            //            navValue.InvokeMethod("Add", await LoadOrCreateAsync(child, true));
+            //        }
+            //        continue;
+            //    }
+            //    if(nv.TryGetPropertyCaseInsensitive("Remove", out var remove))
+            //    {
+            //        if (entry != null) {
+            //            await entry.Navigation(np.Name).LoadAsync();
+            //        }
+            //        navValue = np.GetValue(e);
+            //        if (navValue == null)
+            //            continue;
+            //        foreach (var child in nv.EnumerateArray())
+            //        {
+            //            navValue.InvokeMethod("Remove", await LoadOrCreateAsync(child, true));
+            //        }
+            //        continue;
+            //    }
+            //    if (nv.TryGetPropertyCaseInsensitive("Clear", out var clear)) {
+            //        if (entry != null)
+            //        {
+            //            // load 
+            //            await entry.Navigation(np.Name).LoadAsync();
+            //        }
+            //        np.SetValue(e, null);
+            //        continue;
+            //    }
+            //    if(nv.TryGetPropertyCaseInsensitive("Set", out var @set))
+            //    {
+            //        np.SetValue(e, await LoadOrCreateAsync(@set, true));
+            //    }
+            //}
             return e!;
 
         }
@@ -333,7 +313,10 @@ export class Model<T extends IClrEntity> {
             [FromBody] JsonElement body
             )
         {
-            var e = await LoadOrCreateAsync(body);
+            if (!body.TryGetStringProperty("$type", out var typeName))
+                throw new KeyNotFoundException($"$type not found");
+            var t = FindEntityType(typeName);
+            var e = await LoadOrCreateAsync(t.ClrType, body);
             await db.SaveChangesAsync();
             return Ok(Serialize(e));
         }
@@ -344,7 +327,7 @@ export class Model<T extends IClrEntity> {
             )
         {
             var t = FindEntityType(entity);
-            var d = await db.FindByKeysAsync(t, entity);
+            var d = await db.FindByKeysAsync(t.ClrType, entity);
             if (d != null)
             {
                 db.Remove(d);

@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
@@ -11,7 +12,8 @@ namespace NeuroSpeech.EntityAccessControl.Security
     public interface ISecureRepository
     {
         EntityEntry Entry(object item);
-        Task<object?> FindByKeysAsync(IEntityType t, JsonElement keys, CancellationToken token = default);
+
+        Task<object?> FindByKeysAsync(Type t, JsonElement keys, CancellationToken token = default);
         IQueryable<T?> Query<T>() where T : class;
 
         IModel Model { get; }
