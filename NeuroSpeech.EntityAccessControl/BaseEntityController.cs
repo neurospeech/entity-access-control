@@ -207,83 +207,26 @@ namespace NeuroSpeech.EntityAccessControl
 
         protected virtual object? Serialize(object? e)
         {
-            return Serialize(e, null);
+            return EntityJsonSerializer.SerializeToJson(e, new Dictionary<object, int>(), new EntitySerializationSettings { 
+                GetTypeName = (x) => db.Entry(x).Metadata.Name,
+                NamingPolicy = JsonNamingPolicy.CamelCase
+            });
         }
 
         protected virtual object? SerializeList<T>(List<T> items)
         {
-            var all = new List<object>();
+            var settings = new EntitySerializationSettings
+            {
+                GetTypeName = (x) => db.Entry(x).Metadata.Name,
+                NamingPolicy = JsonNamingPolicy.CamelCase
+            };
+            var all = new Dictionary<object,int>();
             var result = new List<object?>(items.Count);
             foreach(var item in items)
             {
-                result.Add(Serialize(item, all));
+                result.Add(EntityJsonSerializer.SerializeToJson(item, all, settings));
             }
             return result;
-        }
-
-        private object? Serialize(object? e, List<object>? added)
-        {
-            if (e == null)
-                return null;
-            added ??= new List<object>();
-            var existingIndex = added.IndexOf(e);
-            if(existingIndex!= -1)
-            {
-                return new Dictionary<string, object> {
-                    { "$id", existingIndex }
-                };
-            }
-            var index = added.Count;
-            added.Add(e);
-            var r = new Dictionary<string, object>() {
-                { "$id", index }
-            };
-            var d = db.Entry(e);
-            r["$type"] = d.Metadata.Name;
-            foreach(var p in e.GetType().GetProperties())
-            {
-                var name = JsonNamingPolicy.CamelCase.ConvertName(p.Name);
-                if (p.GetCustomAttribute<System.Text.Json.Serialization.JsonIgnoreAttribute>() != null)
-                    continue;
-                var v = p.GetValue(e);
-                if (v == null)
-                    continue;
-                if (v is not string && v is System.Collections.IEnumerable coll) {
-                    var list = new List<object>();
-                    foreach(var c in coll)
-                    {
-                        var jc = this.Serialize(c, added);
-                        if (jc != null)
-                        {
-                            list.Add(jc);
-                        }
-                    }
-                    r[name] = list;
-                    continue;
-                }
-                var t = p.PropertyType;
-                t = Nullable.GetUnderlyingType(t) ?? t;
-                if(t.IsValueType || t == typeof(string))
-                {
-                    switch(v)
-                    {
-                        case DateTime dt:
-                            r[name] = dt.ToString(DateFormat);
-                            continue;
-                        case DateTimeOffset dto:
-                            r[name] = dto.UtcDateTime.ToString(DateFormat);
-                            continue;
-                    }
-                    r[name] = v;
-                    continue;
-                }
-                var sv = Serialize(v, added);
-                if (sv != null)
-                {
-                    r[name] = sv;
-                }
-            }
-            return r;
         }
 
         protected static readonly object[] Empty = new object[0];
