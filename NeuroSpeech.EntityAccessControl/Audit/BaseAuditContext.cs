@@ -20,23 +20,32 @@ namespace NeuroSpeech.EntityAccessControl
 
         }
 
+        public bool EnableAudit { get; set; } = true;
+
         public void Register(DbContext db)
         {
             List<AuditEntry>? changes = new List<AuditEntry>();
             db.SavingChanges += (s, e) => {
-                Begin(changes, db.ChangeTracker.Entries());
+                if (EnableAudit)
+                {
+                    Begin(changes, db.ChangeTracker.Entries());
+                }
             };
             db.SavedChanges += async (s, e) =>
             {
-                try
+                if (EnableAudit)
                 {
-                    SetKeys(changes!, db.ChangeTracker.Entries());
-                    var copy = changes;
-                    changes = new List<AuditEntry>();
-                    await SaveAsync(copy!);
-                } catch (Exception ex)
-                {
-                    OnError(ex);
+                    try
+                    {
+                        SetKeys(changes!, db.ChangeTracker.Entries());
+                        var copy = changes;
+                        changes = new List<AuditEntry>();
+                        await SaveAsync(copy!);
+                    }
+                    catch (Exception ex)
+                    {
+                        OnError(ex);
+                    }
                 }
             };
         }
