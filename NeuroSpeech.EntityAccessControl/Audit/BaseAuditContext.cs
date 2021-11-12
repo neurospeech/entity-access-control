@@ -2,10 +2,17 @@
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace NeuroSpeech.EntityAccessControl
 {
+    [AttributeUsage(AttributeTargets.Class, Inherited = true)]
+    public class IgnoreAuditAttribute: Attribute
+    {
+
+    }
+
     public abstract class BaseAuditContext {
 
         public BaseAuditContext()
@@ -60,6 +67,10 @@ namespace NeuroSpeech.EntityAccessControl
                     case EntityState.Added:
                     case EntityState.Modified:
                     case EntityState.Deleted:
+
+                        if (e.Entity.GetType().GetCustomAttribute<IgnoreAuditAttribute>() != null)
+                            continue;
+
                         var entry = New(e);
                         entry.LastUpdate = now;
                         changes.Add(entry);
