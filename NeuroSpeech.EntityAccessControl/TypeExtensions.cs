@@ -38,6 +38,16 @@ namespace NeuroSpeech.EntityAccessControl.Internal
     }
     public static class TypeExtensions
     {
+
+        private static Dictionary<Type, object> defaults = new Dictionary<Type, object> { };
+
+        public static object? GetDefaultForType(this Type type) {
+            type = Nullable.GetUnderlyingType(type) ?? type;
+            if (type.IsValueType)
+                return null;
+            return defaults.GetOrCreate(type, x => Activator.CreateInstance(x)!);
+        }
+
         public static string ToTypeScript(this Type type)
         {
             type = Nullable.GetUnderlyingType(type) ?? type;

@@ -11,6 +11,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using NeuroSpeech.EntityAccessControl.Internal;
 
 namespace NeuroSpeech.EntityAccessControl.Security
 {
@@ -91,6 +92,9 @@ namespace NeuroSpeech.EntityAccessControl.Security
                 if (!keys.TryGetPropertyCaseInsensitive(p.Name, out var v))
                     continue;
                 var value = v.DeserializeJsonElement(p.PropertyInfo.PropertyType);
+                // check if it is default...
+                if (value == null || value.Equals(p.PropertyInfo.PropertyType.GetDefaultForType()))
+                    continue;
                 var equals = Expression.Equal(Expression.Property(tx, p.PropertyInfo), Expression.Constant(value));
                 if (start == null)
                 {
