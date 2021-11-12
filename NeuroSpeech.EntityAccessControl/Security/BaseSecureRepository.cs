@@ -83,25 +83,24 @@ namespace NeuroSpeech.EntityAccessControl.Security
             var tx = Expression.Parameter(type, "x");
             var t = db.Model.GetEntityTypes().FirstOrDefault(x => x.ClrType == type);
             Expression? start = null;
-            foreach (var p in t.GetProperties())
+            foreach (var k in t.GetKeys())
             {
-                if (!p.IsKey())
+                foreach (var p in k.Properties)
                 {
-                    continue;
+                    if (!keys.TryGetPropertyCaseInsensitive(p.Name, out var v))
+                        continue;
+                    var value = v.DeserializeJsonElement(p.PropertyInfo.PropertyType);
+                    // check if it is default...
+                    if (value == null || value.Equals(p.PropertyInfo.PropertyType.GetDefaultForType()))
+                        continue;
+                    var equals = Expression.Equal(Expression.Property(tx, p.PropertyInfo), Expression.Constant(value));
+                    if (start == null)
+                    {
+                        start = equals;
+                        continue;
+                    }
+                    start = Expression.AndAlso(start, equals);
                 }
-                if (!keys.TryGetPropertyCaseInsensitive(p.Name, out var v))
-                    continue;
-                var value = v.DeserializeJsonElement(p.PropertyInfo.PropertyType);
-                // check if it is default...
-                if (value == null || value.Equals(p.PropertyInfo.PropertyType.GetDefaultForType()))
-                    continue;
-                var equals = Expression.Equal(Expression.Property(tx, p.PropertyInfo), Expression.Constant(value));
-                if (start == null)
-                {
-                    start = equals;
-                    continue;
-                }
-                start = Expression.AndAlso(start, equals);
             }
             if (start == null)
                 return Task.FromResult<T?>(null);
