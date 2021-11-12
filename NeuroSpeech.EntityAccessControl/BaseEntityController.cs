@@ -17,11 +17,14 @@ using NeuroSpeech.EntityAccessControl.Internal;
 
 namespace NeuroSpeech.EntityAccessControl
 {
-    public abstract class BaseEntityController: Controller
+    public abstract class BaseController: Controller
     {
+
+        protected static readonly string DateFormat = "yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'FFFFFFFZ";
+
         protected readonly ISecureRepository db;
 
-        public BaseEntityController(ISecureRepository db)
+        public BaseController(ISecureRepository db)
         {
             this.db = db;
         }
@@ -182,6 +185,125 @@ namespace NeuroSpeech.EntityAccessControl
 
         }
 
+        protected static readonly Dictionary<string, IEntityType> entityTypes = new();
+
+        protected IEntityType FindEntityType(in JsonElement e)
+        {
+            if (!e.TryGetStringProperty("$type", out var p))
+                throw new ArgumentException($"$type is missing in the object");
+            return FindEntityType(p);
+        }
+
+        protected IEntityType FindEntityType(string? type)
+        {
+            if (type == null)
+                throw new ArgumentNullException($"Type cannot be null");
+            var e = entityTypes.GetOrCreate(type, type =>
+             db.Model.GetEntityTypes().FirstOrDefault(x => x.Name.EqualsIgnoreCase(type)));
+            if (e == null)
+                throw new ArgumentOutOfRangeException($"Entity {type} not found");
+            return e;
+        }
+
+        protected virtual object? Serialize(object? e)
+        {
+            return Serialize(e, null);
+        }
+
+        protected virtual object? SerializeList<T>(List<T> items)
+        {
+            var all = new List<object>();
+            var result = new List<object?>(items.Count);
+            foreach(var item in items)
+            {
+                result.Add(Serialize(item, all));
+            }
+            return result;
+        }
+
+        private object? Serialize(object? e, List<object>? added)
+        {
+            if (e == null)
+                return null;
+            added ??= new List<object>();
+            var existingIndex = added.IndexOf(e);
+            if(existingIndex!= -1)
+            {
+                return new Dictionary<string, object> {
+                    { "$id", existingIndex }
+                };
+            }
+            var index = added.Count;
+            added.Add(e);
+            var r = new Dictionary<string, object>() {
+                { "$id", index }
+            };
+            var d = db.Entry(e);
+            r["$type"] = d.Metadata.Name;
+            foreach(var p in e.GetType().GetProperties())
+            {
+                var name = JsonNamingPolicy.CamelCase.ConvertName(p.Name);
+                if (p.GetCustomAttribute<System.Text.Json.Serialization.JsonIgnoreAttribute>() != null)
+                    continue;
+                var v = p.GetValue(e);
+                if (v == null)
+                    continue;
+                if (v is not string && v is System.Collections.IEnumerable coll) {
+                    var list = new List<object>();
+                    foreach(var c in coll)
+                    {
+                        var jc = this.Serialize(c, added);
+                        if (jc != null)
+                        {
+                            list.Add(jc);
+                        }
+                    }
+                    r[name] = list;
+                    continue;
+                }
+                var t = p.PropertyType;
+                t = Nullable.GetUnderlyingType(t) ?? t;
+                if(t.IsValueType || t == typeof(string))
+                {
+                    switch(v)
+                    {
+                        case DateTime dt:
+                            r[name] = dt.ToString(DateFormat);
+                            continue;
+                        case DateTimeOffset dto:
+                            r[name] = dto.UtcDateTime.ToString(DateFormat);
+                            continue;
+                    }
+                    r[name] = v;
+                    continue;
+                }
+                var sv = Serialize(v, added);
+                if (sv != null)
+                {
+                    r[name] = sv;
+                }
+            }
+            return r;
+        }
+
+        protected static readonly object[] Empty = new object[0];
+
+        protected static readonly object EmptyResult = new
+        {
+            items = Empty,
+            total = 0
+        };
+
+        protected static readonly List<string> EmptyStringArray = new();
+    }
+
+    public abstract class BaseEntityController: BaseController
+    {
+
+        public BaseEntityController(ISecureRepository db): base(db)
+        {
+        }
+
         [HttpGet("model")]
         public IActionResult Entities()
         {
@@ -273,73 +395,6 @@ export class Model<T extends IClrEntity> {
             return Ok(Serialize(e));
         }
 
-        private static readonly string DateFormat = "yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'FFFFFFFZ";
-
-        protected virtual object? Serialize(object? e, List<object> added = null!)
-        {
-            if (e == null)
-                return null;
-            added ??= new List<object>();
-            var existingIndex = added.IndexOf(e);
-            if(existingIndex!= -1)
-            {
-                return new Dictionary<string, object> {
-                    { "$id", existingIndex }
-                };
-            }
-            var index = added.Count;
-            added.Add(e);
-            var r = new Dictionary<string, object>() {
-                { "$id", index }
-            };
-            var d = db.Entry(e);
-            r["$type"] = d.Metadata.Name;
-            foreach(var p in e.GetType().GetProperties())
-            {
-                var name = JsonNamingPolicy.CamelCase.ConvertName(p.Name);
-                if (p.GetCustomAttribute<System.Text.Json.Serialization.JsonIgnoreAttribute>() != null)
-                    continue;
-                var v = p.GetValue(e);
-                if (v == null)
-                    continue;
-                if (v is not string && v is System.Collections.IEnumerable coll) {
-                    var list = new List<object>();
-                    foreach(var c in coll)
-                    {
-                        var jc = this.Serialize(c, added);
-                        if (jc != null)
-                        {
-                            list.Add(jc);
-                        }
-                    }
-                    r[name] = list;
-                    continue;
-                }
-                var t = p.PropertyType;
-                t = Nullable.GetUnderlyingType(t) ?? t;
-                if(t.IsValueType || t == typeof(string))
-                {
-                    switch(v)
-                    {
-                        case DateTime dt:
-                            r[name] = dt.ToString(DateFormat);
-                            continue;
-                        case DateTimeOffset dto:
-                            r[name] = dto.UtcDateTime.ToString(DateFormat);
-                            continue;
-                    }
-                    r[name] = v;
-                    continue;
-                }
-                var sv = Serialize(v, added);
-                if (sv != null)
-                {
-                    r[name] = sv;
-                }
-            }
-            return r;
-        }
-
         [HttpDelete]
         public async Task<IActionResult> Delete(
             [FromBody] JsonElement entity
@@ -354,90 +409,6 @@ export class Model<T extends IClrEntity> {
             await db.SaveChangesAsync();
             return Ok();
         }
-
-        private static readonly Dictionary<string, IEntityType> entityTypes = new();
-
-        private IEntityType FindEntityType(in JsonElement e)
-        {
-            if (!e.TryGetStringProperty("$type", out var p))
-                throw new ArgumentException($"$type is missing in the object");
-            return FindEntityType(p);
-        }
-
-        private IEntityType FindEntityType(string? type)
-        {
-            if (type == null)
-                throw new ArgumentNullException($"Type cannot be null");
-            var e = entityTypes.GetOrCreate(type, type =>
-             db.Model.GetEntityTypes().FirstOrDefault(x => x.Name.EqualsIgnoreCase(type)));
-            if (e == null)
-                throw new ArgumentOutOfRangeException($"Entity {type} not found");
-            return e;
-        }
-
-        #region Not Used
-        //[HttpPut("relation")]
-        //public async Task<IActionResult> AddRelation(
-        //    [FromBody] ClrEntityRelation relation
-        //    )
-        //{
-        //    var pt = FindEntityType(relation.Entity.Type);
-        //    var ct = FindEntityType(relation.NavigationValue.Type);
-        //    var parent = await db.FindByKeysAsync(pt, relation.Entity.Keys);
-        //    var child = await db.FindByKeysAsync(ct, relation.NavigationValue.Keys);
-        //    var entry = db.Entry(parent);
-        //    var n = entry.Navigations.FirstOrDefault(x => x.Metadata.Name == relation.NavigationName);
-        //    if (n.Metadata.IsCollection)
-        //    {
-
-        //    }
-        //    else
-        //    {
-        //        n.CurrentValue = child;
-        //    }
-        //    await db.SaveChangesAsync();
-        //    return Ok();
-        //}
-
-        //[HttpDelete("relation")]
-        //public async Task<IActionResult> RemoveRelation(
-        //    [FromBody] ClrEntityRelation relation
-        //    )
-        //{
-        //    var pt = db.Model.GetEntityTypes().FirstOrDefault(x => x.Name.EqualsIgnoreCase(relation.Entity.Type));
-        //    var ct = db.Model.GetEntityTypes().FirstOrDefault(x => x.Name.EqualsIgnoreCase(relation.NavigationValue.Type));
-        //    var parent = await db.FindByKeysAsync(pt, relation.Entity.Keys);
-        //    var child = await db.FindByKeysAsync(ct, relation.NavigationValue.Keys);
-        //    var entry = db.Entry(parent);
-        //    var n = entry.Navigations.FirstOrDefault(x => x.Metadata.Name == relation.NavigationName);
-        //    await n.LoadAsync();
-        //    if (n.Metadata.IsCollection)
-        //    {
-        //        // remove...
-        //        var coll = n.Metadata.PropertyInfo.GetValue(entry) as System.Collections.IList;
-        //        coll.Remove(entry);
-        //    }
-        //    else
-        //    {
-        //        var prop = n.Metadata.PropertyInfo;
-        //        if (prop.GetValue(entry) == child)
-        //        {
-        //            n.Metadata.PropertyInfo.SetValue(entry, null);
-        //        }
-        //    }
-        //    await db.SaveChangesAsync();
-        //    return Ok();
-        //} 
-        #endregion
-
-        private static readonly object[] Empty = new object[0];
-
-        private static readonly object EmptyResult = new { 
-            items = Empty,
-            total = 0
-        };
-
-        private static readonly List<string> EmptyStringArray = new();
 
         [HttpGet("query/{entity}")]
         public async Task<IActionResult> Query(
