@@ -67,7 +67,6 @@ namespace NeuroSpeech.EntityAccessControl
             var d = settings.GetTypeName?.Invoke(e) ?? e.GetType().FullName;
             var namingPolicy = settings.NamingPolicy ?? JsonNamingPolicy.CamelCase;
             r["$type"] = d;
-            r["$index"] = index;
             foreach (var p in e.GetType().GetProperties())
             {
                 if (p.GetCustomAttribute<System.Text.Json.Serialization.JsonIgnoreAttribute>() != null)
