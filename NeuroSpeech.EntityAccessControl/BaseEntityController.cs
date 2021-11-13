@@ -91,6 +91,8 @@ namespace NeuroSpeech.EntityAccessControl
                     if (navProperty.IsCollection)
                     {
                         // what to do in collection...
+                        pt = navProperty.GetTargetType().ClrType;
+
                         // get or create...
                         var coll = (navProperty.PropertyInfo.GetOrCreate(e) as System.Collections.IList)!;
                         // this will be an array..
