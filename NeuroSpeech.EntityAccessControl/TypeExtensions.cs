@@ -43,7 +43,7 @@ namespace NeuroSpeech.EntityAccessControl.Internal
 
         public static object? GetDefaultForType(this Type type) {
             type = Nullable.GetUnderlyingType(type) ?? type;
-            if (type.IsValueType)
+            if (!type.IsValueType)
                 return null;
             return defaults.GetOrCreate(type, x => Activator.CreateInstance(x)!);
         }
