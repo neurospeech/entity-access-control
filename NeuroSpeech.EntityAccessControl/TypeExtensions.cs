@@ -39,12 +39,63 @@ namespace NeuroSpeech.EntityAccessControl.Internal
     public static class TypeExtensions
     {
 
-        private static Dictionary<Type, object> defaults = new Dictionary<Type, object> { };
+        private static Dictionary<Type, object> defaults = new Dictionary<Type, object> {
+        };
+
+        private static object Boolean = false;
+        private static object Char = (char)0;
+        private static object SByte = (sbyte)0;
+        private static object Byte = (byte)0;
+        private static object Int16 = (short)0;
+        private static object UInt16 = (ushort)0;
+        private static object Int32 = 0;
+        private static object UInt32 = (uint)0;
+        private static object Int64 = (long)0;
+        private static object UInt64 = (ulong)0;
+        private static object Single = (float)0;
+        private static object Double = (double)0;
+        private static object Decimal = (decimal)0;
+        private static object DateTime = System.DateTime.MinValue;
+        private static object DateTimeOffset = System.DateTimeOffset.MinValue;
 
         public static object? GetDefaultForType(this Type type) {
             type = Nullable.GetUnderlyingType(type) ?? type;
             if (!type.IsValueType)
                 return null;
+            var tc = Type.GetTypeCode(type);
+            switch (tc)
+            {
+                case TypeCode.Boolean:
+                    return Boolean;
+                case TypeCode.Char:
+                    return Char;
+                case TypeCode.SByte:
+                    return SByte;
+                case TypeCode.Byte:
+                    return Byte;
+                case TypeCode.Int16:
+                    return Int16;
+                case TypeCode.UInt16:
+                    return UInt16;
+                case TypeCode.Int32:
+                    return Int32;
+                case TypeCode.UInt32:
+                    return UInt32;
+                case TypeCode.Int64:
+                    return Int64;
+                case TypeCode.UInt64:
+                    return UInt64;
+                case TypeCode.Single:
+                    return Single;
+                case TypeCode.Double:
+                    return Double;
+                case TypeCode.Decimal:
+                    return Decimal;
+                case TypeCode.DateTime:
+                    return DateTime;
+            }
+            if (type == typeof(System.DateTimeOffset))
+                return DateTimeOffset;
             return defaults.GetOrCreate(type, x => Activator.CreateInstance(x)!);
         }
 
