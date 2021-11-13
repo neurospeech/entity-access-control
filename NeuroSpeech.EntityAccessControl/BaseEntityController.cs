@@ -47,7 +47,14 @@ namespace NeuroSpeech.EntityAccessControl
             if(body.TryGetStringProperty("$type", out var typeName))
             {
                 t = FindEntityType(typeName);
-                type = t.ClrType;
+                if (type.IsAssignableFrom(t.ClrType))
+                {
+                    type = t.ClrType;
+                } else
+                {
+                    // we can ignore $type in case of specialized one to one mapping
+                    t = db.Model.FindEntityType(type);
+                }
             } else
             {
                 t = db.Model.FindEntityType(type);
