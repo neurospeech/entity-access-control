@@ -14,6 +14,7 @@ using System.Reflection;
 using System.Text.Json;
 using System.Threading.Tasks;
 using NeuroSpeech.EntityAccessControl.Internal;
+using System.Collections.Concurrent;
 
 namespace NeuroSpeech.EntityAccessControl
 {
@@ -174,7 +175,7 @@ namespace NeuroSpeech.EntityAccessControl
 
         }
 
-        protected static readonly Dictionary<string, IEntityType> entityTypes = new();
+        protected static readonly ConcurrentDictionary<string, IEntityType> entityTypes = new();
 
         protected IEntityType FindEntityType(in JsonElement e)
         {
@@ -187,8 +188,9 @@ namespace NeuroSpeech.EntityAccessControl
         {
             if (type == null)
                 throw new ArgumentNullException($"Type cannot be null");
-            var e = entityTypes.GetOrCreate(type, type =>
-             db.Model.GetEntityTypes().FirstOrDefault(x => x.Name.EqualsIgnoreCase(type)));
+            var t = db.GetType().FullName;
+            var key = $"{t}:{type}";
+            var e = entityTypes.GetOrAdd(key, key => db.Model.GetEntityTypes().FirstOrDefault(x => x.Name.EqualsIgnoreCase(type)));
             if (e == null)
                 throw new ArgumentOutOfRangeException($"Entity {type} not found");
             return e;
