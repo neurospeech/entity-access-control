@@ -31,8 +31,7 @@ namespace NeuroSpeech.EntityAccessControl.Internal
         {
             if (d.TryGetValue(key, out var v))
                 return v;
-            v = factory(key);
-            d.Add(key, v);
+            d[key] = v = factory(key);
             return v;
         }
     }
