@@ -89,25 +89,27 @@ namespace NeuroSpeech.EntityAccessControl
                 if(navProperties.TryGetFirst(p.Name, (x, name) => x.Name.EqualsIgnoreCase(name), out var navProperty))
                 {
                     var pt = navProperty.ClrType;
-                    if (navProperty.IsCollection)
-                    {
-                        // what to do in collection...
-                        pt = navProperty.GetTargetType().ClrType;
 
-                        // get or create...
-                        var coll = (navProperty.PropertyInfo.GetOrCreate(e) as System.Collections.IList)!;
-                        // this will be an array..
-                        if(p.Value.ValueKind != JsonValueKind.Array)
-                        {
-                            throw new InvalidOperationException($"{p.Name} should be an Array");
-                        }
-                        foreach (var item in p.Value.EnumerateArray())
-                        {
-                            coll.Add(await LoadOrCreateAsync(pt, item, true));
-                        }
+                    if (!navProperty.IsCollection)
+                    {
+                        navProperty.PropertyInfo.SaveJsonOrValue(e, await LoadOrCreateAsync(pt, p.Value, true));
                         continue;
                     }
-                    navProperty.PropertyInfo.SaveJsonOrValue(e, await LoadOrCreateAsync(pt, p.Value, true));
+
+                    // what to do in collection...
+                    pt = navProperty.GetTargetType().ClrType;
+
+                    // get or create...
+                    var coll = (navProperty.PropertyInfo.GetOrCreate(e) as System.Collections.IList)!;
+                    // this will be an array..
+                    if(p.Value.ValueKind != JsonValueKind.Array)
+                    {
+                        throw new InvalidOperationException($"{p.Name} should be an Array");
+                    }
+                    foreach (var item in p.Value.EnumerateArray())
+                    {
+                        coll.Add(await LoadOrCreateAsync(pt, item, true));
+                    }
                 }
             }
 

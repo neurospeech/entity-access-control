@@ -93,7 +93,7 @@ namespace NeuroSpeech.EntityAccessControl.Security
                     // check if it is default...
                     if (value == null || value.Equals(p.PropertyInfo.PropertyType.GetDefaultForType()))
                         continue;
-                    var equals = Expression.Equal(Expression.Property(tx, p.PropertyInfo), Expression.Constant(value));
+                    var equals = Expression.Equal(Expression.Property(tx, p.PropertyInfo), Expression.Constant(value, p.PropertyInfo.PropertyType));
                     if (start == null)
                     {
                         start = equals;
@@ -104,29 +104,6 @@ namespace NeuroSpeech.EntityAccessControl.Security
             }
             if (start == null)
                 return Task.FromResult<T?>(null);
-            var lambda = Expression.Lambda<Func<T?, bool>>(start, tx);
-            var q = Query<T>().Where(lambda);
-            return q.FirstOrDefaultAsync(token);
-        }
-
-
-        public Task<T?> LoadFromDbGenericAsync<T>(T entity, CancellationToken token = default)
-            where T: class
-        {
-            var type = typeof(T);
-            var tx = Expression.Parameter(type, "x");
-            var t = db.Model.GetEntityTypes().FirstOrDefault(x => x.ClrType == type);
-            Expression? start = null;
-            foreach (var p in t.GetKeys().SelectMany(x => x.Properties))
-            {
-                var equals = Expression.Equal(Expression.Property(tx, p.PropertyInfo), Expression.Constant(p.PropertyInfo.GetValue(entity)));
-                if (start == null)
-                {
-                    start = equals;
-                    continue;
-                }
-                start = Expression.AndAlso(start, equals);
-            }
             var lambda = Expression.Lambda<Func<T?, bool>>(start, tx);
             var q = Query<T>().Where(lambda);
             return q.FirstOrDefaultAsync(token);

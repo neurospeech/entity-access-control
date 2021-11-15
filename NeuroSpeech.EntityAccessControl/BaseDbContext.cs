@@ -111,30 +111,6 @@ namespace NeuroSpeech.EntityAccessControl
             {
                 var validationContext = new ValidationContext(entity);
                 Validator.TryValidateObject(entity, validationContext, errors);
-
-                //foreach (var property in entity.GetType()
-                //    .GetProperties()
-                //    .Where(x => x.PropertyType == typeof(DateTime)))
-                //{
-                //    if (property.CanRead)
-                //    {
-                //        try
-                //        {
-                //            var v = property.GetValue(entity);
-                //            if (v != null)
-                //            {
-                //                DateTime dv = (DateTime)v;
-                //                if (dv == DateTime.MinValue)
-                //                {
-                //                    errors.Add(new ValidationResult("Invalid Date", new string[] { property.Name }));
-                //                }
-                //            }
-                //        }
-                //        catch
-                //        {
-                //        }
-                //    }
-                //}
             }
 
             if (errors.Any())
@@ -152,6 +128,12 @@ namespace NeuroSpeech.EntityAccessControl
 
         }
 
+        /// <summary>
+        /// Save changes will validate object after executing all relevant events, so event handlers can set default properties before they are validated.
+        /// </summary>
+        /// <param name="acceptAllChangesOnSuccess"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
         public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
         {
             this.ChangeTracker.DetectChanges();
@@ -166,20 +148,22 @@ namespace NeuroSpeech.EntityAccessControl
             {
                 var item = e.Entity;
                 var type = item.GetType();
-                Validator.TryValidateObject(item, new ValidationContext(item), errors);
                 switch (e.State)
                 {
                     case EntityState.Added:
                         pending.Add((e.State, item, type));
                         await OnInserting(type, item);
+                        Validator.TryValidateObject(item, new ValidationContext(item), errors);
                         break;
                     case EntityState.Modified:
                         pending.Add((e.State, item, type));
                         await OnUpdating(type, item);
+                        Validator.TryValidateObject(item, new ValidationContext(item), errors);
                         break;
                     case EntityState.Deleted:
                         pending.Add((e.State, item, type));
                         await OnDeleting(type, item);
+                        Validator.TryValidateObject(item, new ValidationContext(item), errors);
                         break;
                 }
             }
