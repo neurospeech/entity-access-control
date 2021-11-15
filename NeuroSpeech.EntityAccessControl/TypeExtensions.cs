@@ -23,6 +23,20 @@ namespace NeuroSpeech.EntityAccessControl.Internal
             return false;
         }
 
+        public static bool TryGetFirst<T>(this IEnumerable<T> target, Func<T, bool> fx, out T value)
+        {
+            foreach (var v in target)
+            {
+                if (fx(v))
+                {
+                    value = v;
+                    return true;
+                }
+            }
+            value = default!;
+            return false;
+        }
+
     }
 
     public static class DictionaryExtensions

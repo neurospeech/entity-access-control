@@ -415,13 +415,16 @@ export class Model<T extends IClrEntity> {
                         int index = x.IndexOf('.');
                         if (index == -1)
                         {
-                            key += t.GetNavigations().First(n => n.Name.EqualsIgnoreCase(x)).Name;
+                            if (!t.GetNavigations().TryGetFirst(n => n.Name.EqualsIgnoreCase(x), out var np))
+                                throw new KeyNotFoundException($"No navigation property {x} found in {t.Name}");
+                            key += np.Name;
                             includeKeys.Add(key);
                             break;
                         }
                         var left = x.Substring(0, index);
                         x = x.Substring(index + 1);
-                        var leftProperty = t.GetNavigations().First(x => x.Name.EqualsIgnoreCase(left));
+                        if (!t.GetNavigations().TryGetFirst(n => n.Name.EqualsIgnoreCase(left), out var leftProperty))
+                            throw new KeyNotFoundException($"No navigation property {x} found in {t.Name}");
                         t = leftProperty.TargetEntityType;
                         key += leftProperty.Name + ".";
                     }
@@ -436,7 +439,8 @@ export class Model<T extends IClrEntity> {
                 Expression? body = null;
                 foreach (var key in JsonSerializer.Deserialize<JsonElement>(keys).EnumerateObject())
                 {
-                    var property = type.GetProperties().FirstOrDefault(x => x.Name.EqualsIgnoreCase(key.Name));
+                    if(!type.GetProperties().TryGetFirst(x => x.Name.EqualsIgnoreCase(key.Name), out var property))
+                        throw new KeyNotFoundException($"No navigation property {key.Name} found in {type.Name}");
                     var compare = Expression.Equal(
                             Expression.Property(pe, property),
                             Expression.Constant(key.Value.DeserializeJsonElement(property.PropertyType)));
