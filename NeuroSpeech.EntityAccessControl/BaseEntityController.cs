@@ -387,7 +387,7 @@ export class Model<T extends IClrEntity> {
         };
 
         public async Task<IActionResult> ListAsync<T>(
-            IEntityType t,
+            IEntityType entityType,
             string? select,
             string? filter, 
             string? parameters, 
@@ -405,6 +405,7 @@ export class Model<T extends IClrEntity> {
                 tx = tx?.Trim('[', ' ', '\t', '\r', '\n', ']');
                 if (string.IsNullOrWhiteSpace(tx))
                     return null;
+                var scope = entityType;
                 var includeKeys = new List<string>();
                 foreach (var token in tx.Split(',', ';'))
                 {
@@ -415,17 +416,17 @@ export class Model<T extends IClrEntity> {
                         int index = x.IndexOf('.');
                         if (index == -1)
                         {
-                            if (!t.GetNavigations().TryGetFirst(n => n.Name.EqualsIgnoreCase(x), out var np))
-                                throw new KeyNotFoundException($"No navigation property {x} found in {t.Name}");
+                            if (!scope.GetNavigations().TryGetFirst(n => n.Name.EqualsIgnoreCase(x), out var np))
+                                throw new KeyNotFoundException($"No navigation property {x} found in {scope.Name}");
                             key += np.Name;
                             includeKeys.Add(key);
                             break;
                         }
                         var left = x.Substring(0, index);
                         x = x.Substring(index + 1);
-                        if (!t.GetNavigations().TryGetFirst(n => n.Name.EqualsIgnoreCase(left), out var leftProperty))
-                            throw new KeyNotFoundException($"No navigation property {x} found in {t.Name}");
-                        t = leftProperty.TargetEntityType;
+                        if (!scope.GetNavigations().TryGetFirst(n => n.Name.EqualsIgnoreCase(left), out var leftProperty))
+                            throw new KeyNotFoundException($"No navigation property {x} found in {scope.Name}");
+                        scope = leftProperty.TargetEntityType;
                         key += leftProperty.Name + ".";
                     }
                 }
