@@ -405,12 +405,12 @@ export class Model<T extends IClrEntity> {
                 tx = tx?.Trim('[', ' ', '\t', '\r', '\n', ']');
                 if (string.IsNullOrWhiteSpace(tx))
                     return null;
-                var scope = entityType;
                 var includeKeys = new List<string>();
                 foreach (var token in tx.Split(',', ';'))
                 {
                     var x = token.Trim('"',' ', '\r', '\t' , '\n');
                     var key = "";
+                    var scope = entityType;
                     while (x.Length > 0)
                     {
                         int index = x.IndexOf('.');
