@@ -77,6 +77,11 @@ namespace NeuroSpeech.EntityAccessControl
                 e = Activator.CreateInstance(type)!;
                 insert = true;
             }
+
+            if (insert && !isChild)
+            {
+                db.Add(e);
+            }
             var properties = t.GetProperties();
             var navProperties = t.GetNavigations();
             foreach(var p in body.EnumerateObject())
@@ -113,10 +118,6 @@ namespace NeuroSpeech.EntityAccessControl
                 }
             }
 
-            if (insert && !isChild)
-            {
-                db.Add(e);
-            }
             if(!body.TryGetProperty("$navigations", out var nav))  
                 return e!;
             //var clrType = t.ClrType;
