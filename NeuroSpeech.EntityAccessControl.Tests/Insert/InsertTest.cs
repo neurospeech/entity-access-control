@@ -1,4 +1,5 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NeuroSpeech.EntityAccessControl.Tests.Model;
 using System;
 using System.Collections.Generic;
@@ -14,7 +15,8 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
         [TestMethod]
         public async Task InsertAsync()
         {
-            using var db = CreateContext();
+            using var scope = CreateScope();
+            using var db = scope.GetRequiredService<AppDbContext>();
 
             var sdb = new SecureAppTestDbContext(db, 2, new AppTestDbContextRules());
 

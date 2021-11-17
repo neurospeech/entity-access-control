@@ -1,4 +1,5 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NeuroSpeech.EntityAccessControl.Tests.Model;
 using System;
 using System.Collections.Generic;
@@ -23,16 +24,63 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
         [TestMethod]
         public async Task InsertAsync()
         {
+            using var scope = CreateScope();
+            
+            await InsertPostAsync(scope);
+            await InsertPostAsync(scope);
+            
+        }
 
-            using var db = CreateContext();
+        [TestMethod]
+        public async Task InsertAdminAsync()
+        {
+            using var scope = CreateScope();
+            
+            await InsertPostAsync(scope, 1);
+            await InsertPostAsync(scope, 1);
+            ;
+        }
 
-            var sdb = new SecureAppTestDbContext(db, 2, new AppTestDbContextRules());
+
+        private async Task InsertPostAsync(IServiceProvider services, int userId = 2)
+        {
+            var db = services.GetRequiredService<AppDbContext>();
+            var sdb = new SecureAppTestDbContext(db, userId, new AppTestDbContextRules());
 
             var controller = new TestEntityController(sdb);
 
-            var doc = System.Text.Json.JsonDocument.Parse("");
+            var doc = System.Text.Json.JsonDocument.Parse(
+                JsonSerialize(new Dictionary<string, object>{
+                    { "$type", typeof(Post).FullName },
+                    { "Name", "a" },
+                    { "Tags" , new PostTag[] {
+                            new PostTag {
+                                Name = "funny"
+                            },
+                            new PostTag
+                            {
+                                Name = "public"
+                            }
+                        }
+                    },
+                    {
+                        "Contents", new PostContent[] {
+                            new PostContent {
+                                Name = "b",
+                                Tags = new PostContentTag[] {
+                                    new PostContentTag {
+                                        Name = "funny"
+                                    },
+                                    new PostContentTag
+                                    {
+                                        Name = "public"
+                                    }
+                                }
+                            }
+                        }
+                    }
+            }));
             await controller.Save(doc.RootElement);
         }
-
     }
 }

@@ -15,6 +15,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using NeuroSpeech.EntityAccessControl.Internal;
 using System.Collections.Concurrent;
+using System.Threading;
 
 namespace NeuroSpeech.EntityAccessControl
 {
@@ -42,7 +43,9 @@ namespace NeuroSpeech.EntityAccessControl
         }
 
         protected async Task<object> LoadOrCreateAsync(Type type,
-            JsonElement body, bool isChild = false)
+            JsonElement body, 
+            bool isChild = false,
+            CancellationToken cancellationToken = default)
         {
             IEntityType t;
             if(body.TryGetStringProperty("$type", out var typeName))
@@ -66,7 +69,7 @@ namespace NeuroSpeech.EntityAccessControl
 
             object? e = null;
             Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry? entry = null;
-            e = await db.FindByKeysAsync(type, body, HttpContext.RequestAborted);
+            e = await db.FindByKeysAsync(type, body, cancellationToken);
             if(e != null)
             {
                 entry = db.Entry(e);

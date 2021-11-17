@@ -7,6 +7,8 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Model
 {
     public class AppDbContext: BaseDbContext<AppDbContext>
     {
+        public long UserID;
+
         public AppDbContext(DbContextOptions<AppDbContext> options, DbContextEvents<AppDbContext> events)
             : base(options, events)
         {
