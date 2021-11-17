@@ -24,9 +24,10 @@ namespace NeuroSpeech.EntityAccessControl
             DbContextEvents<T> events) : base(options)
         {
             this.events = events;
+            this.RaiseEvents = events != null;
         }
 
-        public bool RaiseEvents { get; set; } = true;
+        public bool RaiseEvents { get; set; }
 
         private Task OnInserting(Type type, object entity)
         {

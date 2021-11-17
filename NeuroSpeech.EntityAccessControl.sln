@@ -10,6 +10,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NeuroSpeech.EntityAccessControl", "NeuroSpeech.EntityAccessControl\NeuroSpeech.EntityAccessControl.csproj", "{71B1AADA-2C85-4B32-BF2D-7FB281B9FC86}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NeuroSpeech.EntityAccessControl.Tests", "NeuroSpeech.EntityAccessControl.Tests\NeuroSpeech.EntityAccessControl.Tests.csproj", "{08926752-8406-40AA-9151-9F8EE50E4CEE}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NeuroSpeech.EFCore.MockSqlServer", "NeuroSpeech.EFCore.MockSqlServer\NeuroSpeech.EFCore.MockSqlServer.csproj", "{8D9A1333-E5E2-4EEB-AAA5-70E943489CF3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -20,6 +24,14 @@ Global
 		{71B1AADA-2C85-4B32-BF2D-7FB281B9FC86}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{71B1AADA-2C85-4B32-BF2D-7FB281B9FC86}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{71B1AADA-2C85-4B32-BF2D-7FB281B9FC86}.Release|Any CPU.Build.0 = Release|Any CPU
+		{08926752-8406-40AA-9151-9F8EE50E4CEE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{08926752-8406-40AA-9151-9F8EE50E4CEE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{08926752-8406-40AA-9151-9F8EE50E4CEE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{08926752-8406-40AA-9151-9F8EE50E4CEE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8D9A1333-E5E2-4EEB-AAA5-70E943489CF3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8D9A1333-E5E2-4EEB-AAA5-70E943489CF3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8D9A1333-E5E2-4EEB-AAA5-70E943489CF3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8D9A1333-E5E2-4EEB-AAA5-70E943489CF3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
