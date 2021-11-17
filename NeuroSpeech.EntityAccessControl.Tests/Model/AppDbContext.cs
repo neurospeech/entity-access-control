@@ -70,7 +70,7 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Model
     {
         public long PostID { get; set; }
 
-        [MaxLength(100)]
+        [MaxLength(100), Required]
         public string Name { get; set; }
 
         [ForeignKey(nameof(PostID))]
@@ -101,9 +101,9 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Model
     [Table("PostContentTags")]
     public class PostContentTag
     {
-        public long PostContentID { get; set; }        
+        public long PostContentID { get; set; }
 
-        [MaxLength(100)]
+        [MaxLength(100), Required]
         public string Name { get; set; }
 
         [ForeignKey(nameof(PostContentID))]
@@ -118,6 +118,10 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Model
     {
         [Key, MaxLength(100)]
         public string Name { get; set; }
+
+        public ICollection<PostTag> PostTags { get; set; }
+
+        public ICollection<PostContent> PostContents { get; set; }
     }
 
 }

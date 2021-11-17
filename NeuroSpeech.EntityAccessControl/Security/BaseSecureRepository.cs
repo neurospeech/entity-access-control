@@ -102,10 +102,10 @@ namespace NeuroSpeech.EntityAccessControl.Security
                         break;
                     }
 
+                    tx ??= Expression.Parameter(type, "x");
                     var equals = Expression.Equal(Expression.Property(tx, p.PropertyInfo), Expression.Constant(value, p.PropertyInfo.PropertyType));
                     if (start == null)
                     {
-                        tx = Expression.Parameter(type, "x");
                         start = equals;
                         continue;
                     }
