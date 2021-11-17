@@ -136,7 +136,7 @@ namespace NeuroSpeech.EntityAccessControl
         /// <returns></returns>
         public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
         {
-            this.ChangeTracker.DetectChanges();
+            // this.ChangeTracker.DetectChanges();
             if (!RaiseEvents)
             {
                 Validate();
