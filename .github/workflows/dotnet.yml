@@ -28,12 +28,12 @@ jobs:
     - name: Pack
       run: dotnet pack --no-restore
     - name: Publish NuGet
-      run: dotnet nuget push **/*.nupkg -k ${NUGET_TOKEN} -n true --source https://api.nuget.org/v3/index.json
+      run: dotnet nuget push **/*.nupkg  --source https://api.nuget.org/v3/index.json --api-key ${NUGET_TOKEN} --no-symbols true
       env:
          NUGET_TOKEN: ${{secrets.PUBLIC_NUGET_TOKEN}}
 
     - name: Publish Proget
-      run: dotnet nuget push **/*.nupkg -k ${NUGET_KEY} -n true --source ${NUGET_SOURCE} 
+      run: dotnet nuget push **/*.nupkg --source ${NUGET_SOURCE} --api-key ${NUGET_KEY} --no-symbols true
       env:
          NUGET_SOURCE: ${{secrets.PROGET_NUGET}}
          NUGET_KEY: ${{secrets.PROGET_NUGET_TOKEN}}  
