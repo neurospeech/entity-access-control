@@ -59,7 +59,6 @@ namespace NeuroSpeech.EntityAccessControl.Tests
             ConnectionString = (new SqlConnectionStringBuilder()
             {
                 DataSource = "(localdb)\\MSSQLLocalDB",
-                //sqlCnstr.AttachDBFilename = t;
                 InitialCatalog = DBName,
                 IntegratedSecurity = true,
                 ApplicationName = "EntityFramework"

@@ -62,7 +62,10 @@ namespace NeuroSpeech.EntityAccessControl.Tests
         {
             using var scope = Services.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            db.MigrationForSqlServer().Migrate();
+            // db.Database.ExecuteSqlRaw(db.Database.GenerateCreateScript().Replace("GO;",""));
+            db.Database.EnsureCreated();
+            db.Database.Migrate();
+            // db.MigrationForSqlServer().Migrate();
             Seed(db);
         }
 
@@ -83,20 +86,35 @@ namespace NeuroSpeech.EntityAccessControl.Tests
             return System.Text.Json.JsonSerializer.Serialize<T>(value, jsonSerializerOptions);
         }
 
+        protected void Seed<T>(AppDbContext db, params T[] items)
+            where T: class
+        {
+            if (db.Set<T>().Any())
+                return;
+            foreach(var item in items)
+            {
+                db.Add<T>(item);
+            }
+            db.SaveChanges();
+        }
 
         public void Seed(AppDbContext db)
         {
-            if (db.Tags.Any())
-                return;
-            db.Tags.Add(new Tag
+            Seed(db, new Account { 
+                // admin
+                AccountID = 1
+            },new Account { 
+                // non admin
+                AccountID = 2
+            });
+
+            Seed(db, new Tag
             {
                 Name = "funny"
-            });
-            db.Tags.Add(new Tag
+            },new Tag
             {
                 Name = "public"
             });
-            db.SaveChanges();
         }
     }
 }

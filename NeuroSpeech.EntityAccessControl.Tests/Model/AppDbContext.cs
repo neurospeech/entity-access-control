@@ -40,6 +40,7 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Model
     [Table("Accounts")]
     public class Account
     {
+        [Key, DatabaseGenerated(DatabaseGeneratedOption.None)]
         public long AccountID { get; set; }
     }
 
