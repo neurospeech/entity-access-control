@@ -10,8 +10,9 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Model
             SetFilterForAll<PostTag>((q, u) => q.Where(x => x.Post.AuthorID == u));
             SetFilterForAll<PostContent>((q, u) => q.Where(x => x.Post.AuthorID == u));
             SetFilterForAll<PostContentTag>((q, u) => q.Where(x => x.PostContent.Post.AuthorID == u));
-            SetFilterForAll<Tag>((q, u) => q.Where(x => x.PostContents.Any(p => p.Post.AuthorID == u) 
-                || x.PostTags.Any(p => p.Post.AuthorID == u)));
+
+            // we can select all tags but cannot modify it...
+            SetAllFilter<Tag>(select: (q, u) => q);
 
         }
     }
