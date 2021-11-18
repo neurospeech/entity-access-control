@@ -6,13 +6,13 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Model
     {
         public AppTestDbContextRules()
         {
-            SetFilterForAll<Post>((q, u) => q.Where(x => x.AuthorID == u));
-            SetFilterForAll<PostTag>((q, u) => q.Where(x => x.Post.AuthorID == u));
-            SetFilterForAll<PostContent>((q, u) => q.Where(x => x.Post.AuthorID == u));
-            SetFilterForAll<PostContentTag>((q, u) => q.Where(x => x.PostContent.Post.AuthorID == u));
+            SetAllFilters<Post>((q, u) => q.Where(x => x.AuthorID == u));
+            SetAllFilters<PostTag>((q, u) => q.Where(x => x.Post.AuthorID == u));
+            SetAllFilters<PostContent>((q, u) => q.Where(x => x.Post.AuthorID == u));
+            SetAllFilters<PostContentTag>((q, u) => q.Where(x => x.PostContent.Post.AuthorID == u));
 
             // we can select all tags but cannot modify it...
-            SetAllFilter<Tag>(select: (q, u) => q);
+            SetFilters<Tag>(select: Allow);
 
         }
     }

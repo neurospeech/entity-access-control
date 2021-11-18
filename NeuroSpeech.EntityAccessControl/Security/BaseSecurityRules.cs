@@ -35,7 +35,15 @@ namespace NeuroSpeech.EntityAccessControl
             return update.As<T,TC>()(q, client);
         }
 
-        protected void SetAllFilter<T>(
+        /// <summary>
+        /// Set filter for select, insert, update, delete
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="select"></param>
+        /// <param name="insert"></param>
+        /// <param name="update"></param>
+        /// <param name="delete"></param>
+        protected void SetFilters<T>(
             Func<IQueryable<T>, TC, IQueryable<T>>? select = null,
             Func<IQueryable<T>, TC, IQueryable<T>>? insert = null,
             Func<IQueryable<T>, TC, IQueryable<T>>? update = null,
@@ -47,10 +55,15 @@ namespace NeuroSpeech.EntityAccessControl
             this.delete.SetFunc<T, TC>(delete);
         }
 
-        public void SetFilterForAll<T>(
+        /// <summary>
+        /// Set one filter for all (select, insert, update, delete)
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="all"></param>
+        public void SetAllFilters<T>(
             Func<IQueryable<T>, TC, IQueryable<T>> all)
         {
-            SetAllFilter<T>(all, all, all, all);
+            SetFilters<T>(all, all, all, all);
         }
 
 
