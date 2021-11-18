@@ -69,7 +69,7 @@ namespace NeuroSpeech.EntityAccessControl
 
             object? e = null;
             Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry? entry = null;
-            e = await db.FindByKeysAsync(type, body, cancellationToken);
+            e = await db.FindByKeysAsync(t, body, cancellationToken);
             if(e != null)
             {
                 entry = db.Entry(e);
@@ -97,9 +97,10 @@ namespace NeuroSpeech.EntityAccessControl
                 if(navProperties.TryGetFirst(p.Name, (x, name) => x.Name.EqualsIgnoreCase(name), out var navProperty))
                 {
 
+                    PropertyInfo navPropertyInfo = navProperty.PropertyInfo;
                     if (!navProperty.IsCollection)
                     {
-                        navProperty.PropertyInfo.SetValue(e, await LoadOrCreateAsync(navProperty.PropertyInfo.PropertyType, p.Value, true));
+                        navPropertyInfo.SetValue(e, await LoadOrCreateAsync(navPropertyInfo.PropertyType, p.Value, true));
                         continue;
                     }
 
@@ -107,7 +108,7 @@ namespace NeuroSpeech.EntityAccessControl
                     var pt = navProperty.TargetEntityType.ClrType;
 
                     // get or create...
-                    var coll = (navProperty.PropertyInfo.GetOrCreate(e) as System.Collections.IList)!;
+                    var coll = (navPropertyInfo.GetOrCreateCollection(e, pt) as System.Collections.IList)!;
                     // this will be an array..
                     if(p.Value.ValueKind != JsonValueKind.Array)
                     {
@@ -343,7 +344,7 @@ export class Model<T extends IClrEntity> {
             )
         {
             var t = FindEntityType(entity);
-            var d = await db.FindByKeysAsync(t.ClrType, entity);
+            var d = await db.FindByKeysAsync(t, entity);
             if (d != null)
             {
                 db.Remove(d);

@@ -13,7 +13,7 @@ namespace NeuroSpeech.EntityAccessControl.Security
     {
         EntityEntry Entry(object item);
 
-        Task<object?> FindByKeysAsync(Type t, JsonElement keys, CancellationToken token = default);
+        Task<object?> FindByKeysAsync(IEntityType t, JsonElement keys, CancellationToken token = default);
         IQueryable<T?> Query<T>() where T : class;
 
         IModel Model { get; }

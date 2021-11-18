@@ -13,6 +13,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using NeuroSpeech.EntityAccessControl.Internal;
 using System.ComponentModel;
+using System.Reflection;
 
 namespace NeuroSpeech.EntityAccessControl.Security
 {
@@ -67,22 +68,20 @@ namespace NeuroSpeech.EntityAccessControl.Security
 
         public EntityEntry Entry(object entity) => db.Entry(entity);
 
-        public async Task<object?> FindByKeysAsync(Type t, JsonElement keys, CancellationToken token = default)
+        public Task<object?> FindByKeysAsync(IEntityType t, JsonElement keys, CancellationToken token = default)
         {
-            var r = this.GetType()
-                .GetMethod(nameof(FindByKeysGenericAsync))!
-                .MakeGenericMethod(t)
-                .Invoke(this, new object?[] { keys, token}) as Task;
-            await r!;
-            return r.GetType().GetProperty("Result")!.GetValue(r);
+            var method = this.GetInstanceGenericMethod(nameof(FindByKeysGenericAsync), t.ClrType)
+                .As<Task<object?>>();
+            return method.Invoke(t, keys, token);
         }
 
-        public Task<T?> FindByKeysGenericAsync<T>(JsonElement keys, CancellationToken token = default)
+        private static Task<object?> nullResult = Task.FromResult<object?>(null);
+
+        public Task<object?> FindByKeysGenericAsync<T>(IEntityType t, JsonElement keys, CancellationToken token = default)
             where T: class
         {
             var type = typeof(T);
             ParameterExpression? tx = null;// = Expression.Parameter(type, "x");
-            var t = db.Model.GetEntityTypes().FirstOrDefault(x => x.ClrType == type);
             Expression? start = null;
             bool hasAllKeyMembers = true;
             foreach (var k in t.GetKeys())
@@ -115,10 +114,10 @@ namespace NeuroSpeech.EntityAccessControl.Security
                     break;
             }
             if (!hasAllKeyMembers)
-                return Task.FromResult<T?>(null);
+                return nullResult;
             var lambda = Expression.Lambda<Func<T?, bool>>(start, tx);
             var q = Query<T>().Where(lambda);
-            return q.FirstOrDefaultAsync(token);
+            return q.FirstOrDefaultAsync(token).ContinueAsObject();
         }
 
         public async Task<int> SaveChangesAsync(CancellationToken token = default) {

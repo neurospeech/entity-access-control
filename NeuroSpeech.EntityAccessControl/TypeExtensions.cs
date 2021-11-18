@@ -1,7 +1,13 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore.Metadata;
+using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
+using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace NeuroSpeech.EntityAccessControl.Internal
 {
@@ -144,49 +150,154 @@ namespace NeuroSpeech.EntityAccessControl.Internal
             return $"any /*{type.FullName}*/";
         }
 
-        public static object GetOrCreate(this PropertyInfo property, object target)
+        public static System.Collections.IList? GetOrCreateCollection(this PropertyInfo property, object target, Type itemType)
         {
             var value = property.GetValue(target);
-            if(value == null)
+            if (value == null)
             {
-                value = property.PropertyType.CreateClassInstance()!;
+                value = property.PropertyType.CreateCollection(itemType)!;
                 property.SetValue(target, value);
             }
-            return value;
+            return value as System.Collections.IList;
         }
 
+        private static ConcurrentDictionary<Type, Func<System.Collections.IList>> collectionFactories
+            = new ConcurrentDictionary<Type, Func<System.Collections.IList>>();
 
-        /// <summary>
-        /// Creates new Instance of class if it is a class, if it is of IList, ICollection as List
-        /// </summary>
-        /// <param name="type"></param>
-        /// <returns></returns>
-        public static object? CreateClassInstance(this Type type)
+        public static System.Collections.IList CreateCollection(this Type type, Type itemType)
         {
-            if (type.IsInterface)
+            var f = collectionFactories.GetOrAdd(type, x =>
             {
-                if (type.IsGenericType)
+                if (type.IsInterface)
                 {
-                    var t = type.GetGenericArguments()[0];
-                    var gt = type.GetGenericTypeDefinition();
-                    if(gt == typeof(ICollection<>) || gt == typeof(IList<>))
+                    var t = typeof(List<>).MakeGenericType(itemType);
+                    if (type.IsAssignableFrom(t))
                     {
-                        var ct = typeof(List<>).MakeGenericType(t);
-                        return Activator.CreateInstance(ct);
+                        type = t;
+                    } else
+                    {
+                        Func<System.Collections.IList> fx = () => throw new InvalidOperationException($"Cannot instantiate type {type.FullName}");
+                        return fx;
                     }
                 }
-            }
-            return Activator.CreateInstance(type);
+                var body = Expression.Lambda<Func<System.Collections.IList>>(
+                    Expression.New(type));
+                return body.Compile();
+            });
+            return f();
         }
 
-        public static object? InvokeMethod(this object target, string method, params object[] values)
+    }
+
+
+
+    public static class GenericHelper1
+    {
+
+        class GenericCache<T, RT>
+            where T: notnull
         {
-            return target.GetType().InvokeMember(method,
-                System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Default,
-                null,
-                target,
-                values);
+
+            internal static readonly ConcurrentDictionary<T, RT> cache
+                = new ConcurrentDictionary<T, RT>();
         }
 
+        private static T GetOrAdd<TKey, T>(TKey key, Func<TKey, T> factory)
+            where TKey: notnull
+        {
+            return GenericCache<TKey, T>.cache.GetOrAdd(key, factory);
+        }
+
+        public class GenericMethod<T>
+        {
+            private MethodInfo method;
+            private object? @delegate;
+
+            public GenericMethod(MethodInfo method)
+            {
+                this.method = method;
+                @delegate = null;
+            }
+
+            internal TDelegate CreateDelegate<TDelegate>()
+            {
+                return (TDelegate)(@delegate ??= method.CreateDelegate(typeof(TDelegate)));
+            }
+        }
+
+        public struct GenericMethodWithTarget<T>
+        {
+            private readonly GenericMethod<T> method;
+            private readonly T target;
+
+            public GenericMethodWithTarget(GenericMethod<T> method, T target)
+            {
+                this.method = method;
+                this.target = target;
+            }
+
+            public GenericMethod<T, RT> As<RT>() => new GenericMethod<T, RT>(method, target);
+
+        }
+
+        public struct GenericMethod<T, RT>
+        {
+            private GenericMethod<T> genericMethod;
+            private readonly T target;
+
+            public GenericMethod(GenericMethod<T> genericMethod, T target)
+            {
+                this.genericMethod = genericMethod;
+                this.target = target;
+            }
+
+            public RT Invoke()
+            {
+                return genericMethod.CreateDelegate<Func<T, RT>>()(target);
+            }
+
+            public RT Invoke<T1>(T1 p1)
+            {
+                return genericMethod.CreateDelegate<Func<T, T1, RT>>()(target, p1);
+            }
+
+            public RT Invoke<T1, T2>(T1 p1, T2 p2)
+            {
+                return genericMethod.CreateDelegate<Func<T, T1, T2, RT>>()(target, p1, p2);
+            }
+
+            public RT Invoke<T1, T2, T3>(T1 p1, T2 p2, T3 p3)
+            {
+                return genericMethod.CreateDelegate<Func<T, T1, T2, T3, RT>>()(target, p1, p2, p3);
+            }
+
+            public RT Invoke<T1, T2, T3, T4>(T1 p1, T2 p2, T3 p3, T4 p4)
+            {
+                return genericMethod.CreateDelegate<Func<T, T1, T2, T3, T4, RT>>()(target, p1, p2, p3, p4);
+            }
+        }
+
+        public static GenericMethodWithTarget<T> GetInstanceGenericMethod<T>(this T target, string methodName, Type type)
+            where T: notnull
+        {
+            var m = GetOrAdd((target, methodName, type), (x) =>
+                {
+                    var method = typeof(T)
+                        .GetMethod(methodName)!
+                        .MakeGenericMethod(type);
+                    return new GenericMethod<T>(method);
+                });
+            return new GenericMethodWithTarget<T>(m, target);
+        }
+
+    }
+
+    public static class TaskExtensions
+    {
+        public static async Task<object?> ContinueAsObject<T>(this Task<T> task)
+        {
+            var r = await task;
+            return r;
+        }
     }
 }
