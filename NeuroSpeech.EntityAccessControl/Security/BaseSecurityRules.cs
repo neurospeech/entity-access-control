@@ -49,10 +49,14 @@ namespace NeuroSpeech.EntityAccessControl
             Func<IQueryable<T>, TC, IQueryable<T>>? update = null,
             Func<IQueryable<T>, TC, IQueryable<T>>? delete = null)
         {
-            this.select.SetFunc<T, TC>(select);
-            this.insert.SetFunc<T, TC>(insert);
-            this.update.SetFunc<T, TC>(update);
-            this.delete.SetFunc<T, TC>(delete);
+            if (select != null)
+                this.select.SetFunc<T, TC>(select);
+            if (insert != null)
+                this.insert.SetFunc<T, TC>(insert);
+            if (update != null)
+                this.update.SetFunc<T, TC>(update);
+            if (delete != null)
+                this.delete.SetFunc<T, TC>(delete);
         }
 
         /// <summary>
