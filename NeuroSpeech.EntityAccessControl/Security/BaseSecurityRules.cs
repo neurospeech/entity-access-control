@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 
 namespace NeuroSpeech.EntityAccessControl
 {
@@ -14,6 +15,7 @@ namespace NeuroSpeech.EntityAccessControl
         private RulesDictionary insert = new RulesDictionary();
         private RulesDictionary update = new RulesDictionary();
         private RulesDictionary delete = new RulesDictionary();
+        private RulesDictionary modify = new RulesDictionary();
 
         internal IQueryable<T> Apply<T>(IQueryable<T> ts, TC client) where T : class
         {
@@ -76,5 +78,10 @@ namespace NeuroSpeech.EntityAccessControl
         public static IQueryable<T> Unauthorized<T>(IQueryable<T> q, TC c)
                    where T : class
                    => throw new UnauthorizedAccessException();
+
+        internal void VerifyModifyMember<T>(PropertyInfo propertyInfo, TC c)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

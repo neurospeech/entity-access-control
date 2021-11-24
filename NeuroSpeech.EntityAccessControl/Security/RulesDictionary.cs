@@ -10,6 +10,8 @@ namespace NeuroSpeech.EntityAccessControl
 
         private static MethodInfo asMethod = typeof(RulesDictionary).GetMethod("FromBase")!;
 
+        private static MethodInfo asLambdaMethod = typeof(RulesDictionary).GetMethod("FromBaseLambda")!;
+
         private Dictionary<Type, object> rules = new Dictionary<Type, object>();
         private Dictionary<Type, object> cached = new Dictionary<Type, object>();
 

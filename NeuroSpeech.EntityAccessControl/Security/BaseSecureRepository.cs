@@ -136,6 +136,13 @@ namespace NeuroSpeech.EntityAccessControl.Security
                 switch (entry.State)
                 {
                     case EntityState.Modified:
+                        foreach(var member in entry.Members.Where(x => x.IsModified))
+                        {
+                            VerifyMemberModify(entry.Entity, member.Metadata.PropertyInfo);
+                        }
+                        await VerifyAccessAsync(entry);
+                        pendingVerifications.Add(entry);
+                        break;
                     case EntityState.Deleted:
                         await VerifyAccessAsync(entry);
                         pendingVerifications.Add(entry);
@@ -156,6 +163,19 @@ namespace NeuroSpeech.EntityAccessControl.Security
             return r;
         }
 
+        private void VerifyMemberModify(object entity, PropertyInfo propertyInfo)
+        {
+            this.GetInstanceGenericMethod(nameof(InternalVerifyMemberModify), entity.GetType())
+                .As<bool>()
+                .Invoke(propertyInfo);
+        }
+
+        public bool InternalVerifyMemberModify<T>(PropertyInfo propertyInfo)
+        {
+            // rules.VerifyModifyMember<T>(propertyInfo, AssociatedUser);
+            return true;
+        }
+
         public readonly struct PreservedState
         {
             public readonly EntityState State;
@@ -173,10 +193,13 @@ namespace NeuroSpeech.EntityAccessControl.Security
 
         private Task VerifyAccessAsync(PreservedState entity)
         {
-            return (this.GetType()
-                .GetMethod(nameof(VerifyAccessGenericAsync))!
-                .MakeGenericMethod(entity.Entity.GetType())
-                .Invoke(this, new object[] { entity }) as Task)!;
+            return this.GetInstanceGenericMethod(nameof(VerifyAccessGenericAsync), entity.Entity.GetType())
+                .As<Task>()
+                .Invoke(entity);
+            //return (this.GetType()
+            //    .GetMethod(nameof(VerifyAccessGenericAsync))!
+            //    .MakeGenericMethod(entity.Entity.GetType())
+            //    .Invoke(this, new object[] { entity }) as Task)!;
         }
 
         [EditorBrowsable(EditorBrowsableState.Never)]
