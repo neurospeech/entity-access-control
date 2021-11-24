@@ -150,7 +150,7 @@ namespace NeuroSpeech.EntityAccessControl
 
         }
 
-        protected async Task SetProperties(object? entity, IEntityType entityType, JsonElement model)
+        protected async Task SetProperties(object entity, IEntityType entityType, JsonElement model)
         {
             var properties = entityType.GetProperties();
             var navProperties = entityType.GetNavigations();
@@ -367,14 +367,21 @@ export class Model<T extends IClrEntity> {
             CancellationToken cancellation
             )
         {
-            foreach(var item in model.IDs)
+            if (model.Keys == null)
+                return BadRequest();
+            foreach(var item in model.Keys)
             {
                 var t = FindEntityType(item);
                 var entity = await db.FindByKeysAsync(t, item, cancellation);
-                if (entity != null)
+                if (entity == null)
                 {
-                    db.Remove(entity);
+                    if (model.ThrowWhenNotFound)
+                    {
+                        return BadRequest();
+                    }
+                    continue;
                 }
+                db.Remove(entity);
             }
 
             await db.SaveChangesAsync();
@@ -383,8 +390,10 @@ export class Model<T extends IClrEntity> {
 
         public class BulkOperation
         {
-            public JsonElement[] Keys { get; set; }
+            public JsonElement[]? Keys { get; set; }
             public JsonElement Update { get; set; }
+
+            public bool ThrowWhenNotFound { get; set; }
         }
 
         [HttpPut("bulk")]
@@ -393,13 +402,23 @@ export class Model<T extends IClrEntity> {
             CancellationToken cancellation
             )
         {
-            if (model.Update.ValueKind == JsonValueKind.Undefined || model.Update.ValueKind == JsonValueKind.Null)
+            if (model.Keys == null 
+                || model.Update.ValueKind == JsonValueKind.Undefined
+                || model.Update.ValueKind == JsonValueKind.Null)
                 return BadRequest();
 
-            foreach(var item in model.IDs)
+            foreach(var item in model.Keys)
             {
                 var t = FindEntityType(item);
                 var entity = await db.FindByKeysAsync(t, item, cancellation);
+                if (entity == null)
+                {
+                    if (model.ThrowWhenNotFound)
+                    {
+                        return BadRequest();
+                    }
+                    continue;
+                }
                 await SetProperties(entity, t, model.Update);
             }
             await db.SaveChangesAsync();
