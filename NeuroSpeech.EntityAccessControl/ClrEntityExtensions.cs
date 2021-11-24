@@ -45,6 +45,16 @@ namespace NeuroSpeech.EntityAccessControl
                 }
                 switch (Type.GetTypeCode(type))
                 {
+                    case TypeCode.Boolean:
+                        if(je.ValueKind == JsonValueKind.Number)
+                        {
+                            return je.GetDouble() != 0;
+                        }
+                        if (je.ValueKind == JsonValueKind.True)
+                            return true;
+                        if (je.ValueKind == JsonValueKind.False)
+                            return false;
+                        break;
                     case TypeCode.Int16:
                         if(je.ValueKind == JsonValueKind.Number)
                             return je.GetInt16();
