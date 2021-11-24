@@ -11,6 +11,55 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
     [TestClass]
     public class InsertTest: BaseTest
     {
+        [TestMethod]
+        public async Task UnauthorizeAsync()
+        {
+            try
+            {
+
+                using var scope = CreateScope();
+                using var db = scope.GetRequiredService<AppDbContext>();
+
+                var sdb = new SecureAppTestDbContext(db, 3, new AppTestDbContextRules());
+
+                sdb.Add(new Post
+                {
+                    Name = "a",
+                    Tags = new List<PostTag> {
+                    new PostTag {
+                        Name = "funny"
+                    },
+                    new PostTag
+                    {
+                        Name = "public"
+                    }
+                },
+                    Contents = new List<PostContent> {
+                    new PostContent {
+                        Name = "b",
+                        Tags = new List<PostContentTag> {
+                            new PostContentTag {
+                                Name = "funny"
+                            },
+                            new PostContentTag
+                            {
+                                Name = "public"
+                            }
+                        }
+                    }
+                }
+                });
+
+                await sdb.SaveChangesAsync();
+
+
+                throw new InvalidOperationException();
+            } catch (UnauthorizedAccessException)
+            {
+
+            }
+        }
+
 
         [TestMethod]
         public async Task InsertAsync()
@@ -47,7 +96,7 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
                 }
             });
 
-            await db.SaveChangesAsync();
+            await sdb.SaveChangesAsync();
 
             sdb.Add(new Post
             {
@@ -77,7 +126,7 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
                 }
             });
 
-            await db.SaveChangesAsync();
+            await sdb.SaveChangesAsync();
 
         }
 

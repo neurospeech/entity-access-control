@@ -214,11 +214,13 @@ namespace NeuroSpeech.EntityAccessControl.Security
                 default:
                     return;
             }
-            var d = await q.FirstOrDefaultAsync();
-            if (d != entry.Entity)
-            {
+            if (!await q.AnyAsync())
                 throw new UnauthorizedAccessException();
-            }
+            //var d = await q.FirstOrDefaultAsync();
+            //if (d != entry.Entity)
+            //{
+            //    throw new UnauthorizedAccessException();
+            //}
         }
 
     }

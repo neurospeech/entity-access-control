@@ -48,18 +48,20 @@ namespace NeuroSpeech.EntityAccessControl
             CancellationToken cancellationToken = default)
         {
             IEntityType t;
-            if(body.TryGetStringProperty("$type", out var typeName))
+            if (body.TryGetStringProperty("$type", out var typeName))
             {
                 t = FindEntityType(typeName);
                 if (type.IsAssignableFrom(t.ClrType))
                 {
                     type = t.ClrType;
-                } else
+                }
+                else
                 {
                     // we can ignore $type in case of specialized one to one mapping
                     t = db.Model.FindEntityType(type);
                 }
-            } else
+            }
+            else
             {
                 t = db.Model.FindEntityType(type);
             }
@@ -70,7 +72,7 @@ namespace NeuroSpeech.EntityAccessControl
             object? e = null;
             Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry? entry = null;
             e = await db.FindByKeysAsync(t, body, cancellationToken);
-            if(e != null)
+            if (e != null)
             {
                 entry = db.Entry(e);
             }
@@ -85,43 +87,10 @@ namespace NeuroSpeech.EntityAccessControl
             {
                 db.Add(e);
             }
-            var properties = t.GetProperties();
-            var navProperties = t.GetNavigations();
-            foreach(var p in body.EnumerateObject())
-            {
-                if(properties.TryGetFirst(p.Name, (x,name) => x.Name.EqualsIgnoreCase(name),out var property))
-                {
-                    property.PropertyInfo.SaveJsonOrValue(e, p.Value);
-                    continue;
-                }
-                if(navProperties.TryGetFirst(p.Name, (x, name) => x.Name.EqualsIgnoreCase(name), out var navProperty))
-                {
+            
+            await SetProperties(e, t, body);
 
-                    PropertyInfo navPropertyInfo = navProperty.PropertyInfo;
-                    if (!navProperty.IsCollection)
-                    {
-                        navPropertyInfo.SetValue(e, await LoadOrCreateAsync(navPropertyInfo.PropertyType, p.Value, true));
-                        continue;
-                    }
-
-                    // what to do in collection...
-                    var pt = navProperty.TargetEntityType.ClrType;
-
-                    // get or create...
-                    var coll = (navPropertyInfo.GetOrCreateCollection(e, pt) as System.Collections.IList)!;
-                    // this will be an array..
-                    if(p.Value.ValueKind != JsonValueKind.Array)
-                    {
-                        throw new InvalidOperationException($"{p.Name} should be an Array");
-                    }
-                    foreach (var item in p.Value.EnumerateArray())
-                    {
-                        coll.Add(await LoadOrCreateAsync(pt, item, true));
-                    }
-                }
-            }
-
-            if(!body.TryGetProperty("$navigations", out var nav))  
+            if (!body.TryGetProperty("$navigations", out var nav))
                 return e!;
             //var clrType = t.ClrType;
             //if (!(nav is JsonElement je))
@@ -179,6 +148,45 @@ namespace NeuroSpeech.EntityAccessControl
             //}
             return e!;
 
+        }
+
+        protected async Task SetProperties(object? entity, IEntityType entityType, JsonElement model)
+        {
+            var properties = entityType.GetProperties();
+            var navProperties = entityType.GetNavigations();
+            foreach (var p in model.EnumerateObject())
+            {
+                if (properties.TryGetFirst(p.Name, (x, name) => x.Name.EqualsIgnoreCase(name), out var property))
+                {
+                    property.PropertyInfo.SaveJsonOrValue(entity, p.Value);
+                    continue;
+                }
+                if (navProperties.TryGetFirst(p.Name, (x, name) => x.Name.EqualsIgnoreCase(name), out var navProperty))
+                {
+
+                    PropertyInfo navPropertyInfo = navProperty.PropertyInfo;
+                    if (!navProperty.IsCollection)
+                    {
+                        navPropertyInfo.SetValue(entity, await LoadOrCreateAsync(navPropertyInfo.PropertyType, p.Value, true));
+                        continue;
+                    }
+
+                    // what to do in collection...
+                    var pt = navProperty.TargetEntityType.ClrType;
+
+                    // get or create...
+                    var coll = (navPropertyInfo.GetOrCreateCollection(entity, pt) as System.Collections.IList)!;
+                    // this will be an array..
+                    if (p.Value.ValueKind != JsonValueKind.Array)
+                    {
+                        throw new InvalidOperationException($"{p.Name} should be an Array");
+                    }
+                    foreach (var item in p.Value.EnumerateArray())
+                    {
+                        coll.Add(await LoadOrCreateAsync(pt, item, true));
+                    }
+                }
+            }
         }
 
         protected static readonly ConcurrentDictionary<string, IEntityType> entityTypes = new();
@@ -350,7 +358,52 @@ export class Model<T extends IClrEntity> {
                 db.Remove(d);
             }
             await db.SaveChangesAsync();
-            return Ok();
+            return Ok(new { });
+        }
+
+        [HttpDelete("bulk")]
+        public async Task<IActionResult> BulkDelete(
+            [FromBody] BulkOperation model,
+            CancellationToken cancellation
+            )
+        {
+            foreach(var item in model.IDs)
+            {
+                var t = FindEntityType(item);
+                var entity = await db.FindByKeysAsync(t, item, cancellation);
+                if (entity != null)
+                {
+                    db.Remove(entity);
+                }
+            }
+
+            await db.SaveChangesAsync();
+            return Ok(new { });
+        }
+
+        public class BulkOperation
+        {
+            public JsonElement[] IDs { get; set; }
+            public JsonElement Update { get; set; }
+        }
+
+        [HttpPut("bulk")]
+        public async Task<IActionResult> BulkSave(
+            [FromBody] BulkOperation model,
+            CancellationToken cancellation
+            )
+        {
+            if (model.Update.ValueKind == JsonValueKind.Undefined || model.Update.ValueKind == JsonValueKind.Null)
+                return BadRequest();
+
+            foreach(var item in model.IDs)
+            {
+                var t = FindEntityType(item);
+                var entity = await db.FindByKeysAsync(t, item, cancellation);
+                await SetProperties(entity, t, model.Update);
+            }
+            await db.SaveChangesAsync();
+            return Ok(new { });
         }
 
         [HttpGet("query/{entity}")]

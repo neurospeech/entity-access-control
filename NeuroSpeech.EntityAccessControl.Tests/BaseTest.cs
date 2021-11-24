@@ -106,6 +106,10 @@ namespace NeuroSpeech.EntityAccessControl.Tests
             },new Account { 
                 // non admin
                 AccountID = 2
+            }, new Account
+            {
+                // banned user
+                AccountID = 3
             });
 
             Seed(db, new Tag
