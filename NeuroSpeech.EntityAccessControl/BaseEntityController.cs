@@ -383,7 +383,7 @@ export class Model<T extends IClrEntity> {
 
         public class BulkOperation
         {
-            public JsonElement[] IDs { get; set; }
+            public JsonElement[] Keys { get; set; }
             public JsonElement Update { get; set; }
         }
 
