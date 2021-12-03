@@ -338,18 +338,17 @@ export class Model<T extends IClrEntity> {
                 i.WriteLine("}");
                 i.WriteLine();
 
-                foreach(var enumType  in enumTypes)
-                {
-                    var names = string.Join(" | ", enumType.GetEnumNames().Select(x => $"\"{x}\""));
-                    i.WriteLine($"export type IEnum{enumType.Name} = {names};");
-                }
-                i.WriteLine();
-
                 if (e.IsOwned())
                     continue;
                 i.WriteLine($"export const {name} = new Model<I{name}>(\"{e.Name}\");");
             }
 
+            foreach (var enumType in enumTypes)
+            {
+                var names = string.Join(" | ", enumType.GetEnumNames().Select(x => $"\"{x}\""));
+                i.WriteLine($"export type IEnum{enumType.Name} = {names};");
+            }
+            i.WriteLine();
 
             return Content(sw.ToString(),"text/plain");
         }
