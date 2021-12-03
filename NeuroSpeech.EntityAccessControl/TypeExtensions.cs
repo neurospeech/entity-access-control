@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
@@ -121,6 +122,10 @@ namespace NeuroSpeech.EntityAccessControl.Internal
         public static string ToTypeScript(this Type type)
         {
             type = Nullable.GetUnderlyingType(type) ?? type;
+            if (type.IsEnum)
+            {
+                return string.Join(", ", type.GetEnumNames().Select(x => $"\"{x}\""));
+            }
             var tc = Type.GetTypeCode(type);
             switch (tc)
             {

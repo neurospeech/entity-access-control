@@ -12,6 +12,8 @@ namespace NeuroSpeech.EntityAccessControl
         public JsonNamingPolicy? NamingPolicy;
 
         public Func<object, string>? GetTypeName;
+
+        public Func<object, PropertyInfo, bool>? IsForeignKey;
     }
 
     public static class EntityJsonSerializer
@@ -26,7 +28,8 @@ namespace NeuroSpeech.EntityAccessControl
             var settings = new EntitySerializationSettings
             {
                 NamingPolicy = namingPolicy,
-                GetTypeName = x => context.Entry(x).Metadata.Name
+                GetTypeName = x => context.Entry(x).Metadata.Name,
+                IsForeignKey = (x, p) => context.Entry(x).Property(p.Name).Metadata.IsForeignKey()
             };
             return SerializeToJson(entity, new Dictionary<object, int>(), settings);
         }
@@ -69,12 +72,26 @@ namespace NeuroSpeech.EntityAccessControl
             r["$type"] = d;
             foreach (var p in e.GetType().GetProperties())
             {
-                if (p.GetCustomAttribute<System.Text.Json.Serialization.JsonIgnoreAttribute>() != null)
+                var att = p.GetCustomAttribute<System.Text.Json.Serialization.JsonIgnoreAttribute>();
+                if (att?.Condition == System.Text.Json.Serialization.JsonIgnoreCondition.Always)
                     continue;
                 var name = namingPolicy.ConvertName(p.Name);
                 var v = p.GetValue(e);
                 if (v == null)
+                {
+                    if(settings.IsForeignKey?.Invoke(e, p) ?? false)
+                    {
+                        r[name] = null!;
+                        continue;
+                    }
+                    
+
+                    if(att?.Condition == System.Text.Json.Serialization.JsonIgnoreCondition.Always)
+                    {
+                        r[name] = null!;
+                    }
                     continue;
+                }
                 if (v is not string && v is System.Collections.IEnumerable coll)
                 {
                     var list = new List<object>();
@@ -91,6 +108,11 @@ namespace NeuroSpeech.EntityAccessControl
                 }
                 var t = p.PropertyType;
                 t = Nullable.GetUnderlyingType(t) ?? t;
+                if (t.IsEnum)
+                {
+                    r[name] = t.GetEnumName(v)!;
+                    continue;
+                }
                 if (t.IsValueType || t == typeof(string))
                 {
                     switch (v)
