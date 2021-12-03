@@ -294,6 +294,8 @@ export class Model<T extends IClrEntity> {
     constructor(public name: string) {}
 }");
 
+            var enumTypes = new List<Type>();
+
             foreach(var e in db.Model.GetEntityTypes())
             {
 
@@ -303,6 +305,18 @@ export class Model<T extends IClrEntity> {
                 i.Indent++;
                 foreach(var  p in e.GetDeclaredProperties())
                 {
+                    var clrType = Nullable.GetUnderlyingType(p.ClrType) ?? p.ClrType;
+                    if (clrType.IsEnum) {
+                        if(!enumTypes.Contains(clrType))
+                            enumTypes.Add(clrType);
+                        var typeName = $"IEnum{clrType.Name}";
+                        if (p.IsNullable)
+                        {
+                            typeName += " | null";
+                        }
+                        i.WriteLine($"{naming.ConvertName(p.Name)}?: {typeName};");
+                        continue;
+                    }
                     var type = p.ClrType.ToTypeScript();
                     if (p.IsNullable)
                     {
@@ -323,6 +337,14 @@ export class Model<T extends IClrEntity> {
                 i.Indent--;
                 i.WriteLine("}");
                 i.WriteLine();
+
+                foreach(var enumType  in enumTypes)
+                {
+                    var names = string.Join(" | ", enumType.GetEnumNames().Select(x => $"\"{x}\""));
+                    i.WriteLine($"export type IEnum{enumType.Name} = {names};");
+                }
+                i.WriteLine();
+
                 if (e.IsOwned())
                     continue;
                 i.WriteLine($"export const {name} = new Model<I{name}>(\"{e.Name}\");");
