@@ -38,7 +38,8 @@ namespace NeuroSpeech.EntityAccessControl
         {
             var settings = new EntitySerializationSettings { 
                 NamingPolicy = namingPolicy,
-                GetTypeName = x => context.Entry(x).Metadata.Name
+                GetTypeName = x => context.Entry(x).Metadata.Name,
+                IsForeignKey = (x, p) => context.Entry(x).Property(p.Name).Metadata.IsForeignKey()
             };
             var all = new Dictionary<object, int>();
             var result = new List<object>();
