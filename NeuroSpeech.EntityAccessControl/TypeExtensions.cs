@@ -124,7 +124,7 @@ namespace NeuroSpeech.EntityAccessControl.Internal
             type = Nullable.GetUnderlyingType(type) ?? type;
             if (type.IsEnum)
             {
-                return string.Join(", ", type.GetEnumNames().Select(x => $"\"{x}\""));
+                return string.Join(" | ", type.GetEnumNames().Select(x => $"\"{x}\""));
             }
             var tc = Type.GetTypeCode(type);
             switch (tc)
