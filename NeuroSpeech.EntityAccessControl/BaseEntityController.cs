@@ -340,7 +340,7 @@ export class Model<T extends IClrEntity> {
 
                 if (e.IsOwned())
                     continue;
-                i.WriteLine($"export const {name} = new Model<I{name}>(\"{e.Name}\");");
+                i.WriteLine($"export const {name}: IModel<I{name}> = new Model<I{name}>(\"{e.Name}\");");
             }
 
             foreach (var enumType in enumTypes)
