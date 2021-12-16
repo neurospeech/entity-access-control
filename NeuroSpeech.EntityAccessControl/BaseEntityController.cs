@@ -156,6 +156,8 @@ namespace NeuroSpeech.EntityAccessControl
             var navProperties = entityType.GetNavigations();
             foreach (var p in model.EnumerateObject())
             {
+                if (p.Value.ValueKind == JsonValueKind.Null)
+                    continue;
                 if (properties.TryGetFirst(p.Name, (x, name) => x.Name.EqualsIgnoreCase(name), out var property))
                 {
                     property.PropertyInfo.SaveJsonOrValue(entity, p.Value);
