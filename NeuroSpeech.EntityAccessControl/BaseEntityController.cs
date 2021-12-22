@@ -457,12 +457,16 @@ export class Model<T extends IClrEntity> {
             [FromQuery] string? keys = null,
             [FromQuery] string? include = null,
             [FromQuery] string? orderBy = null,
+            [FromQuery] bool splitInclude = true,
             [FromQuery] int start = 0,
             [FromQuery] int size = 200
             )
         {
 
             var t = FindEntityType(entity);
+
+            //this.GetInstanceGenericMethod(nameof(ListAsync), t.ClrType)
+            //    .As<Task<IActionResult>>().Invoke()
 
             var r = this.GetType()
                 .GetMethod(nameof(ListAsync))!
@@ -475,6 +479,7 @@ export class Model<T extends IClrEntity> {
                     keys,
                     include,
                     orderBy,
+                    splitInclude,
                     start,
                     size }) as Task<IActionResult>;
             return await r!;
@@ -493,6 +498,7 @@ export class Model<T extends IClrEntity> {
             string? keys,
             string? include,
             string? orderBy, 
+            bool splitInclude,
             int start, int size)
             where T : class
         {
@@ -595,6 +601,11 @@ export class Model<T extends IClrEntity> {
                 foreach(var i in includeList)
                 {
                     q = q.Include(i);
+                }
+
+                if (splitInclude)
+                {
+                    q = q.AsSplitQuery();
                 }
             }
 
