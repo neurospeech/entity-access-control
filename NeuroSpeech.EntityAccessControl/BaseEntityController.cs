@@ -16,6 +16,7 @@ using System.Threading.Tasks;
 using NeuroSpeech.EntityAccessControl.Internal;
 using System.Collections.Concurrent;
 using System.Threading;
+using System.Text.Json.Nodes;
 
 namespace NeuroSpeech.EntityAccessControl
 {
@@ -212,26 +213,28 @@ namespace NeuroSpeech.EntityAccessControl
             return e;
         }
 
-        protected virtual object? Serialize(object? e)
+        protected virtual JsonNode? Serialize(object? e)
         {
-            return EntityJsonSerializer.SerializeToJson(e, new Dictionary<object, int>(), new EntitySerializationSettings { 
+            var serializer = new EntityJsonSerializer(new EntitySerializationSettings {
                 GetTypeName = (x) => db.Entry(x).Metadata.Name,
-                NamingPolicy = JsonNamingPolicy.CamelCase
+                NamingPolicy = JsonNamingPolicy.CamelCase,
+                IsForeignKey = (x, p) => db.Entry(x).Property(p.Name)?.Metadata.IsForeignKey() ?? false
             });
+            return serializer.Serialize(e);
         }
 
-        protected virtual object? SerializeList<T>(List<T> items)
+        protected virtual JsonNode? SerializeList<T>(List<T> items)
         {
-            var settings = new EntitySerializationSettings
+            var serializer = new EntityJsonSerializer(new EntitySerializationSettings
             {
                 GetTypeName = (x) => db.Entry(x).Metadata.Name,
-                NamingPolicy = JsonNamingPolicy.CamelCase
-            };
-            var all = new Dictionary<object,int>();
-            var result = new List<object?>(items.Count);
+                NamingPolicy = JsonNamingPolicy.CamelCase,
+                IsForeignKey = (x, p) => db.Entry(x).Property(p.Name)?.Metadata.IsForeignKey() ?? false
+            });
+            var result = new JsonArray();
             foreach(var item in items)
             {
-                result.Add(EntityJsonSerializer.SerializeToJson(item, all, settings));
+                result.Add(serializer.Serialize(item));
             }
             return result;
         }
@@ -366,7 +369,7 @@ export class Model<T extends IClrEntity> {
             var t = FindEntityType(typeName);
             var e = await LoadOrCreateAsync(t.ClrType, body);
             await db.SaveChangesAsync();
-            return Ok(Serialize(e));
+            return Json(Serialize(e));
         }
 
         [HttpDelete]
@@ -609,7 +612,7 @@ export class Model<T extends IClrEntity> {
                 }
             }
 
-            var json = new List<object>();
+            var json = new JsonArray();
             if (!string.IsNullOrWhiteSpace(select))
             {
                 var dl = await q.Select(config, select).ToDynamicListAsync();
