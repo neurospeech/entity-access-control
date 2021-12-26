@@ -46,7 +46,7 @@ namespace NeuroSpeech.EntityAccessControl.Security
         {
             if(SecurityDisabled)
                 return db.Set<T>();
-            return rules.Apply<T>(db.Set<T>(), AssociatedUser);
+            return rules.Apply<T>(new QueryContext<T>(this, db.Set<T>()), AssociatedUser);
         }
 
         public IQueryable<T> FromSqlRaw<T>(string sql, params object[] parameters)
@@ -57,7 +57,7 @@ namespace NeuroSpeech.EntityAccessControl.Security
             {
                 return q;
             }
-            return rules.Apply<T>(q, AssociatedUser);
+            return rules.Apply<T>(new QueryContext<T>(this, q), AssociatedUser);
         }
 
         public void Remove(object entity) => db.Remove(entity);
@@ -226,13 +226,13 @@ namespace NeuroSpeech.EntityAccessControl.Security
             switch (entry.State)
             {
                 case EntityState.Added:
-                    q = rules.ApplyInsert<T>(q, AssociatedUser);
+                    q = rules.ApplyInsert<T>(new QueryContext<T>(this, q), AssociatedUser);
                     break;
                 case EntityState.Deleted:
-                    q = rules.ApplyDelete<T>(q, AssociatedUser);
+                    q = rules.ApplyDelete<T>(new QueryContext<T>(this, q), AssociatedUser);
                     break;
                 case EntityState.Modified:
-                    q = rules.ApplyUpdate<T>(q, AssociatedUser);
+                    q = rules.ApplyUpdate<T>(new QueryContext<T>(this, q), AssociatedUser);
                     break;
                 default:
                     return;

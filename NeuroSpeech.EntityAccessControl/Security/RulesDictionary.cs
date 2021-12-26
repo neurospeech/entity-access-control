@@ -15,24 +15,25 @@ namespace NeuroSpeech.EntityAccessControl
         private Dictionary<Type, object> rules = new Dictionary<Type, object>();
         private Dictionary<Type, object> cached = new Dictionary<Type, object>();
 
-        public static Func<IQueryable<T>, TC, IQueryable<T>> FromBase<T, BT, TC>(Func<IQueryable<BT>, TC, IQueryable<T>> filter)
+        public static Func<IQueryContext<T>, TC, IQueryContext<T>> FromBase<T, BT, TC>(
+            Func<IQueryContext<BT>, TC, IQueryContext<T>> filter)
             where T: BT
         {
-            Func<IQueryable<T> , TC, IQueryable<T>> nf = (q, c) => {
+            Func<IQueryContext<T> , TC, IQueryContext<T>> nf = (q, c) => {
                 return filter(q.OfType<BT>(), c).OfType<T>();
             };
             return nf;
         }
 
-        public Func<IQueryable<T>, TC, IQueryable<T>> As<T, TC>()
+        public Func<IQueryContext<T>, TC, IQueryContext<T>> As<T, TC>()
             where T: class
         {
             var t = typeof(T);
             if (cached.TryGetValue(t, out var r))
-                return (r as Func<IQueryable<T>, TC, IQueryable<T>>)!;
+                return (r as Func<IQueryContext<T>, TC, IQueryContext<T>>)!;
 
             // setup cache...
-            Func<IQueryable<T>, TC, IQueryable<T>>? nf = null;
+            Func<IQueryContext<T>, TC, IQueryContext<T>>? nf = null;
 
             List<Type> allTypes = new List<Type>();
             var start = t;
@@ -46,17 +47,17 @@ namespace NeuroSpeech.EntityAccessControl
                 if(rules.TryGetValue(type, out var tr)) {
                     if (nf == null)
                     {
-                        nf = asMethod.MakeGenericMethod(t, type, typeof(TC)).Invoke(null, new object[] { tr } ) as Func<IQueryable<T>, TC, IQueryable<T>>;
+                        nf = asMethod.MakeGenericMethod(t, type, typeof(TC)).Invoke(null, new object[] { tr } ) as Func<IQueryContext<T>, TC, IQueryContext<T>>;
                     } else
                     {
-                        nf += (asMethod.MakeGenericMethod(t, type, typeof(TC)).Invoke(null, new object[] { tr } ) as Func<IQueryable<T>, TC, IQueryable<T>>)!;
+                        nf += (asMethod.MakeGenericMethod(t, type, typeof(TC)).Invoke(null, new object[] { tr } ) as Func<IQueryContext<T>, TC, IQueryContext<T>>)!;
                     }
                 }
             }
 
             if(rules.TryGetValue(t, out r))
             {
-                nf += (r as Func<IQueryable<T>, TC, IQueryable<T>>)!;
+                nf += (r as Func<IQueryContext<T>, TC, IQueryContext<T>>)!;
                 cached[t] = nf;
                 return nf;
             }
@@ -69,7 +70,7 @@ namespace NeuroSpeech.EntityAccessControl
             return nf;
         }
 
-        public void SetFunc<T, TC>(Func<IQueryable<T>,TC, IQueryable<T>>? filter)
+        public void SetFunc<T, TC>(Func<IQueryContext<T>, TC, IQueryContext<T>>? filter)
         {
             if (filter == null)
             {
@@ -99,23 +100,23 @@ namespace NeuroSpeech.EntityAccessControl
     //        ? typeof(T).BaseType
     //        : null;
 
-    //    private Func<IQueryable<T>, TC, IQueryable<T>>? selectFilter = null;
-    //    private Func<IQueryable<T>, TC, IQueryable<T>>? insertFilter = null;
-    //    private Func<IQueryable<T>, TC, IQueryable<T>>? updateFilter = null;
-    //    private Func<IQueryable<T>, TC, IQueryable<T>>? deleteFilter = null;
+    //    private Func<IQueryContext<T>, TC, IQueryContext<T>>? selectFilter = null;
+    //    private Func<IQueryContext<T>, TC, IQueryContext<T>>? insertFilter = null;
+    //    private Func<IQueryContext<T>, TC, IQueryContext<T>>? updateFilter = null;
+    //    private Func<IQueryContext<T>, TC, IQueryContext<T>>? deleteFilter = null;
 
     //    //public Rules(
-    //    //    Func<IQueryable<T>, TC, IQueryable<T>>? selectFilter,
-    //    //    Func<IQueryable<T>, TC, IQueryable<T>>? insertFilter, 
-    //    //    Func<IQueryable<T>, TC, IQueryable<T>>? updateFilter,
-    //    //    Func<IQueryable<T>, TC, IQueryable<T>>? deleteFilter)
+    //    //    Func<IQueryContext<T>, TC, IQueryContext<T>>? selectFilter,
+    //    //    Func<IQueryContext<T>, TC, IQueryContext<T>>? insertFilter, 
+    //    //    Func<IQueryContext<T>, TC, IQueryContext<T>>? updateFilter,
+    //    //    Func<IQueryContext<T>, TC, IQueryContext<T>>? deleteFilter)
     //    //{
 
     //    //}
 
-    //    private Func<IQueryable<T>, TC, IQueryable<T>> InitFilter(
+    //    private Func<IQueryContext<T>, TC, IQueryContext<T>> InitFilter(
     //        [NotNull]
-    //        ref Func<IQueryable<T>, TC, IQueryable<T>>? rule, string methodName)
+    //        ref Func<IQueryContext<T>, TC, IQueryContext<T>>? rule, string methodName)
     //    {
     //        if (rule == null)
     //        {
@@ -138,7 +139,7 @@ namespace NeuroSpeech.EntityAccessControl
     //    }
 
 
-    //    private Func<IQueryable<T>, TC, IQueryable<T>>? GetBaseRule(Type bt, string methodName)
+    //    private Func<IQueryContext<T>, TC, IQueryContext<T>>? GetBaseRule(Type bt, string methodName)
     //    {
     //        var peQ = Expression.Parameter(typeof(IQueryable<T>));
     //        var peTC = Expression.Parameter(typeof(TC));
@@ -155,7 +156,7 @@ namespace NeuroSpeech.EntityAccessControl
     //            null,
     //            ofType,
     //            call);
-    //        var l = Expression.Lambda<Func<IQueryable<T>, TC, IQueryable<T>>>(body, peQ, peTC);
+    //        var l = Expression.Lambda<Func<IQueryContext<T>, TC, IQueryContext<T>>>(body, peQ, peTC);
     //        return l.Compile();
     //    }
 
@@ -175,7 +176,7 @@ namespace NeuroSpeech.EntityAccessControl
     //    }
 
     //    public void SetFilterForAll(
-    //        Func<IQueryable<T>, TC, IQueryable<T>> all)
+    //        Func<IQueryContext<T>, TC, IQueryContext<T>> all)
     //    {
     //        selectFilter = all;
     //        insertFilter = all;
@@ -184,10 +185,10 @@ namespace NeuroSpeech.EntityAccessControl
     //    }
 
     //    public void SetAllFilter(
-    //        Func<IQueryable<T>, TC, IQueryable<T>>? select = null,
-    //        Func<IQueryable<T>, TC, IQueryable<T>>? insert = null,
-    //        Func<IQueryable<T>, TC, IQueryable<T>>? update = null,
-    //        Func<IQueryable<T>, TC, IQueryable<T>>? delete = null)
+    //        Func<IQueryContext<T>, TC, IQueryContext<T>>? select = null,
+    //        Func<IQueryContext<T>, TC, IQueryContext<T>>? insert = null,
+    //        Func<IQueryContext<T>, TC, IQueryContext<T>>? update = null,
+    //        Func<IQueryContext<T>, TC, IQueryContext<T>>? delete = null)
     //    {
     //        selectFilter = select;
     //        insertFilter = insert;
