@@ -568,16 +568,16 @@ export class Model<T extends IClrEntity> {
                 if (filter.StartsWith("["))
                 {
                     var filters = JsonSerializer.Deserialize<string[]>(filter);
-                    var parameterArray = JsonSerializer.Deserialize<object[]>(parameters ?? "[]").JsonToNative();
+                    var parameterArray = JsonDocument.Parse(parameters ?? "[]").RootElement;
                     for (int i = 0; i < filters.Length; i++)
                     {
                         filter = filters[i];
-                        q = q.Where(config, filter, parameterArray[i] as object[]);
+                        q = await q.WhereLinqAsync(filter, parameterArray[i]);
                     }
                 }
                 else
                 {
-                    q = q.Where(config, filter, JsonSerializer.Deserialize<object[]>(parameters ?? "[]").JsonToNative());
+                    q = await q.WhereLinqAsync(filter, JsonDocument.Parse(parameters ?? "[]").RootElement);
                 }
             }
             if (!string.IsNullOrWhiteSpace(orderBy))
@@ -629,7 +629,7 @@ export class Model<T extends IClrEntity> {
             }
             else
             {
-                var list = await q.ToListAsync(this.HttpContext.RequestAborted);
+                var list = await q.ToListAsync(this.HttpContext?.RequestAborted ?? default);
                 json = SerializeList(list);
             }
 
