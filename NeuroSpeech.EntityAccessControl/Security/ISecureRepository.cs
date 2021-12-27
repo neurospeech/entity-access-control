@@ -18,6 +18,8 @@ namespace NeuroSpeech.EntityAccessControl.Security
 
         IModel Model { get; }
 
+        object Map(object item);
+
         void Add(object e);
 
         void Remove(object e);

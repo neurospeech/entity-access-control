@@ -243,6 +243,7 @@ namespace NeuroSpeech.EntityAccessControl.Internal
 
             public GenericMethod<T, RT> As<RT>() => new GenericMethod<T, RT>(method, target);
 
+
         }
 
         public struct GenericMethod<T, RT>

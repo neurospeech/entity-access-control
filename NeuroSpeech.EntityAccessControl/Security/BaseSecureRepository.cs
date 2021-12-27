@@ -60,6 +60,15 @@ namespace NeuroSpeech.EntityAccessControl.Security
             return rules.Apply<T>(new QueryContext<T>(this, q), AssociatedUser);
         }
 
+        public object? Map(object entity)
+        {
+            if(SecurityDisabled)
+            {
+                return entity;
+            }
+            return rules.MapObject(entity);
+        }
+
         public void Remove(object entity) => db.Remove(entity);
 
         public void Attach(object entity) => db.Attach(entity);

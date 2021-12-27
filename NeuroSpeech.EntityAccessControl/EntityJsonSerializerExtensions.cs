@@ -15,6 +15,8 @@ namespace NeuroSpeech.EntityAccessControl
         public Func<object, string>? GetTypeName;
 
         public Func<object, PropertyInfo, bool>? IsForeignKey;
+
+        public Func<object, object>? Map;
     }
 
     public class EntityJsonSerializer
@@ -55,6 +57,10 @@ namespace NeuroSpeech.EntityAccessControl
         {
             if (e == null)
                 return null;
+            if (settings.Map != null)
+            {
+                e = settings.Map(e);
+            }
             if (added.TryGetValue(e, out var existingIndex))
             {
                 return new JsonObject() {

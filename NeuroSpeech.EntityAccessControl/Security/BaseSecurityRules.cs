@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using NeuroSpeech.EntityAccessControl.Security;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -65,6 +66,9 @@ namespace NeuroSpeech.EntityAccessControl
         private RulesDictionary delete = new RulesDictionary();
         private RulesDictionary modify = new RulesDictionary();
 
+        private Dictionary<Type, Func<object,object>> selectMapper
+            = new Dictionary<Type, Func<object, object>>();
+
         internal IQueryable<T> Apply<T>(IQueryContext<T> ts, TC client) where T : class
         {
             return select.As<T, TC>()(ts, client).ToQuery();
@@ -83,6 +87,23 @@ namespace NeuroSpeech.EntityAccessControl
         internal IQueryable<T> ApplyUpdate<T>(IQueryContext<T> q, TC client) where T : class
         {
             return update.As<T,TC>()(q, client).ToQuery();
+        }
+
+        /**
+         * This will be called before serializing object of given type
+         */
+        public void Map<T>(Func<T,object> mapper)
+        {
+            selectMapper[typeof(T)] = (x) => mapper((T)x);
+        }
+
+        internal object? MapObject(object item)
+        {
+            if(selectMapper.TryGetValue(item.GetType(), out var mapper))
+            {
+                return mapper(item);
+            }
+            return item;
         }
 
         /// <summary>

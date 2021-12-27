@@ -215,21 +215,27 @@ namespace NeuroSpeech.EntityAccessControl
 
         protected virtual JsonNode? Serialize(object? e)
         {
+            if (e == null)
+            {
+                return null;
+            }
             var serializer = new EntityJsonSerializer(new EntitySerializationSettings {
                 GetTypeName = (x) => db.Entry(x).Metadata.Name,
                 NamingPolicy = JsonNamingPolicy.CamelCase,
-                IsForeignKey = (x, p) => db.Entry(x).Property(p.Name)?.Metadata.IsForeignKey() ?? false
+                IsForeignKey = (x, p) => db.Entry(x).Property(p.Name)?.Metadata.IsForeignKey() ?? false,
+                Map = (x) => db.Map(x)
             });
             return serializer.Serialize(e);
         }
 
-        protected virtual JsonNode? SerializeList<T>(List<T> items)
+        protected virtual JsonArray? SerializeList<T>(List<T> items)
         {
             var serializer = new EntityJsonSerializer(new EntitySerializationSettings
             {
                 GetTypeName = (x) => db.Entry(x).Metadata.Name,
                 NamingPolicy = JsonNamingPolicy.CamelCase,
-                IsForeignKey = (x, p) => db.Entry(x).Property(p.Name)?.Metadata.IsForeignKey() ?? false
+                IsForeignKey = (x, p) => db.Entry(x).Property(p.Name)?.Metadata.IsForeignKey() ?? false,
+                Map = (x) => db.Map(x)
             });
             var result = new JsonArray();
             foreach(var item in items)
@@ -624,13 +630,7 @@ export class Model<T extends IClrEntity> {
             else
             {
                 var list = await q.ToListAsync(this.HttpContext.RequestAborted);
-                foreach (var item in list)
-                {
-                    var s = Serialize(item);
-                    if (s == null)
-                        continue;
-                    json.Add(s);
-                }
+                json = SerializeList(list);
             }
 
             return Json(new
