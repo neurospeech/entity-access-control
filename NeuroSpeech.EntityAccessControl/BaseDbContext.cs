@@ -47,7 +47,7 @@ namespace NeuroSpeech.EntityAccessControl
 
         private Task OnInserting(Type type, object entity)
         {
-            var eh = events.GetEvents(this, services, type);
+            var eh = events.GetEvents(services, type);
             if (eh!=null)
             {
                 return eh.Inserting(entity);
@@ -66,7 +66,7 @@ namespace NeuroSpeech.EntityAccessControl
             {
                 await OnInserted(bt, entity);
             }
-            var eh = events.GetEvents(this, services, type);
+            var eh = events.GetEvents(services, type);
             if (eh != null)
             {
                 await eh.Inserted(entity);
@@ -81,7 +81,7 @@ namespace NeuroSpeech.EntityAccessControl
             {
                 await OnUpdating(bt, entity);
             }
-            var eh = events.GetEvents(this, services, type);
+            var eh = events.GetEvents(services, type);
             if (eh != null)
             {
                 await eh.Updating(entity);
@@ -96,7 +96,7 @@ namespace NeuroSpeech.EntityAccessControl
             {
                 await OnUpdated(bt, entity);
             }
-            var eh = events.GetEvents(this, services, type);
+            var eh = events.GetEvents(services, type);
             if (eh != null)
             {
                 await eh.Updated(entity);
@@ -112,7 +112,7 @@ namespace NeuroSpeech.EntityAccessControl
             {
                 await OnDeleting(bt, entity);
             }
-            var eh = events.GetEvents(this, services, type);
+            var eh = events.GetEvents(services, type);
             if (eh != null)
             {
                 await eh.Deleting(entity);
@@ -127,7 +127,7 @@ namespace NeuroSpeech.EntityAccessControl
             {
                 await OnDeleted(bt, entity);
             }
-            var eh = events.GetEvents(this, services, type);
+            var eh = events.GetEvents(services, type);
             if (eh != null)
             {
                 await eh.Deleted(entity);

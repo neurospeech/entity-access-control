@@ -93,7 +93,7 @@ namespace NeuroSpeech.EntityAccessControl
             public abstract Task Run(DbContext db, object entity);
         }
 
-        internal IEntityEvents? GetEvents(DbContext db, IServiceProvider services, Type type)
+        internal IEntityEvents? GetEvents(IServiceProvider services, Type type)
         {
             if(registrations.TryGetValue(type, out var t))
             {
