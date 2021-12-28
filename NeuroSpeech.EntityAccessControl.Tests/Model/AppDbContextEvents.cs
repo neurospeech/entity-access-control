@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 
 namespace NeuroSpeech.EntityAccessControl.Tests.Model
 {
+
     public class AppDbContextEvents : DbContextEvents<AppDbContext>
     {
         public AppDbContextEvents()
@@ -12,15 +13,25 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Model
             SetupPostEvents();
         }
 
-        private void SetupPostEvents()
+        public class PostEvents: DbEntityEvents<Post>
         {
-            Register<Post>(Inserting);
+            private readonly AppDbContext db;
 
-            Task Inserting(AppDbContext db, Post post)
+            public PostEvents(AppDbContext db)
             {
-                post.AuthorID = db.UserID;
+                this.db = db;
+            }
+
+            public override Task Inserting(Post entity)
+            {
+                entity.AuthorID = db.UserID;
                 return Task.CompletedTask;
             }
+        }
+
+        private void SetupPostEvents()
+        {
+            Register<PostEvents>();
         }
     }
 }

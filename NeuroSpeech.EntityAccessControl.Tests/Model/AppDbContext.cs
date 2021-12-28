@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -9,8 +10,11 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Model
     {
         public long UserID;
 
-        public AppDbContext(DbContextOptions<AppDbContext> options, DbContextEvents<AppDbContext> events)
-            : base(options, events)
+        public AppDbContext(
+            DbContextOptions<AppDbContext> options,
+            DbContextEvents<AppDbContext> events,
+            IServiceProvider services)
+            : base(options, events, services)
         {
 
         }

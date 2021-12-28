@@ -1,133 +1,169 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Linq.Expressions;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace NeuroSpeech.EntityAccessControl
 {
+    public class DbEntityEvents<T> : IEntityEvents
+    {
+        public virtual Task Deleted(T entity)
+        {
+            return Task.CompletedTask;
+        }
+
+        Task IEntityEvents.Deleted(object entity)
+        {
+            return Deleted((T)entity);
+        }
+
+        public virtual Task Deleting(T entity)
+        {
+            return Task.CompletedTask;
+        }
+
+        Task IEntityEvents.Deleting(object entity)
+        {
+            return Deleting((T)entity);
+        }
+
+        public virtual Task Inserted(T entity)
+        {
+            return Task.CompletedTask;
+        }
+
+        Task IEntityEvents.Inserted(object entity)
+        {
+            return Inserted((T)entity);
+        }
+
+        public virtual Task Inserting(T entity)
+        {
+            return Task.CompletedTask;
+        }
+
+        Task IEntityEvents.Inserting(object entity)
+        {
+            return Inserting((T)entity);
+        }
+
+        public virtual Task Updated(T entity)
+        {
+            return Task.CompletedTask;
+        }
+
+        Task IEntityEvents.Updated(object entity)
+        {
+            return Updated((T)entity);
+        }
+
+        public virtual Task Updating(T entity)
+        {
+            return Task.CompletedTask;
+        }
+
+        Task IEntityEvents.Updating(object entity)
+        {
+            return Updating((T)entity);
+        }
+    }
+
+    internal class DbContextDefaultEntityEvents<T>: DbEntityEvents<T>
+    {
+        public DbContextDefaultEntityEvents()
+        {
+
+        }
+    }
+
     public class DbContextEvents<T>
         where T: BaseDbContext<T>
     {
+
+        private static Type entityEventType = typeof(DbEntityEvents<>);
+
+        private Dictionary<Type, Type> registrations = new Dictionary<Type, Type>();
+
         internal abstract class EntityHandler
         {
             public abstract Task Run(DbContext db, object entity);
         }
 
-        class EntityHandler<TEntity> : EntityHandler
+        internal IEntityEvents? GetEvents(DbContext db, IServiceProvider services, Type type)
         {
-            private readonly Dictionary<Type, EntityHandler> handlers;
-            private readonly Type? baseType;
-            private readonly List<OnEntityEvent<T, TEntity>> tasks;
-            public EntityHandler(Dictionary<Type, EntityHandler> handlers, Type? baseType)
+            if(registrations.TryGetValue(type, out var t))
             {
-                this.handlers = handlers;
-                this.baseType = baseType;
-                this.tasks = new List<OnEntityEvent<T, TEntity>>();
+                return services.Build(t) as IEntityEvents;
             }
-
-            public Action Add(OnEntityEvent<T, TEntity> task)
-            {
-                tasks.Add(task);
-                return () => {
-                    tasks.Remove(task);
-                };
-            }
-
-            public override Task Run(DbContext baseDb, object @object)
-            {
-                var entity = (TEntity)@object;
-                var db = (T)baseDb;
-                if (baseType != null)
-                {
-                    if (handlers.TryGetValue(baseType, out var eh))
-                    {
-                        if (tasks == null)
-                            return eh.Run(db, entity);
-                        return RunAll(tasks, eh, db, entity);
-                    }
-                }
-                if (tasks == null)
-                    return Task.CompletedTask;
-                return RunAll(tasks, db, entity);
-            }
-
-            private async Task RunAll(List<OnEntityEvent<T, TEntity>> tasks, T db, TEntity entity)
-            {
-                foreach (var item in tasks)
-                {
-                    await item(db, entity);
-                }
-            }
-
-            private async Task RunAll(
-                List<OnEntityEvent<T, TEntity>> tasks,
-                EntityHandler eh,
-                T db, TEntity entity)
-            {
-                await eh.Run(db, entity!);
-                foreach (var item in tasks)
-                {
-                    await item(db, entity);
-                }
-            }
+            return null;
         }
 
-        internal readonly Dictionary<Type, EntityHandler> insertingHandlers = new();
-        internal readonly Dictionary<Type, EntityHandler> insertedHandlers = new();
-
-        internal readonly Dictionary<Type, EntityHandler> updatingHandlers = new();
-        internal readonly Dictionary<Type, EntityHandler> updatedHandlers = new();
-
-        internal readonly Dictionary<Type, EntityHandler> deletingHandlers = new();
-        internal readonly Dictionary<Type, EntityHandler> deletedHandlers = new();
-
-        public IDisposable Register<TEntity>(
-            OnEntityEvent<T, TEntity>? inserting = null,
-            OnEntityEvent<T, TEntity>? inserted = null,
-            OnEntityEvent<T, TEntity>? updating = null,
-            OnEntityEvent<T, TEntity>? updated = null,
-            OnEntityEvent<T, TEntity>? deleting = null,
-            OnEntityEvent<T, TEntity>? deleted = null)
-            where TEntity : class
+        public void Register<T, TE>()
+            where TE: DbEntityEvents<T>
         {
-            Type t = typeof(TEntity);
+            registrations[typeof(T)] = typeof(TE);
+        }
 
-            var baseType = t.BaseType;
-            if (baseType == typeof(object))
+        public void Register<T>()
+            where T: IEntityEvents
+        {
+            var t = typeof(T);
+            var start = t;
+            while (!start.IsConstructedGenericType)
             {
-                baseType = null;
+                start = start.BaseType;
+                if (start == null)
+                    throw new ArgumentException($"Type is not derived from DbEntityEvents<>");
             }
+            var et = start.GenericTypeArguments[0];
+            registrations[et] = t;
+        }
+    }
 
-            Action? disposables = null;
+    internal static class ServiceBuilder
+    {
+        private static Dictionary<Type, Func<IServiceProvider, object>> builders
+            = new Dictionary<Type, Func<IServiceProvider, object>>();
 
-            disposables += Setup(t, baseType, inserting, insertingHandlers);
-            disposables += Setup(t, baseType, inserted, insertedHandlers);
-            disposables += Setup(t, baseType, updating, updatingHandlers);
-            disposables += Setup(t, baseType, updated, updatedHandlers);
-            disposables += Setup(t, baseType, deleting, deletingHandlers);
-            disposables += Setup(t, baseType, deleted, deletedHandlers);
+        private static MethodInfo getRequiredService =
+            typeof(Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions)
+            .GetMethod(nameof(Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService),
+                new Type[] { typeof(IServiceProvider) })!;
 
-            return new DisposableAction(disposables);
-
-            static Action? Setup(Type type, Type? baseType, OnEntityEvent<T, TEntity>? task, Dictionary<Type, EntityHandler> list)
+        public static object? Build(this IServiceProvider services, Type type)
+        {
+            if(!builders.TryGetValue(type, out var f))
             {
-                if (task == null)
-                    return null;
-                EntityHandler<TEntity> eh;
-                lock (list)
+                var c = type.GetConstructors()
+                    .OrderBy(x => x.GetParameters()?.Length ?? 0)
+                    .FirstOrDefault();
+                if (c == null)
                 {
-                    if (list.TryGetValue(type, out var ehv))
+                    f = (s) => throw new ArgumentException($"No public constructor found for type {type.FullName}");
+                }
+                else
+                {
+                    var p = Expression.Parameter(typeof(IServiceProvider));
+                    if (c.GetParameters().Length == 0)
                     {
-                        eh = (ehv as EntityHandler<TEntity>)!;
-                    }
-                    else
+                        f = Expression.Lambda<Func<IServiceProvider, object>>(Expression.New(c), p).Compile();
+                    } else
                     {
-                        eh = new EntityHandler<TEntity>(list, baseType);
-                        list.Add(type, eh);
+
+                        var ps = c.GetParameters()
+                            .Select(x => Expression.Call(getRequiredService.MakeGenericMethod(x.ParameterType), p))
+                            .ToArray();
+
+                        f = Expression.Lambda<Func<IServiceProvider, object>>(Expression.New(c, ps), p).Compile();
                     }
                 }
-                return eh.Add(task);
+                builders[type] = f;
             }
+            return f(services);
         }
     }
 }

@@ -12,18 +12,34 @@ using System.Threading.Tasks;
 
 namespace NeuroSpeech.EntityAccessControl
 {
+    public interface IEntityEvents
+    {
+        Task Inserting(object entity);
+        Task Inserted(object entity);
+
+        Task Updating(object entity);
+
+        Task Updated(object entity);
+
+        Task Deleting(object entity);
+        Task Deleted(object entity);
+    }
+
     public delegate Task OnEntityEvent<T, TEntity>(T context, TEntity entity);
 
     public class BaseDbContext<T> : DbContext
         where T: BaseDbContext<T>
     {
         private readonly DbContextEvents<T> events;
+        private readonly IServiceProvider services;
 
         public BaseDbContext(
             DbContextOptions<T> options,
-            DbContextEvents<T> events) : base(options)
+            DbContextEvents<T> events,
+            IServiceProvider services) : base(options)
         {
             this.events = events;
+            this.services = services;
             this.RaiseEvents = events != null;
         }
 
@@ -31,9 +47,10 @@ namespace NeuroSpeech.EntityAccessControl
 
         private Task OnInserting(Type type, object entity)
         {
-            if(events.insertingHandlers.TryGetValue(type, out var eh))
+            var eh = events.GetEvents(this, services, type);
+            if (eh!=null)
             {
-                return eh.Run(this, entity);
+                return eh.Inserting(entity);
             }
             var bt = type.BaseType;
             if (bt == null || bt == typeof(object))
@@ -41,64 +58,80 @@ namespace NeuroSpeech.EntityAccessControl
             return OnInserting(bt, entity);
         }
 
-        private Task OnInserted(Type type, object entity)
+        private async Task OnInserted(Type type, object entity)
         {
-            if (events.insertedHandlers.TryGetValue(type, out var eh))
-            {
-                return eh.Run(this, entity);
-            }
+            // call base class events first...
             var bt = type.BaseType;
-            if (bt == null || bt == typeof(object))
-                return Task.CompletedTask;
-            return OnInserted(bt, entity);
+            if (bt != null && bt != typeof(object))
+            {
+                await OnInserted(bt, entity);
+            }
+            var eh = events.GetEvents(this, services, type);
+            if (eh != null)
+            {
+                await eh.Inserted(entity);
+            }
         }
 
-        private Task OnUpdating(Type type, object entity)
+        private async Task OnUpdating(Type type, object entity)
         {
-            if (events.updatingHandlers.TryGetValue(type, out var eh))
-            {
-                return eh.Run(this, entity);
-            }
+            // call base class events first...
             var bt = type.BaseType;
-            if (bt == null || bt == typeof(object))
-                return Task.CompletedTask;
-            return OnUpdating(bt, entity);
+            if (bt != null && bt != typeof(object))
+            {
+                await OnUpdating(bt, entity);
+            }
+            var eh = events.GetEvents(this, services, type);
+            if (eh != null)
+            {
+                await eh.Updating(entity);
+            }
         }
 
-        private Task OnUpdated(Type type, object entity)
+        private async Task OnUpdated(Type type, object entity)
         {
-            if (events.updatedHandlers.TryGetValue(type, out var eh))
-            {
-                return eh.Run(this, entity);
-            }
+            // call base class events first...
             var bt = type.BaseType;
-            if (bt == null || bt == typeof(object))
-                return Task.CompletedTask;
-            return OnUpdated(bt, entity);
+            if (bt != null && bt != typeof(object))
+            {
+                await OnUpdated(bt, entity);
+            }
+            var eh = events.GetEvents(this, services, type);
+            if (eh != null)
+            {
+                await eh.Updated(entity);
+            }
         }
 
-        private Task OnDeleting(Type type, object entity)
+
+        private async Task OnDeleting(Type type, object entity)
         {
-            if (events.deletingHandlers.TryGetValue(type, out var eh))
-            {
-                return eh.Run(this, entity);
-            }
+            // call base class events first...
             var bt = type.BaseType;
-            if (bt == null || bt == typeof(object))
-                return Task.CompletedTask;
-            return OnDeleting(bt, entity);
+            if (bt != null && bt != typeof(object))
+            {
+                await OnDeleting(bt, entity);
+            }
+            var eh = events.GetEvents(this, services, type);
+            if (eh != null)
+            {
+                await eh.Deleting(entity);
+            }
         }
 
-        private Task OnDeleted(Type type, object entity)
+        private async Task OnDeleted(Type type, object entity)
         {
-            if (events.deletedHandlers.TryGetValue(type, out var eh))
-            {
-                return eh.Run(this, entity);
-            }
+            // call base class events first...
             var bt = type.BaseType;
-            if (bt == null || bt == typeof(object))
-                return Task.CompletedTask;
-            return OnDeleted(bt, entity);
+            if (bt != null && bt != typeof(object))
+            {
+                await OnDeleted(bt, entity);
+            }
+            var eh = events.GetEvents(this, services, type);
+            if (eh != null)
+            {
+                await eh.Deleted(entity);
+            }
         }
 
         protected virtual void Validate()
