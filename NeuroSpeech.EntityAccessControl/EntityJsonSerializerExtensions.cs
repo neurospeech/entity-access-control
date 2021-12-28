@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using NeuroSpeech.EntityAccessControl.Internal;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -14,7 +15,7 @@ namespace NeuroSpeech.EntityAccessControl
 
         public Func<object, string>? GetTypeName;
 
-        public Func<object, PropertyInfo, bool>? IsForeignKey;
+        public Func<PropertyInfo, bool>? IsForeignKey;
 
         public Func<object, object>? Map;
     }
@@ -39,7 +40,7 @@ namespace NeuroSpeech.EntityAccessControl
             this.settings = new EntitySerializationSettings {
                 GetTypeName = (x) => db.Entry(x).Metadata.Name,
                 NamingPolicy = JsonNamingPolicy.CamelCase,
-                IsForeignKey = (x, p) => db.Entry(x).Property(p.Name)?.Metadata?.IsForeignKey() ?? false
+                IsForeignKey = (p) => db.Model.IsForeignKey(p)
             };
         }
 
@@ -93,7 +94,7 @@ namespace NeuroSpeech.EntityAccessControl
                     
                     if ((propertyType == typeof(string) ||
                         propertyType.IsValueType) &&
-                        (settings.IsForeignKey?.Invoke(e, p) ?? false))
+                        (settings.IsForeignKey?.Invoke(p) ?? false))
                     {
                         r[name] = null!;
                     }

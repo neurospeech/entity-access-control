@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Metadata;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -190,6 +191,11 @@ namespace NeuroSpeech.EntityAccessControl.Internal
                 return body.Compile();
             });
             return f();
+        }
+
+        internal static bool IsForeignKey(this IModel model, PropertyInfo p)
+        {
+            return model.FindEntityType(p.DeclaringType)?.FindProperty(p)?.IsForeignKey() ?? false;
         }
 
     }
