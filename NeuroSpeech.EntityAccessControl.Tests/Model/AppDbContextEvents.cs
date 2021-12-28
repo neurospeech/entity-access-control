@@ -22,7 +22,7 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Model
                 this.db = db;
             }
 
-            public override Task Inserting(Post entity)
+            public override Task InsertingAsync(Post entity)
             {
                 entity.AuthorID = db.UserID;
                 return Task.CompletedTask;

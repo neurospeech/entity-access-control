@@ -11,64 +11,64 @@ namespace NeuroSpeech.EntityAccessControl
 {
     public class DbEntityEvents<T> : IEntityEvents
     {
-        public virtual Task Deleted(T entity)
+        public virtual Task DeletedAsync(T entity)
         {
             return Task.CompletedTask;
         }
 
-        Task IEntityEvents.Deleted(object entity)
+        Task IEntityEvents.DeletedAsync(object entity)
         {
-            return Deleted((T)entity);
+            return DeletedAsync((T)entity);
         }
 
-        public virtual Task Deleting(T entity)
+        public virtual Task DeletingAsync(T entity)
         {
             return Task.CompletedTask;
         }
 
-        Task IEntityEvents.Deleting(object entity)
+        Task IEntityEvents.DeletingAsync(object entity)
         {
-            return Deleting((T)entity);
+            return DeletingAsync((T)entity);
         }
 
-        public virtual Task Inserted(T entity)
+        public virtual Task InsertedAsync(T entity)
         {
             return Task.CompletedTask;
         }
 
-        Task IEntityEvents.Inserted(object entity)
+        Task IEntityEvents.InsertedAsync(object entity)
         {
-            return Inserted((T)entity);
+            return InsertedAsync((T)entity);
         }
 
-        public virtual Task Inserting(T entity)
+        public virtual Task InsertingAsync(T entity)
         {
             return Task.CompletedTask;
         }
 
-        Task IEntityEvents.Inserting(object entity)
+        Task IEntityEvents.InsertingAsync(object entity)
         {
-            return Inserting((T)entity);
+            return InsertingAsync((T)entity);
         }
 
-        public virtual Task Updated(T entity)
+        public virtual Task UpdatedAsync(T entity)
         {
             return Task.CompletedTask;
         }
 
-        Task IEntityEvents.Updated(object entity)
+        Task IEntityEvents.UpdatedAsync(object entity)
         {
-            return Updated((T)entity);
+            return UpdatedAsync((T)entity);
         }
 
-        public virtual Task Updating(T entity)
+        public virtual Task UpdatingAsync(T entity)
         {
             return Task.CompletedTask;
         }
 
-        Task IEntityEvents.Updating(object entity)
+        Task IEntityEvents.UpdatingAsync(object entity)
         {
-            return Updating((T)entity);
+            return UpdatingAsync((T)entity);
         }
     }
 

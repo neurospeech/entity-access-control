@@ -14,15 +14,15 @@ namespace NeuroSpeech.EntityAccessControl
 {
     public interface IEntityEvents
     {
-        Task Inserting(object entity);
-        Task Inserted(object entity);
+        Task InsertingAsync(object entity);
+        Task InsertedAsync(object entity);
 
-        Task Updating(object entity);
+        Task UpdatingAsync(object entity);
 
-        Task Updated(object entity);
+        Task UpdatedAsync(object entity);
 
-        Task Deleting(object entity);
-        Task Deleted(object entity);
+        Task DeletingAsync(object entity);
+        Task DeletedAsync(object entity);
     }
 
     public delegate Task OnEntityEvent<T, TEntity>(T context, TEntity entity);
@@ -45,92 +45,92 @@ namespace NeuroSpeech.EntityAccessControl
 
         public bool RaiseEvents { get; set; }
 
-        private Task OnInserting(Type type, object entity)
+        private Task OnInsertingAsync(Type type, object entity)
         {
             var eh = events.GetEvents(services, type);
             if (eh!=null)
             {
-                return eh.Inserting(entity);
+                return eh.InsertingAsync(entity);
             }
             var bt = type.BaseType;
             if (bt == null || bt == typeof(object))
                 return Task.CompletedTask;
-            return OnInserting(bt, entity);
+            return OnInsertingAsync(bt, entity);
         }
 
-        private async Task OnInserted(Type type, object entity)
+        private async Task OnInsertedAsync(Type type, object entity)
         {
             // call base class events first...
             var bt = type.BaseType;
             if (bt != null && bt != typeof(object))
             {
-                await OnInserted(bt, entity);
+                await OnInsertedAsync(bt, entity);
             }
             var eh = events.GetEvents(services, type);
             if (eh != null)
             {
-                await eh.Inserted(entity);
+                await eh.InsertedAsync(entity);
             }
         }
 
-        private async Task OnUpdating(Type type, object entity)
+        private async Task OnUpdatingAsync(Type type, object entity)
         {
             // call base class events first...
             var bt = type.BaseType;
             if (bt != null && bt != typeof(object))
             {
-                await OnUpdating(bt, entity);
+                await OnUpdatingAsync(bt, entity);
             }
             var eh = events.GetEvents(services, type);
             if (eh != null)
             {
-                await eh.Updating(entity);
+                await eh.UpdatingAsync(entity);
             }
         }
 
-        private async Task OnUpdated(Type type, object entity)
+        private async Task OnUpdatedAsync(Type type, object entity)
         {
             // call base class events first...
             var bt = type.BaseType;
             if (bt != null && bt != typeof(object))
             {
-                await OnUpdated(bt, entity);
+                await OnUpdatedAsync(bt, entity);
             }
             var eh = events.GetEvents(services, type);
             if (eh != null)
             {
-                await eh.Updated(entity);
+                await eh.UpdatedAsync(entity);
             }
         }
 
 
-        private async Task OnDeleting(Type type, object entity)
+        private async Task OnDeletingAsync(Type type, object entity)
         {
             // call base class events first...
             var bt = type.BaseType;
             if (bt != null && bt != typeof(object))
             {
-                await OnDeleting(bt, entity);
+                await OnDeletingAsync(bt, entity);
             }
             var eh = events.GetEvents(services, type);
             if (eh != null)
             {
-                await eh.Deleting(entity);
+                await eh.DeletingAsync(entity);
             }
         }
 
-        private async Task OnDeleted(Type type, object entity)
+        private async Task OnDeletedAsync(Type type, object entity)
         {
             // call base class events first...
             var bt = type.BaseType;
             if (bt != null && bt != typeof(object))
             {
-                await OnDeleted(bt, entity);
+                await OnDeletedAsync(bt, entity);
             }
             var eh = events.GetEvents(services, type);
             if (eh != null)
             {
-                await eh.Deleted(entity);
+                await eh.DeletedAsync(entity);
             }
         }
 
@@ -186,17 +186,17 @@ namespace NeuroSpeech.EntityAccessControl
                 {
                     case EntityState.Added:
                         pending.Add((e.State, item, type));
-                        await OnInserting(type, item);
+                        await OnInsertingAsync(type, item);
                         Validator.TryValidateObject(item, new ValidationContext(item), errors);
                         break;
                     case EntityState.Modified:
                         pending.Add((e.State, item, type));
-                        await OnUpdating(type, item);
+                        await OnUpdatingAsync(type, item);
                         Validator.TryValidateObject(item, new ValidationContext(item), errors);
                         break;
                     case EntityState.Deleted:
                         pending.Add((e.State, item, type));
-                        await OnDeleting(type, item);
+                        await OnDeletingAsync(type, item);
                         Validator.TryValidateObject(item, new ValidationContext(item), errors);
                         break;
                 }
@@ -219,13 +219,13 @@ namespace NeuroSpeech.EntityAccessControl
                 switch (state)
                 {
                     case EntityState.Added:
-                        await OnInserted(type, item);
+                        await OnInsertedAsync(type, item);
                         break;
                     case EntityState.Modified:
-                        await OnUpdated(type, item);
+                        await OnUpdatedAsync(type, item);
                         break;
                     case EntityState.Deleted:
-                        await OnDeleted(type, item);
+                        await OnDeletedAsync(type, item);
                         break;
                 }
             }
