@@ -3,7 +3,9 @@ using Microsoft.EntityFrameworkCore.Metadata;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -18,7 +20,7 @@ namespace NeuroSpeech.EntityAccessControl.Security
 
         IModel Model { get; }
 
-        object Map(object item);
+        JsonIgnoreCondition GetIgnoreCondition(PropertyInfo property);
 
         void Add(object e);
 

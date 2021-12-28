@@ -68,6 +68,8 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Model
 
         public ICollection<PostContent> Contents { get; set; }
 
+        public string AdminComments { get; set; }
+
     }
 
     [Table("PostTags")]

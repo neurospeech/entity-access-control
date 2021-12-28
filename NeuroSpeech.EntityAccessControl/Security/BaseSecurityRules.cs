@@ -7,6 +7,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Text.Json.Serialization;
 
 namespace NeuroSpeech.EntityAccessControl
 {
@@ -66,12 +67,22 @@ namespace NeuroSpeech.EntityAccessControl
         private RulesDictionary delete = new RulesDictionary();
         private RulesDictionary modify = new RulesDictionary();
 
-        private Dictionary<Type, Func<object,object>> selectMapper
-            = new Dictionary<Type, Func<object, object>>();
+        private Dictionary<PropertyInfo, JsonIgnoreCondition> ignoreConditions
+            = new Dictionary<PropertyInfo, JsonIgnoreCondition>();
 
         internal IQueryable<T> Apply<T>(IQueryContext<T> ts, TC client) where T : class
         {
             return select.As<T, TC>()(ts, client).ToQuery();
+        }
+
+        internal JsonIgnoreCondition GetIgnoreCondition(PropertyInfo property)
+        {
+            if (!ignoreConditions.TryGetValue(property, out var v))
+            {
+                v = property.GetCustomAttribute<JsonIgnoreAttribute>()?.Condition ?? JsonIgnoreCondition.Never;
+                ignoreConditions[property] = v;
+            }
+            return v;
         }
 
         internal IQueryable<T> ApplyInsert<T>(IQueryContext<T> q, TC client) where T : class
@@ -90,21 +101,37 @@ namespace NeuroSpeech.EntityAccessControl
         }
 
         /**
-         * This will be called before serializing object of given type
+         * This will disable Json serialization for given property
          */
-        public void Map<T>(Func<T,object> mapper)
+        public void Ignore<T>(Expression<Func<T,object>> expression,
+            JsonIgnoreCondition condition = JsonIgnoreCondition.Always)
         {
-            selectMapper[typeof(T)] = (x) => mapper((T)x);
+            if (expression.Body is NewExpression nme)
+            {
+                foreach (var m in nme.Arguments)
+                {
+                    if (m is not MemberExpression member)
+                        throw new ArgumentException($"Invalid expression");
+
+                    while (member.Expression is not ParameterExpression pe)
+                    {
+                        if (member.Expression is not MemberExpression me2)
+                            throw new ArgumentException($"Invalid expression");
+                        member = me2;
+                    }
+                    if (member.Member is not PropertyInfo property1)
+                        throw new ArgumentException($"Should be a property");
+                    ignoreConditions[property1] = condition;
+                }
+                return;
+            }
+            if (expression.Body is not MemberExpression me)
+                throw new ArgumentException($"Expression {expression} is not a valid member expression");
+            if(me.Member is not PropertyInfo property)
+                throw new ArgumentException($"Expression {expression} is not a valid property expression");
+            ignoreConditions[property] = condition;
         }
 
-        internal object? MapObject(object item)
-        {
-            if(selectMapper.TryGetValue(item.GetType(), out var mapper))
-            {
-                return mapper(item);
-            }
-            return item;
-        }
 
         /// <summary>
         /// Set filter for select, insert, update, delete

@@ -223,8 +223,7 @@ namespace NeuroSpeech.EntityAccessControl
             var serializer = new EntityJsonSerializer(new EntitySerializationSettings {
                 GetTypeName = (x) => db.Entry(x).Metadata.Name,
                 NamingPolicy = JsonNamingPolicy.CamelCase,
-                IsForeignKey = p => db.Model.IsForeignKey(p),
-                Map = (x) => db.Map(x)
+                GetIgnoreCondition = db.GetIgnoreCondition
             });
             return serializer.Serialize(e);
         }
@@ -235,8 +234,7 @@ namespace NeuroSpeech.EntityAccessControl
             {
                 GetTypeName = (x) => db.Entry(x).Metadata.Name,
                 NamingPolicy = JsonNamingPolicy.CamelCase,
-                IsForeignKey = p => db.Model.IsForeignKey(p),
-                Map = (x) => db.Map(x)
+                GetIgnoreCondition = db.GetIgnoreCondition
             });
             var result = new JsonArray();
             foreach(var item in items)

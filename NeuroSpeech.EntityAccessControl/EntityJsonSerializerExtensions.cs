@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 
 namespace NeuroSpeech.EntityAccessControl
 {
@@ -15,9 +16,13 @@ namespace NeuroSpeech.EntityAccessControl
 
         public Func<object, string>? GetTypeName;
 
-        public Func<PropertyInfo, bool>? IsForeignKey;
+        public Func<PropertyInfo, JsonIgnoreCondition> GetIgnoreCondition = GetDefaultIgnoreAttribute;
 
-        public Func<object, object>? Map;
+        private static JsonIgnoreCondition GetDefaultIgnoreAttribute(PropertyInfo property)
+        {
+            return property.GetCustomAttribute<JsonIgnoreAttribute>()?.Condition
+                ?? System.Text.Json.Serialization.JsonIgnoreCondition.Never;
+        }
     }
 
     public class EntityJsonSerializer
@@ -40,7 +45,6 @@ namespace NeuroSpeech.EntityAccessControl
             this.settings = new EntitySerializationSettings {
                 GetTypeName = (x) => db.Entry(x).Metadata.Name,
                 NamingPolicy = JsonNamingPolicy.CamelCase,
-                IsForeignKey = (p) => db.Model.IsForeignKey(p)
             };
         }
 
@@ -58,10 +62,6 @@ namespace NeuroSpeech.EntityAccessControl
         {
             if (e == null)
                 return null;
-            if (settings.Map != null)
-            {
-                e = settings.Map(e);
-            }
             if (added.TryGetValue(e, out var existingIndex))
             {
                 return new JsonObject() {
@@ -78,26 +78,20 @@ namespace NeuroSpeech.EntityAccessControl
             r["$type"] = d;
             foreach (var p in e.GetType().GetProperties())
             {
-                var att = p.GetCustomAttribute<System.Text.Json.Serialization.JsonIgnoreAttribute>();
-                if (att?.Condition == System.Text.Json.Serialization.JsonIgnoreCondition.Always)
+                var ignoreCondition = settings.GetIgnoreCondition(p);
+                
+                if (ignoreCondition == JsonIgnoreCondition.Always)
                     continue;
                 var name = namingPolicy.ConvertName(p.Name);
                 var propertyType = Nullable.GetUnderlyingType(p.PropertyType) ?? p.PropertyType;
                 var v = p.GetValue(e);
                 if (v == null)
                 {
-                    if (att?.Condition == System.Text.Json.Serialization.JsonIgnoreCondition.Always)
+                    if (ignoreCondition == JsonIgnoreCondition.WhenWritingNull)
                     {
-                        r[name] = null!;
                         continue;
-                    }
-                    
-                    if ((propertyType == typeof(string) ||
-                        propertyType.IsValueType) &&
-                        (settings.IsForeignKey?.Invoke(p) ?? false))
-                    {
-                        r[name] = null!;
-                    }
+                    }                    
+                    r[name] = null!;
                     continue;
                 }
                 if (v is not string && v is System.Collections.IEnumerable coll)
@@ -148,126 +142,4 @@ namespace NeuroSpeech.EntityAccessControl
         }
     }
 
-    //public static class EntityJsonSerializerExtensions
-    //{
-
-
-    //    static readonly string DateFormat = "yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'FFFFFFFZ";
-
-
-    //    public static object? SerializeToJson(this DbContext context, object entity, JsonNamingPolicy? namingPolicy = null)
-    //    {
-    //        var settings = new EntitySerializationSettings
-    //        {
-    //            NamingPolicy = namingPolicy,
-    //            GetTypeName = x => context.Entry(x).Metadata.Name,
-    //            IsForeignKey = (x, p) => context.Entry(x).Property(p.Name).Metadata.IsForeignKey()
-    //        };
-    //        return SerializeToJson(entity, new Dictionary<object, int>(), settings);
-    //    }
-
-    //    public static object? SerializeToJson<T>(this DbContext context, List<T> items, JsonNamingPolicy? namingPolicy = null)
-    //    {
-    //        var settings = new EntitySerializationSettings { 
-    //            NamingPolicy = namingPolicy,
-    //            GetTypeName = x => context.Entry(x).Metadata.Name,
-    //            IsForeignKey = (x, p) => context.Entry(x).Property(p.Name).Metadata.IsForeignKey()
-    //        };
-    //        var all = new Dictionary<object, int>();
-    //        var result = new List<object>();
-    //        foreach(var item in items)
-    //        {
-    //            var ji = SerializeToJson(item, all, settings);
-    //            if (ji == null)
-    //                continue;
-    //            result.Add(ji);
-    //        }
-    //        return result;
-    //    }
-
-    //    public static object? SerializeToJson(object? e, Dictionary<object,int> added, EntitySerializationSettings settings)
-    //    {
-    //        if (e == null)
-    //            return null;
-    //        if(added.TryGetValue(e, out  var existingIndex))
-    //        {
-    //            return new Dictionary<string, object> {
-    //                { "$id", existingIndex }
-    //            };
-    //        }
-    //        var index = added.Count;
-    //        added[e] = index;
-    //        var r = new Dictionary<string, object>() {
-    //            { "$id", index }
-    //        };
-    //        var d = settings.GetTypeName?.Invoke(e) ?? e.GetType().FullName;
-    //        var namingPolicy = settings.NamingPolicy ?? JsonNamingPolicy.CamelCase;
-    //        r["$type"] = d;
-    //        foreach (var p in e.GetType().GetProperties())
-    //        {
-    //            var att = p.GetCustomAttribute<System.Text.Json.Serialization.JsonIgnoreAttribute>();
-    //            if (att?.Condition == System.Text.Json.Serialization.JsonIgnoreCondition.Always)
-    //                continue;
-    //            var name = namingPolicy.ConvertName(p.Name);
-    //            var v = p.GetValue(e);
-    //            if (v == null)
-    //            {
-    //                if(settings.IsForeignKey?.Invoke(e, p) ?? false)
-    //                {
-    //                    r[name] = null!;
-    //                    continue;
-    //                }
-                    
-
-    //                if(att?.Condition == System.Text.Json.Serialization.JsonIgnoreCondition.Always)
-    //                {
-    //                    r[name] = null!;
-    //                }
-    //                continue;
-    //            }
-    //            if (v is not string && v is System.Collections.IEnumerable coll)
-    //            {
-    //                var list = new List<object>();
-    //                foreach (var c in coll)
-    //                {
-    //                    var jc = SerializeToJson(c, added, settings);
-    //                    if (jc != null)
-    //                    {
-    //                        list.Add(jc);
-    //                    }
-    //                }
-    //                r[name] = list;
-    //                continue;
-    //            }
-    //            var t = p.PropertyType;
-    //            t = Nullable.GetUnderlyingType(t) ?? t;
-    //            if (t.IsEnum)
-    //            {
-    //                r[name] = t.GetEnumName(v)!;
-    //                continue;
-    //            }
-    //            if (t.IsValueType || t == typeof(string))
-    //            {
-    //                switch (v)
-    //                {
-    //                    case DateTime dt:
-    //                        r[name] = dt.ToString(DateFormat);
-    //                        continue;
-    //                    case DateTimeOffset dto:
-    //                        r[name] = dto.UtcDateTime.ToString(DateFormat);
-    //                        continue;
-    //                }
-    //                r[name] = v;
-    //                continue;
-    //            }
-    //            var sv = SerializeToJson(v, added, settings);
-    //            if (sv != null)
-    //            {
-    //                r[name] = sv;
-    //            }
-    //        }
-    //        return r;
-    //    }
-
-    //}
 }

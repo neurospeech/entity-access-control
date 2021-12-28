@@ -6,6 +6,10 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Model
     {
         public AppTestDbContextRules()
         {
+            Ignore<Post>(x => new { 
+                x.AdminComments
+            });
+
             SetAllFilters<Post>((q, u) => q.Where(x => x.AuthorID == u));
             SetAllFilters<PostTag>((q, u) => q.Where(x => x.Post.AuthorID == u));
             SetAllFilters<PostContent>((q, u) => q.Where(x => x.Post.AuthorID == u));

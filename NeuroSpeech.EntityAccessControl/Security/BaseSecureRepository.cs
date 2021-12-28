@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using NeuroSpeech.EntityAccessControl.Internal;
 using System.ComponentModel;
 using System.Reflection;
+using System.Text.Json.Serialization;
 
 namespace NeuroSpeech.EntityAccessControl.Security
 {
@@ -60,13 +61,13 @@ namespace NeuroSpeech.EntityAccessControl.Security
             return rules.Apply<T>(new QueryContext<T>(this, q), AssociatedUser);
         }
 
-        public object? Map(object entity)
+        public JsonIgnoreCondition GetIgnoreCondition(PropertyInfo property)
         {
             if(SecurityDisabled)
             {
-                return entity;
+                return JsonIgnoreCondition.Never;
             }
-            return rules.MapObject(entity);
+            return rules.GetIgnoreCondition(property);
         }
 
         public void Remove(object entity) => db.Remove(entity);
