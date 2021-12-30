@@ -2,6 +2,6 @@
 {
     public interface IQueryContext
     {
-        IQueryContext<T> OfType<T>();
+        IQueryContext<T> OfType<T>() where T: class;
     } 
 }

@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 namespace NeuroSpeech.EntityAccessControl
 {
     public readonly struct QueryContext<T>: IQueryContext<T>
+        where T: class
     {
         private readonly ISecureRepository db;
         private readonly IQueryable<T> queryable;
@@ -38,11 +39,13 @@ namespace NeuroSpeech.EntityAccessControl
         }
 
         public IQueryContext<T1> OfType<T1>()
+            where T1: class
         {
             return new QueryContext<T1>(db, queryable.OfType<T1>());
         }
 
         public IQueryContext<T2> Select<T2>(Expression<Func<T, T2>> expression)
+            where T2: class
         {
             var ne = expression.Body as NewExpression;
             var list = new List<Expression>();
@@ -129,6 +132,11 @@ namespace NeuroSpeech.EntityAccessControl
         public Task<List<T>> ToListAsync()
         {
             return queryable.ToListAsync();
+        }
+
+        public IQueryContext<T> Include(string include)
+        {
+            return new QueryContext<T>(db, queryable.Include(include));
         }
     }
 }

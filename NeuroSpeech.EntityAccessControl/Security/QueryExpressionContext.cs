@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 namespace NeuroSpeech.EntityAccessControl
 {
     public struct QueryExpressionContext<T> : IQueryContext<T>
+        where T: class
     {
         private readonly IQueryContext<T> parent;
         private readonly Expression expression;
@@ -42,12 +43,14 @@ namespace NeuroSpeech.EntityAccessControl
         }
 
         public IQueryContext<T1> OfType<T1>()
+            where T1: class
         {
             var e = Expression.Call(null, MethodOfType, expression);
             return new QueryExpressionContext<T1>(parent.OfType<T1>(), e);
         }
 
         public IQueryContext<T2> Select<T2>(Expression<Func<T, T2>> expression)
+            where T2: class
         {
             return parent.Select(expression);
         }
@@ -85,6 +88,11 @@ namespace NeuroSpeech.EntityAccessControl
         }
 
         public Task<List<T>> ToListAsync()
+        {
+            throw new NotImplementedException();
+        }
+
+        public IQueryContext<T> Include(string include)
         {
             throw new NotImplementedException();
         }

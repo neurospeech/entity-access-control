@@ -15,15 +15,15 @@ namespace NeuroSpeech.EntityAccessControl
         private Dictionary<Type, object> rules = new Dictionary<Type, object>();
         private Dictionary<Type, object> cached = new Dictionary<Type, object>();
 
-        public static Func<IQueryContext<T>, TC, IQueryContext<T>> FromBase<T, BT, TC>(
-            Func<IQueryContext<BT>, TC, IQueryContext<T>> filter)
-            where T: BT
-        {
-            Func<IQueryContext<T> , TC, IQueryContext<T>> nf = (q, c) => {
-                return filter(q.OfType<BT>(), c).OfType<T>();
-            };
-            return nf;
-        }
+        //public static Func<IQueryContext<T>, TC, IQueryContext<T>> FromBase<T, BT, TC>(
+        //    Func<IQueryContext<BT>, TC, IQueryContext<T>> filter)
+        //    where T: BT
+        //{
+        //    Func<IQueryContext<T> , TC, IQueryContext<T>> nf = (q, c) => {
+        //        return filter(q.OfType<BT>(), c).OfType<T>();
+        //    };
+        //    return nf;
+        //}
 
         public Func<IQueryContext<T>, TC, IQueryContext<T>> As<T, TC>()
             where T: class

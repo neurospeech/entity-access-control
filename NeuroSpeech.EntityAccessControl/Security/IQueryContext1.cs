@@ -13,11 +13,14 @@ namespace NeuroSpeech.EntityAccessControl
 
         IQueryable<T> ToQuery();
 
-        IQueryContext<T2> Select<T2>(Expression<Func<T, T2>> expression);
+        IQueryContext<T2> Select<T2>(Expression<Func<T, T2>> expression)
+            where T2: class;
 
         IQueryContext<T> Skip(int n);
 
         IQueryContext<T> Take(int n);
+
+        IQueryContext<T> Include(string include);
 
         Task<int> CountAsync();
 

@@ -496,7 +496,13 @@ export class Model<T extends IClrEntity> {
                             lm.Method = "ThenBy";
                             break;
                         case "thenByDescending":
-                            lm.Method = "thenByDescending";
+                            lm.Method = "ThenByDescending";
+                            break;
+                        case "include":
+                            lm.Method = "Include";
+                            break;
+                        case "thenInclude":
+                            lm.Method = "ThenInclude";
                             break;
                         default:
                             continue;
