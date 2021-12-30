@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace NeuroSpeech.EntityAccessControl
 {
-    public readonly struct QueryContext<T>: IQueryContext<T>
+    public readonly struct QueryContext<T>: IOrderedQueryContext<T>
         where T: class
     {
         private readonly ISecureRepository db;
@@ -137,6 +137,26 @@ namespace NeuroSpeech.EntityAccessControl
         public IQueryContext<T> Include(string include)
         {
             return new QueryContext<T>(db, queryable.Include(include));
+        }
+
+        public IOrderedQueryContext<T> ThenBy(Expression<Func<T, object>> expression)
+        {
+            return new QueryContext<T>(db, (queryable as IOrderedQueryable<T>).ThenBy(expression));
+        }
+
+        public IOrderedQueryContext<T> ThenByDescending(Expression<Func<T, object>> expression)
+        {
+            return new QueryContext<T>(db, (queryable as IOrderedQueryable<T>).ThenByDescending(expression));
+        }
+
+        public IOrderedQueryContext<T> OrderBy(Expression<Func<T, object>> expression)
+        {
+            return new QueryContext<T>(db, queryable.OrderBy(expression));
+        }
+
+        public IOrderedQueryContext<T> OrderByDescending(Expression<Func<T, object>> expression)
+        {
+            return new QueryContext<T>(db, queryable.OrderByDescending(expression));
         }
     }
 }

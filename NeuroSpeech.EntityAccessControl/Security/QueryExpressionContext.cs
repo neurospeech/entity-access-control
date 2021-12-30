@@ -96,5 +96,15 @@ namespace NeuroSpeech.EntityAccessControl
         {
             throw new NotImplementedException();
         }
+
+        public IOrderedQueryContext<T> OrderBy(Expression<Func<T, object>> expression)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IOrderedQueryContext<T> OrderByDescending(Expression<Func<T, object>> expression)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

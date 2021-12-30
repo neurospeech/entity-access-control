@@ -26,5 +26,17 @@ namespace NeuroSpeech.EntityAccessControl
 
         Task<List<T>> ToListAsync();
 
+        IOrderedQueryContext<T> OrderBy(Expression<Func<T, object>> expression);
+
+        IOrderedQueryContext<T> OrderByDescending(Expression<Func<T, object>> expression);
+
+    }
+
+    public interface IOrderedQueryContext<T>: IQueryContext<T>
+    {
+        IOrderedQueryContext<T> ThenBy(Expression<Func<T, object>> expression);
+
+        IOrderedQueryContext<T> ThenByDescending(Expression<Func<T, object>> expression);
+
     }
 }
