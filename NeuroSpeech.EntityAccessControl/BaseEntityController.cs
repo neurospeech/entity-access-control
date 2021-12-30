@@ -299,7 +299,8 @@ namespace NeuroSpeech.EntityAccessControl
             var i = new IndentedTextWriter(sw);
 
             i.WriteLine(@"import DateTime from ""@web-atoms/date-time/dist/DateTime"";
-import IClrEntity from ""./entity/IClrEntity"";
+import type IClrEntity from ""@web-atoms/entity/dist/models/IClrEntity"";
+import type { ICollection } from ""@web-atoms/entity/dist/services/EntityService"";
 export class Model<T extends IClrEntity> {
     constructor(public name: string) {}
 }");
@@ -339,7 +340,7 @@ export class Model<T extends IClrEntity> {
                     var npName = $"I{ModelName(np.TargetEntityType.Name)}";
                     if (np.IsCollection)
                     {
-                        i.WriteLine($"{naming.ConvertName(np.Name)}?: {npName}[];");
+                        i.WriteLine($"{naming.ConvertName(np.Name)}?: ICollection<{npName}>;");
                         continue;
                     } 
                     i.WriteLine($"{naming.ConvertName(np.Name)}?: {npName};");
