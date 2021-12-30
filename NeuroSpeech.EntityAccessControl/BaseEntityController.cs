@@ -222,7 +222,7 @@ namespace NeuroSpeech.EntityAccessControl
                 return null;
             }
             var serializer = new EntityJsonSerializer(new EntitySerializationSettings {
-                GetTypeName = (x) => db.Entry(x).Metadata.Name,
+                GetTypeName = (x) => db.Model.FindEntityType(x)?.Name ?? x.FullName!,
                 NamingPolicy = JsonNamingPolicy.CamelCase,
                 GetIgnoreCondition = db.GetIgnoreCondition
             });
@@ -233,7 +233,7 @@ namespace NeuroSpeech.EntityAccessControl
         {
             var serializer = new EntityJsonSerializer(new EntitySerializationSettings
             {
-                GetTypeName = (x) => db.Entry(x).Metadata.Name,
+                GetTypeName = (x) => db.Model.FindEntityType(x)?.Name ?? x.FullName!,
                 NamingPolicy = JsonNamingPolicy.CamelCase,
                 GetIgnoreCondition = db.GetIgnoreCondition
             });

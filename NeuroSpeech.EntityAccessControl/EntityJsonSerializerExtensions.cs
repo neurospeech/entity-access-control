@@ -14,7 +14,7 @@ namespace NeuroSpeech.EntityAccessControl
     {
         public JsonNamingPolicy? NamingPolicy;
 
-        public Func<object, string>? GetTypeName;
+        public Func<Type, string>? GetTypeName;
 
         public Func<PropertyInfo, JsonIgnoreCondition> GetIgnoreCondition = GetDefaultIgnoreAttribute;
 
@@ -43,7 +43,7 @@ namespace NeuroSpeech.EntityAccessControl
         public EntityJsonSerializer(DbContext db)
         {
             this.settings = new EntitySerializationSettings {
-                GetTypeName = (x) => db.Entry(x).Metadata.Name,
+                GetTypeName = (x) => db.Model.FindEntityType(x)?.Name ?? x.FullName!,
                 NamingPolicy = JsonNamingPolicy.CamelCase,
             };
         }
@@ -73,7 +73,8 @@ namespace NeuroSpeech.EntityAccessControl
             var r = new JsonObject() {
                 { "$id", index }
             };
-            var d = settings.GetTypeName?.Invoke(e) ?? e.GetType().FullName;
+            var et = e.GetType();
+            var d = settings.GetTypeName?.Invoke(et) ?? et.FullName;
             var namingPolicy = settings.NamingPolicy ?? JsonNamingPolicy.CamelCase;
             r["$type"] = d;
             foreach (var p in e.GetType().GetProperties())
