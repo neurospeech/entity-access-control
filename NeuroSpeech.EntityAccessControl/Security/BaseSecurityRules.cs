@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
@@ -18,8 +19,8 @@ namespace NeuroSpeech.EntityAccessControl
         private RulesDictionary delete = new RulesDictionary();
         private RulesDictionary modify = new RulesDictionary();
 
-        private Dictionary<PropertyInfo, JsonIgnoreCondition> ignoreConditions
-            = new Dictionary<PropertyInfo, JsonIgnoreCondition>();
+        private ConcurrentDictionary<PropertyInfo, JsonIgnoreCondition> ignoreConditions
+            = new ConcurrentDictionary<PropertyInfo, JsonIgnoreCondition>();
 
         internal IQueryContext<T> Apply<T>(IQueryContext<T> ts, TC client) where T : class
         {
@@ -28,12 +29,8 @@ namespace NeuroSpeech.EntityAccessControl
 
         internal JsonIgnoreCondition GetIgnoreCondition(PropertyInfo property)
         {
-            if (!ignoreConditions.TryGetValue(property, out var v))
-            {
-                v = property.GetCustomAttribute<JsonIgnoreAttribute>()?.Condition ?? JsonIgnoreCondition.Never;
-                ignoreConditions[property] = v;
-            }
-            return v;
+            return ignoreConditions.GetOrAdd(property, 
+                (k) => property.GetCustomAttribute<JsonIgnoreAttribute>()?.Condition ?? JsonIgnoreCondition.Never);
         }
 
         internal IQueryable<T> ApplyInsert<T>(IQueryContext<T> q, TC client) where T : class

@@ -2,6 +2,7 @@
 using Microsoft.CodeAnalysis.Scripting;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -64,8 +65,8 @@ namespace NeuroSpeech.EntityAccessControl.Parser
 
         public static MethodParser Instance = new MethodParser();
 
-        private Dictionary<string, Task> cache
-            = new Dictionary<string, Task>();
+        private ConcurrentDictionary<string, Task> cache
+            = new ConcurrentDictionary<string, Task>();
 
         public async Task<LinqResult> Parse<T>(
             IQueryContext<T> q, 
@@ -90,13 +91,7 @@ namespace NeuroSpeech.EntityAccessControl.Parser
         public Task<LinqMethodDelegate<T>> Parse<T>(LinqSection methods)
         {
             var key = methods.CacheKey;
-            if (cache.TryGetValue(key, out var d))
-            {
-                return (Task<LinqMethodDelegate<T>>)d;
-            }
-            var t = ParseQuery<T>(methods.Methods);
-            cache[key] = t;
-            return t;
+            return (Task<LinqMethodDelegate<T>>)cache.GetOrAdd(key, k => ParseQuery<T>(methods.Methods));
         }
 
 

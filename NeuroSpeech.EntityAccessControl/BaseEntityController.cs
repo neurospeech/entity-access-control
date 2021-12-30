@@ -256,10 +256,10 @@ namespace NeuroSpeech.EntityAccessControl
         protected static readonly List<string> EmptyStringArray = new();
     }
 
-    public abstract class BaseEntityController: BaseController
+    public abstract class BaseEntityController : BaseController
     {
 
-        public BaseEntityController(ISecureRepository db): base(db)
+        public BaseEntityController(ISecureRepository db) : base(db)
         {
         }
 
@@ -308,18 +308,18 @@ export class Model<T extends IClrEntity> {
 
             var enumTypes = new List<Type>();
 
-            foreach(var e in db.Model.GetEntityTypes())
+            foreach (var e in db.Model.GetEntityTypes())
             {
 
                 var name = ModelName(e.Name);
                 var b = e.BaseType == null ? "ClrEntity" : ModelName(e.BaseType.Name);
                 i.WriteLine($"export interface I{name} extends I{b} {{");
                 i.Indent++;
-                foreach(var  p in e.GetDeclaredProperties())
+                foreach (var p in e.GetDeclaredProperties())
                 {
                     var clrType = Nullable.GetUnderlyingType(p.ClrType) ?? p.ClrType;
                     if (clrType.IsEnum) {
-                        if(!enumTypes.Contains(clrType))
+                        if (!enumTypes.Contains(clrType))
                             enumTypes.Add(clrType);
                         var typeName = $"IEnum{clrType.Name}";
                         if (p.IsNullable)
@@ -336,14 +336,14 @@ export class Model<T extends IClrEntity> {
                     }
                     i.WriteLine($"{naming.ConvertName(p.Name)}?: {type};");
                 }
-                foreach(var np in e.GetDeclaredNavigations())
+                foreach (var np in e.GetDeclaredNavigations())
                 {
                     var npName = $"I{ModelName(np.TargetEntityType.Name)}";
                     if (np.IsCollection)
                     {
                         i.WriteLine($"{naming.ConvertName(np.Name)}?: ICollection<{npName}>;");
                         continue;
-                    } 
+                    }
                     i.WriteLine($"{naming.ConvertName(np.Name)}?: {npName};");
                 }
                 i.Indent--;
@@ -362,7 +362,7 @@ export class Model<T extends IClrEntity> {
             }
             i.WriteLine();
 
-            return Content(sw.ToString(),"text/plain");
+            return Content(sw.ToString(), "text/plain");
         }
 
         [HttpPut]
@@ -402,7 +402,7 @@ export class Model<T extends IClrEntity> {
         {
             if (model.Keys == null)
                 return BadRequest();
-            foreach(var item in model.Keys)
+            foreach (var item in model.Keys)
             {
                 var t = FindEntityType(item);
                 var entity = await db.FindByKeysAsync(t, item, cancellation);
@@ -435,12 +435,12 @@ export class Model<T extends IClrEntity> {
             CancellationToken cancellation
             )
         {
-            if (model.Keys == null 
+            if (model.Keys == null
                 || model.Update.ValueKind == JsonValueKind.Undefined
                 || model.Update.ValueKind == JsonValueKind.Null)
                 return BadRequest();
 
-            foreach(var item in model.Keys)
+            foreach (var item in model.Keys)
             {
                 var t = FindEntityType(item);
                 var entity = await db.FindByKeysAsync(t, item, cancellation);
@@ -458,6 +458,14 @@ export class Model<T extends IClrEntity> {
             return Ok(new { });
         }
 
+        public class MethodOptions
+        {
+            public string? Methods { get; set; }
+            public int Start { get; set; } = 0;
+            public int Size { get; set; } = 200;
+            public bool SplitInclude { get; set; } = true;
+        }
+
         [HttpGet("methods/{entity}")]
         public Task<IActionResult> Methods(
             [FromRoute] string entity,
@@ -467,6 +475,25 @@ export class Model<T extends IClrEntity> {
             [FromQuery] bool splitInclude = true
             )
         {
+            return PostMethod(entity, new MethodOptions { 
+                Methods = methods,
+                Start = start,
+                Size = size,
+                SplitInclude = splitInclude
+            });
+        }
+
+
+        [HttpPost("methods/{entity}")]
+        public Task<IActionResult> PostMethod(
+            [FromRoute] string entity,
+            [FromBody] MethodOptions model
+            )
+        {
+            var methods = model.Methods;
+            var start = model.Start;
+            var size = model.Size;
+            var splitInclude = model.SplitInclude;
             var t = FindEntityType(entity);
             bool hasInclude = false;
             List<LinqMethod> methodList = new List<LinqMethod>();
