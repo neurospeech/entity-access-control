@@ -3,6 +3,8 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NeuroSpeech.EntityAccessControl.Tests.Model;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -37,6 +39,14 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
         {
             var db = services.GetRequiredService<AppDbContext>();
             var sdb = new SecureAppTestDbContext(db, 2, new AppTestDbContextRules());
+
+            var userId = 2;
+
+            //Expression<Func<Post, object>> s =
+            //    (x) => new { 
+            //        x.PostID,
+            //        Tags = x.Tags.Where(v => v.Post.AuthorID == userId)
+            //    };
 
             var controller = new TestEntityController(sdb);
             var name = "NeuroSpeech.EntityAccessControl.Tests.Model.Post";

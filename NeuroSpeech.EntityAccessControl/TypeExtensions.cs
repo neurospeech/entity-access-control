@@ -59,14 +59,18 @@ namespace NeuroSpeech.EntityAccessControl.Internal
     }
     public static class TypeExtensions
     {
-        public static MethodInfo GetStaticMethod(this Type type, string name, params Type[] types)
+        public static MethodInfo GetStaticMethod(
+            this Type type, 
+            string name, 
+            int argLength,
+            Func<List<Type>,bool> filter)
         {
             var methods = type
                 .GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)
-                .Where(x => x.Name == name);
-            var first = methods.FirstOrDefault(x => x.GetParameters()
-                .Select(x => x.ParameterType)
-                .SequenceEqual(types));
+                .Where(x => x.Name == name && x.GetParameters().Length == argLength)
+                .Select(x => (Method: x, Types: x.GetParameters().Select(v => v.ParameterType).ToList()))
+                .ToList();
+            var (first, _) = methods.FirstOrDefault((x) => filter(x.Types));
             return first ?? throw new KeyNotFoundException();
         }
 

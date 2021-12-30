@@ -460,6 +460,7 @@ export class Model<T extends IClrEntity> {
         public async Task<IActionResult> Query(
             [FromRoute] string entity,
             [FromQuery] string? select = null,
+            [FromQuery] string? selectParameters = null,
             [FromQuery] string? filter = null,
             [FromQuery] string? parameters = null,
             [FromQuery] string? keys = null,
@@ -482,6 +483,7 @@ export class Model<T extends IClrEntity> {
                 .Invoke(this, new object?[] {
                     t,
                     select,
+                    selectParameters,
                     filter,
                     parameters,
                     keys,
@@ -501,6 +503,7 @@ export class Model<T extends IClrEntity> {
         public async Task<IActionResult> ListAsync<T>(
             IEntityType entityType,
             string? select,
+            string? selectParameters,
             string? filter, 
             string? parameters, 
             string? keys,
@@ -621,7 +624,7 @@ export class Model<T extends IClrEntity> {
             if (!string.IsNullOrWhiteSpace(select))
             {
                 var qc = new QueryContext<T>(db, q);
-                var dl = await qc.SelectLinqAsync(select, default);
+                var dl = await qc.SelectLinqAsync(select, JsonDocument.Parse(selectParameters ?? "[]").RootElement);
                 foreach(var item in dl)
                 {
                     json.Add(item);
