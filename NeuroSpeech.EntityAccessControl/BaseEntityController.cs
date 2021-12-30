@@ -463,7 +463,8 @@ export class Model<T extends IClrEntity> {
             [FromRoute] string entity,
             [FromQuery] string methods,
             [FromQuery] int start = 0,
-            [FromQuery] int size = 0
+            [FromQuery] int size = 200,
+            [FromQuery] bool splitInclude = true
             )
         {
             var t = FindEntityType(entity);
@@ -514,18 +515,19 @@ export class Model<T extends IClrEntity> {
             }
             return this.GetInstanceGenericMethod(nameof(InvokeAsync), t.ClrType)
                 .As<Task<IActionResult>>()
-                .Invoke(methodList, start, size, this.HttpContext?.RequestAborted ?? default);
+                .Invoke(methodList, start, size, splitInclude, this.HttpContext?.RequestAborted ?? default);
         }
 
         public async Task<IActionResult> InvokeAsync<T>(
             List<LinqMethod> methods,
             int start, int size,
+            bool splitInclude,
             CancellationToken cancelToken)
             where T : class
         {
             var q = new QueryContext<T>(db, db.Query<T>()!);
 
-            var result = await MethodParser.Instance.Parse<T>(q, methods, start, size, cancelToken);
+            var result = await MethodParser.Instance.Parse<T>(q, methods, start, size, splitInclude, cancelToken);
             var json = SerializeList(result.Items.ToList());
             return Json(new { 
                 items = json,

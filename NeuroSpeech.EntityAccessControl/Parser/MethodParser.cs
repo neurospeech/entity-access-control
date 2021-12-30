@@ -54,6 +54,7 @@ namespace NeuroSpeech.EntityAccessControl.Parser
         List<QueryParameter> plist, 
         int start, 
         int size,
+        bool splitInclude,
         CancellationToken cancelToken);
 
     public class MethodParser
@@ -71,6 +72,7 @@ namespace NeuroSpeech.EntityAccessControl.Parser
             List<LinqMethod> methods, 
             int start, 
             int size,
+            bool splitInclude,
             CancellationToken cancelToken)
         {
             var d = await Parse<T>(new LinqSection(typeof(T), methods));
@@ -82,7 +84,7 @@ namespace NeuroSpeech.EntityAccessControl.Parser
                     list.Add(new QueryParameter(p));
                 }
             }
-            return await d(q, list, start, size, cancelToken);
+            return await d(q, list, start, size, splitInclude, cancelToken);
         }
 
         public Task<LinqMethodDelegate<T>> Parse<T>(LinqSection methods)
@@ -104,12 +106,11 @@ namespace NeuroSpeech.EntityAccessControl.Parser
                             .AddReferences(typeof(Queryable).Assembly,
                             typeof(Microsoft.EntityFrameworkCore.EF).Assembly,
                             typeof(QueryParser).Assembly,
+                            typeof(RelationalQueryableExtensions).Assembly,
                             typeof(T).Assembly)
                             .WithOptimizationLevel(OptimizationLevel.Debug);
 
             var type = typeof(T);
-
-            var resultList = "";
 
             StringBuilder sb = new StringBuilder();
             StringBuilder exec = new StringBuilder();
@@ -143,6 +144,7 @@ public static async Task<LinqResult> Query(
     List<QueryParameter> args,
     int start,
     int size,
+    bool splitInclude,
     CancellationToken cancelToken) {{
 {sb}
     var rq = q{exec};
@@ -159,6 +161,9 @@ public static async Task<LinqResult> Query(
     }}
     if (loadTotal) {{
         total = await oq.CountAsync();
+    }}
+    if (splitInclude) {{
+        rq = rq.AsSplitQuery();
     }}
     var rl = await rq.ToListAsync();
     return new LinqResult {{
