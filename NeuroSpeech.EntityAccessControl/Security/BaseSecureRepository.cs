@@ -47,7 +47,15 @@ namespace NeuroSpeech.EntityAccessControl.Security
         {
             if(SecurityDisabled)
                 return db.Set<T>();
-            return rules.Apply<T>(new QueryContext<T>(this, db.Set<T>()), AssociatedUser);
+            return rules.Apply<T>(new QueryContext<T>(this, db.Set<T>()), AssociatedUser).ToQuery();
+        }
+
+        public IQueryContext<T?> Apply<T>(IQueryContext<T> q)
+            where T: class
+        {
+            if (SecurityDisabled)
+                return q;
+            return rules.Apply<T>(q, AssociatedUser)!;
         }
 
         public IQueryable<T> FromSqlRaw<T>(string sql, params object[] parameters)
@@ -58,7 +66,7 @@ namespace NeuroSpeech.EntityAccessControl.Security
             {
                 return q;
             }
-            return rules.Apply<T>(new QueryContext<T>(this, q), AssociatedUser);
+            return rules.Apply<T>(new QueryContext<T>(this, q), AssociatedUser).ToQuery();
         }
 
         public JsonIgnoreCondition GetIgnoreCondition(PropertyInfo property)

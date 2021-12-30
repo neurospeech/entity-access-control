@@ -75,6 +75,10 @@ namespace NeuroSpeech.EntityAccessControl
             return QueryParser.Instance.Parse(q, filter, parameters);
         }
 
+        public static Task<IEnumerable<object>> SelectLinqAsync<T>(this IQueryContext<T> q, string filter, JsonElement parameters)
+        {
+            return SelectParser.Instance.Parse(q, filter, parameters);
+        }
     }
 
     public class QueryParser

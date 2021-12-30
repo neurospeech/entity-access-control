@@ -20,7 +20,7 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
 
         }
 
-        private async Task SelectAsync(IScopeServices services)
+        private async Task QueryAsync(IScopeServices services)
         {
             var db = services.GetRequiredService<AppDbContext>();
             var sdb = new SecureAppTestDbContext(db, 2, new AppTestDbContextRules());
@@ -31,6 +31,21 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
             var r = await controller.Query(name,
                 filter: "x => x.PostID > @0",
                 parameters: "[1]");
+        }
+
+        private async Task SelectAsync(IScopeServices services)
+        {
+            var db = services.GetRequiredService<AppDbContext>();
+            var sdb = new SecureAppTestDbContext(db, 2, new AppTestDbContextRules());
+
+            var controller = new TestEntityController(sdb);
+            var name = "NeuroSpeech.EntityAccessControl.Tests.Model.Post";
+
+            var r = await controller.Query(name,
+                filter: "x => x.PostID > @0",
+                parameters: "[1]",
+                select: "x => new { x.PostID, Tags = x.Tags }"
+                );
         }
     }
 }

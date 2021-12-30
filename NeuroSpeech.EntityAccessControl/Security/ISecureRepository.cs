@@ -17,6 +17,7 @@ namespace NeuroSpeech.EntityAccessControl.Security
 
         Task<object?> FindByKeysAsync(IEntityType t, JsonElement keys, CancellationToken token = default);
         IQueryable<T?> Query<T>() where T : class;
+        IQueryContext<T?> Apply<T>(IQueryContext<T> q) where T : class;
 
         IModel Model { get; }
 

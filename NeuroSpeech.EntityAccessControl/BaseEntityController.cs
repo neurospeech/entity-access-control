@@ -620,7 +620,8 @@ export class Model<T extends IClrEntity> {
             var json = new JsonArray();
             if (!string.IsNullOrWhiteSpace(select))
             {
-                var dl = await q.Select(config, select).ToDynamicListAsync();
+                var qc = new QueryContext<T>(db, q);
+                var dl = await qc.SelectLinqAsync(select, default);
                 foreach(var item in dl)
                 {
                     json.Add(item);
