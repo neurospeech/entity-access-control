@@ -9,17 +9,20 @@ using System.Threading.Tasks;
 
 namespace NeuroSpeech.EntityAccessControl
 {
-    public delegate Task<IEnumerable<object>> SelectDelegate<T>(IQueryContext<T> q, params QueryParameter[] args);
 
-    public class SelectParser
+    public delegate IQueryable<T> QueryableDelegate<T>(IQueryable<T> input, params QueryParameter[] plist);
+
+    public class QueryParser
     {
 
-        public static SelectParser Instance = new SelectParser();
 
-        private Dictionary<(Type, string, int), Task> cache
-            = new Dictionary<(Type, string, int), Task>();
 
-        public async Task<IEnumerable<object>> Parse<T>(IQueryContext<T> q, string select, JsonElement parameters)
+        public static QueryParser Instance = new QueryParser();
+
+        private Dictionary<(Type, string, string, int), Task> cache
+            = new Dictionary<(Type, string, string, int), Task>();
+
+        public async Task<IQueryable<T>> Parse<T>(IQueryable<T> q, string filter, JsonElement parameters)
         {
             QueryParameter[] plist = Array.Empty<QueryParameter>();
             if (parameters.ValueKind == JsonValueKind.Array)
@@ -32,23 +35,24 @@ namespace NeuroSpeech.EntityAccessControl
                 }
             }
 
-            var d = await Parse<T>(select, plist.Length);
-            return await d(q, plist);
+            var d = await Parse<T>(filter, plist.Length);
+            return d(q, plist);
         }
 
-        public Task<SelectDelegate<T>> Parse<T>(string code, int length)
+        public Task<QueryableDelegate<T>> Parse<T>(string code, int length, string method = "Where")
         {
-            var key = (typeof(T), code, length);
-            if (cache.TryGetValue(key, out var d))
+            var key = (typeof(T), method, code, length);
+            if(cache.TryGetValue(key, out var d))
             {
-                return (Task<SelectDelegate<T>>)d;
+                return (Task<QueryableDelegate<T>>)d;
             }
-            var t = ParseQuery<T>(code, length);
+            var t = ParseQuery<T>(method, code, length);
             cache[key] = t;
             return t;
         }
 
-        private Task<SelectDelegate<T>> ParseQuery<T>(string code, int length)
+
+        private Task<QueryableDelegate<T>> ParseQuery<T>(string method, string code, int length)
         {
             var options = ScriptOptions.Default
                             .AddReferences(typeof(Queryable).Assembly,
@@ -79,15 +83,16 @@ using System.Collections.Generic;
 using System.Text;
 using System;
 
-public static async Task<IEnumerable<object>> Query(IQueryContext<{type.FullName}> q, params QueryParameter[] args) {{
+public static IQueryable<{type.FullName}> Query(IQueryable<{type.FullName}> q, params QueryParameter[] args) {{
 {sb}
-return (await q.Select({code}).ToQuery().ToListAsync()).OfType<object>();
+return q.{method}({code});
 }}
 
 return Query;
 ";
-            return Microsoft.CodeAnalysis.CSharp.Scripting.CSharpScript.EvaluateAsync<SelectDelegate<T>>(code, options);
+            return Microsoft.CodeAnalysis.CSharp.Scripting.CSharpScript.EvaluateAsync<QueryableDelegate<T>>(code,options);
         }
+
 
     }
 }

@@ -17,6 +17,7 @@ using NeuroSpeech.EntityAccessControl.Internal;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Text.Json.Nodes;
+using NeuroSpeech.EntityAccessControl.Parser;
 
 namespace NeuroSpeech.EntityAccessControl
 {
@@ -457,6 +458,69 @@ export class Model<T extends IClrEntity> {
             return Ok(new { });
         }
 
+        [HttpGet("methods/{entity}")]
+        public Task<IActionResult> Methods(
+            [FromRoute] string entity,
+            [FromQuery] string methods,
+            [FromQuery] int start = 0,
+            [FromQuery] int size = 0
+            )
+        {
+            var t = FindEntityType(entity);
+            List<LinqMethod> methodList = new List<LinqMethod>();
+            foreach(var method in JsonDocument.Parse(methods).RootElement.EnumerateArray())
+            {
+                LinqMethod lm = new LinqMethod();
+                foreach(var property in method.EnumerateObject())
+                {
+                    lm.Expression = property.Value[0].ToString();
+                    for (int i = 1; i < property.Value.GetArrayLength(); i++)
+                    {
+                        lm.Parameters.Add(property.Value[i]);
+                    }
+
+                    switch (property.Name) {
+                        case "select":
+                            lm.Method = "Select";
+                            break;
+                        case "where":
+                            lm.Method = "Where";
+                            break;
+                        case "orderBy":
+                            lm.Method = "OrderBy";
+                            break;
+                        case "orderByDescending":
+                            lm.Method = "OrderByDescending";
+                            break;
+                        case "thenBy":
+                            lm.Method = "ThenBy";
+                            break;
+                        case "thenByDescending":
+                            lm.Method = "thenByDescending";
+                            break;
+                        default:
+                            continue;
+                    }
+                    methodList.Add(lm);
+                }
+            }
+            return this.GetInstanceGenericMethod(nameof(InvokeAsync), t.ClrType)
+                .As<Task<IActionResult>>()
+                .Invoke(methodList, start, size, this.HttpContext?.RequestAborted ?? default);
+        }
+
+        public async Task<IActionResult> InvokeAsync<T>(
+            List<LinqMethod> methods,
+            int start, int size,
+            CancellationToken cancelToken)
+            where T : class
+        {
+            var q = new QueryContext<T>(db, db.Query<T>()!);
+
+            var result = await MethodParser.Instance.Parse<T>(q, methods, start, size, cancelToken);
+            return Json(result);
+        }
+
         [HttpGet("query/{entity}")]
         public async Task<IActionResult> Query(
             [FromRoute] string entity,
@@ -500,6 +564,7 @@ export class Model<T extends IClrEntity> {
         {
             ResolveTypesBySimpleName = true
         };
+
 
         public async Task<IActionResult> ListAsync<T>(
             IEntityType entityType,

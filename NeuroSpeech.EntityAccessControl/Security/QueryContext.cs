@@ -6,6 +6,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.Json.Serialization;
+using System.Threading.Tasks;
 
 namespace NeuroSpeech.EntityAccessControl
 {
@@ -110,5 +111,24 @@ namespace NeuroSpeech.EntityAccessControl
             return fe;
         }
 
+        public IQueryContext<T> Skip(int n)
+        {
+            return new QueryContext<T>(db, queryable.Skip(n));
+        }
+
+        public IQueryContext<T> Take(int n)
+        {
+            return new QueryContext<T>(db, queryable.Take(n));
+        }
+
+        public Task<int> CountAsync()
+        {
+            return queryable.CountAsync();
+        }
+
+        public Task<List<T>> ToListAsync()
+        {
+            return queryable.ToListAsync();
+        }
     }
 }

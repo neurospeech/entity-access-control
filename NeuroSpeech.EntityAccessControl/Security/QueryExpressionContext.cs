@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Threading.Tasks;
 
 namespace NeuroSpeech.EntityAccessControl
 {
@@ -66,6 +67,26 @@ namespace NeuroSpeech.EntityAccessControl
         {
             var e = Expression.Call(null, MethodWhere, expression, filter);
             return new QueryExpressionContext<T>(parent, e);
+        }
+
+        public IQueryContext<T> Skip(int n)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IQueryContext<T> Take(int n)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<int> CountAsync()
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<List<T>> ToListAsync()
+        {
+            throw new NotImplementedException();
         }
     }
 }
