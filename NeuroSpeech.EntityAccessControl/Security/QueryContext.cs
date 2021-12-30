@@ -158,5 +158,10 @@ namespace NeuroSpeech.EntityAccessControl
         {
             return new QueryContext<T>(db, queryable.OrderByDescending(expression));
         }
+
+        public IQueryContext<T> AsSplitQuery()
+        {
+            return new QueryContext<T>(db, queryable.AsSplitQuery());
+        }
     }
 }

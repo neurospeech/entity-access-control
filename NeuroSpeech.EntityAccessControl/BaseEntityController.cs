@@ -468,6 +468,7 @@ export class Model<T extends IClrEntity> {
             )
         {
             var t = FindEntityType(entity);
+            bool hasInclude = false;
             List<LinqMethod> methodList = new List<LinqMethod>();
             foreach(var method in JsonDocument.Parse(methods).RootElement.EnumerateArray())
             {
@@ -483,6 +484,7 @@ export class Model<T extends IClrEntity> {
                     switch (property.Name) {
                         case "select":
                             lm.Method = "Select";
+                            splitInclude = false;
                             break;
                         case "where":
                             lm.Method = "Where";
@@ -501,6 +503,7 @@ export class Model<T extends IClrEntity> {
                             break;
                         case "include":
                             lm.Method = "Include";
+                            hasInclude = true;
                             lm.Expression = System.Text.Json.JsonSerializer.Serialize(lm.Expression);
                             break;
                         case "thenInclude":
@@ -515,7 +518,7 @@ export class Model<T extends IClrEntity> {
             }
             return this.GetInstanceGenericMethod(nameof(InvokeAsync), t.ClrType)
                 .As<Task<IActionResult>>()
-                .Invoke(methodList, start, size, splitInclude, this.HttpContext?.RequestAborted ?? default);
+                .Invoke(methodList, start, size, splitInclude && hasInclude, this.HttpContext?.RequestAborted ?? default);
         }
 
         public async Task<IActionResult> InvokeAsync<T>(

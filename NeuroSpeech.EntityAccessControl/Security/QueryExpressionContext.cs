@@ -106,5 +106,10 @@ namespace NeuroSpeech.EntityAccessControl
         {
             throw new NotImplementedException();
         }
+
+        public IQueryContext<T> AsSplitQuery()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

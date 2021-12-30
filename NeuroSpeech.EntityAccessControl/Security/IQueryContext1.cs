@@ -22,6 +22,8 @@ namespace NeuroSpeech.EntityAccessControl
 
         IQueryContext<T> Include(string include);
 
+        IQueryContext<T> AsSplitQuery();
+
         Task<int> CountAsync();
 
         Task<List<T>> ToListAsync();
