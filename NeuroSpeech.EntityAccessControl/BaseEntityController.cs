@@ -500,9 +500,11 @@ export class Model<T extends IClrEntity> {
                             break;
                         case "include":
                             lm.Method = "Include";
+                            lm.Expression = System.Text.Json.JsonSerializer.Serialize(lm.Expression);
                             break;
                         case "thenInclude":
                             lm.Method = "ThenInclude";
+                            lm.Expression = System.Text.Json.JsonSerializer.Serialize(lm.Expression);
                             break;
                         default:
                             continue;
@@ -524,7 +526,11 @@ export class Model<T extends IClrEntity> {
             var q = new QueryContext<T>(db, db.Query<T>()!);
 
             var result = await MethodParser.Instance.Parse<T>(q, methods, start, size, cancelToken);
-            return Json(result);
+            var json = SerializeList(result.Items.ToList());
+            return Json(new { 
+                items = json,
+                total = result.Total
+            });
         }
 
         [HttpGet("query/{entity}")]

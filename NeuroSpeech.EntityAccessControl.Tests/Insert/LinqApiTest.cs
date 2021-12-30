@@ -42,6 +42,10 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
                 new {
                     where = new object[] { "x => x.PostID > @0", 1 }
                 },
+                new
+                {
+                    include = new object[] { "Tags" }
+                },
                 new {
                     select = new object[] { "x => new { x.PostID, x.Tags }" }
                 }
