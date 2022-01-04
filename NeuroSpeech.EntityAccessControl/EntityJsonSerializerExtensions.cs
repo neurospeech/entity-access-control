@@ -74,10 +74,11 @@ namespace NeuroSpeech.EntityAccessControl
                 { "$id", index }
             };
             var et = e.GetType();
-            var d = settings.GetTypeName?.Invoke(et) ?? et.FullName;
+            var d = et.StaticCacheGetOrCreate((et) => settings.GetTypeName?.Invoke(et) ?? et.FullName);
             var namingPolicy = settings.NamingPolicy ?? JsonNamingPolicy.CamelCase;
             r["$type"] = d;
-            foreach (var p in e.GetType().GetProperties())
+            var properties = et.StaticCacheGetOrCreate((et) => et.GetProperties());
+            foreach (var p in properties)
             {
                 var ignoreCondition = settings.GetIgnoreCondition(p);
                 

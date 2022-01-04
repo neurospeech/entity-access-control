@@ -206,9 +206,8 @@ namespace NeuroSpeech.EntityAccessControl
         {
             if (type == null)
                 throw new ArgumentNullException($"Type cannot be null");
-            var t = db.GetType().FullName;
-            var key = $"{t}:{type}";
-            var e = entityTypes.GetOrAdd(key, key => db.Model.GetEntityTypes().FirstOrDefault(x => x.Name.EqualsIgnoreCase(type)));
+            var t = db.GetType();
+            var e = t.StaticCacheGetOrCreate(type, key => db.Model.GetEntityTypes().FirstOrDefault(x => x.Name.EqualsIgnoreCase(type)));
             if (e == null)
                 throw new ArgumentOutOfRangeException($"Entity {type} not found");
             return e;
