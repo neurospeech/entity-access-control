@@ -112,6 +112,16 @@ namespace NeuroSpeech.EntityAccessControl.Tests
                 AccountID = 3
             });
 
+            Seed(db, new Post { 
+                Name = "A",
+                AuthorID = 2
+            },
+            new Post
+            {
+                Name = "B",
+                AuthorID = 2
+            });
+
             Seed(db, new Tag
             {
                 Name = "funny"

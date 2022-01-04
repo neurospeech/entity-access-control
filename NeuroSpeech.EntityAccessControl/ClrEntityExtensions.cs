@@ -14,105 +14,100 @@ namespace NeuroSpeech.EntityAccessControl
     public static class ClrEntityExtensions
     {
 
-        public static void SaveJsonOrValue(this PropertyInfo property, object target, object value)
+        public static void SaveJsonOrValue(this PropertyInfo property, object target, JsonElement value)
         {
             var type = property.PropertyType;
             type = Nullable.GetUnderlyingType(type) ?? type;
             property.SetValue(target, value.DeserializeJsonElement(type));
         }
 
-        public static object DeserializeJsonElement(this object target, Type type)
+        public static object? DeserializeJsonElement(this JsonElement target, Type type)
         {
             type = Nullable.GetUnderlyingType(type) ?? type;
-            if (target.GetType() == type)
-                return target;
-            var text = "";
-            if (target is JsonElement je)
+            if (target.ValueKind == JsonValueKind.Null)
             {
-                if (je.ValueKind == JsonValueKind.Null)
+                if(type.IsEnum)
                 {
-                    if(type.IsEnum)
-                    {
-                        return Enum.GetValues(type).GetValue(0)!;
-                    }
-                    return null!;
+                    return Enum.GetValues(type).GetValue(0)!;
                 }
-                if (type.IsEnum)
-                {
-                    if (je.ValueKind == JsonValueKind.Number)
-                        return Enum.ToObject(type, je.GetInt32());
-                    return Enum.Parse(type, je.GetString(), true);
-                }
-                switch (Type.GetTypeCode(type))
-                {
-                    case TypeCode.Boolean:
-                        if(je.ValueKind == JsonValueKind.Number)
-                        {
-                            return je.GetDouble() != 0;
-                        }
-                        if (je.ValueKind == JsonValueKind.True)
-                            return true;
-                        if (je.ValueKind == JsonValueKind.False)
-                            return false;
-                        break;
-                    case TypeCode.Int16:
-                        if(je.ValueKind == JsonValueKind.Number)
-                            return je.GetInt16();
-                        break;
-                    case TypeCode.Int32:
-                        if (je.ValueKind == JsonValueKind.Number)
-                            return je.GetInt32();
-                        break;
-                    case TypeCode.Int64:
-                        if (je.ValueKind == JsonValueKind.Number)
-                            return je.GetInt64();
-                        break;
-                    case TypeCode.UInt16:
-                        if (je.ValueKind == JsonValueKind.Number)
-                            return je.GetUInt16();
-                        break;
-                    case TypeCode.UInt32:
-                        if (je.ValueKind == JsonValueKind.Number)
-                            return je.GetUInt32();
-                        break;
-                    case TypeCode.UInt64:
-                        if (je.ValueKind == JsonValueKind.Number)
-                            return je.GetUInt64();
-                        break;
-                    case TypeCode.SByte:
-                        if (je.ValueKind == JsonValueKind.Number)
-                            return je.GetSByte();
-                        break;
-                    case TypeCode.Byte:
-                        if (je.ValueKind == JsonValueKind.Number)
-                            return je.GetByte();
-                        break;
-                    case TypeCode.Char:
-                        if (je.ValueKind == JsonValueKind.Number)
-                            return je.GetString()[0];
-                        break;
-                    case TypeCode.String:
-                        if (je.ValueKind == JsonValueKind.String)
-                            return je.GetString();
-                        return je.GetRawText();
-                    case TypeCode.Single:
-                        if (je.ValueKind == JsonValueKind.Number)
-                            return je.GetSingle();
-                        break;
-                    case TypeCode.Double:
-                        if (je.ValueKind == JsonValueKind.Number)
-                            return je.GetDouble();
-                        break;
-                    case TypeCode.DateTime:
-                        return DateTime.Parse(je.GetString());
-
-                }
-                text = je.GetString();
-                if(type == typeof(DateTimeOffset))
-                {
-                    return DateTimeOffset.Parse(text);
-                }
+                return null;
             }
+            if (type.IsEnum)
+            {
+                if (target.ValueKind == JsonValueKind.Number)
+                    return Enum.ToObject(type, target.GetInt32());
+                return Enum.Parse(type, target.GetString()!, true);
+            }
+            switch (Type.GetTypeCode(type))
+            {
+                case TypeCode.Boolean:
+                    if(target.ValueKind == JsonValueKind.Number)
+                    {
+                        return target.GetDouble() != 0;
+                    }
+                    if (target.ValueKind == JsonValueKind.True)
+                        return true;
+                    if (target.ValueKind == JsonValueKind.False)
+                        return false;
+                    break;
+                case TypeCode.Int16:
+                    if(target.ValueKind == JsonValueKind.Number)
+                        return target.GetInt16();
+                    break;
+                case TypeCode.Int32:
+                    if (target.ValueKind == JsonValueKind.Number)
+                        return target.GetInt32();
+                    break;
+                case TypeCode.Int64:
+                    if (target.ValueKind == JsonValueKind.Number)
+                        return target.GetInt64();
+                    break;
+                case TypeCode.UInt16:
+                    if (target.ValueKind == JsonValueKind.Number)
+                        return target.GetUInt16();
+                    break;
+                case TypeCode.UInt32:
+                    if (target.ValueKind == JsonValueKind.Number)
+                        return target.GetUInt32();
+                    break;
+                case TypeCode.UInt64:
+                    if (target.ValueKind == JsonValueKind.Number)
+                        return target.GetUInt64();
+                    break;
+                case TypeCode.SByte:
+                    if (target.ValueKind == JsonValueKind.Number)
+                        return target.GetSByte();
+                    break;
+                case TypeCode.Byte:
+                    if (target.ValueKind == JsonValueKind.Number)
+                        return target.GetByte();
+                    break;
+                case TypeCode.Char:
+                    if (target.ValueKind == JsonValueKind.Number)
+                        return target.GetInt16();
+                    break;
+                case TypeCode.String:
+                    if (target.ValueKind == JsonValueKind.String)
+                        return target.GetString()!;
+                    return target.GetRawText();
+                case TypeCode.Single:
+                    if (target.ValueKind == JsonValueKind.Number)
+                        return target.GetSingle();
+                    break;
+                case TypeCode.Double:
+                    if (target.ValueKind == JsonValueKind.Number)
+                        return target.GetDouble();
+                    break;
+                case TypeCode.DateTime:
+                    return DateTime.Parse(target.GetString()!);
+
+            }
+            var text = target.GetString()!;
+            if(type == typeof(DateTimeOffset))
+            {
+                return DateTimeOffset.Parse(text);
+            }
+            
             return Convert.ChangeType(text, type);
         }
 

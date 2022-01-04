@@ -154,41 +154,48 @@ namespace NeuroSpeech.EntityAccessControl
 
         protected async Task SetProperties(object entity, IEntityType entityType, JsonElement model)
         {
-            var properties = entityType.GetProperties();
-            var navProperties = entityType.GetNavigations();
+            var clrType = entityType.ClrType;
             foreach (var p in model.EnumerateObject())
             {
-                if (p.Value.ValueKind == JsonValueKind.Null)
-                    continue;
-                if (properties.TryGetFirst(p.Name, (x, name) => x.Name.EqualsIgnoreCase(name), out var property))
+                var property = clrType.StaticCacheGetOrCreate(p.Name,
+                    (x) => clrType.GetProperties().FirstOrDefault(x => x.Name.EqualsIgnoreCase(p.Name)));
+                if (property == null)
                 {
-                    property.PropertyInfo.SaveJsonOrValue(entity, p.Value);
                     continue;
                 }
-                if (navProperties.TryGetFirst(p.Name, (x, name) => x.Name.EqualsIgnoreCase(name), out var navProperty))
+                if (p.Value.ValueKind == JsonValueKind.Null)
                 {
+                    property.SetValue(entity, null);
+                    continue;
+                }
+                if (p.Value.ValueKind != JsonValueKind.Array && p.Value.ValueKind != JsonValueKind.Object)
+                {
+                    property.SaveJsonOrValue(entity, p.Value);
+                    continue;
+                }
+                var navProperty = clrType.StaticCacheGetOrCreate((p.Name, p.Name),
+                    (x) => entityType.GetNavigations().FirstOrDefault(x => x.Name.EqualsIgnoreCase(p.Name)));
 
-                    PropertyInfo navPropertyInfo = navProperty.PropertyInfo;
-                    if (!navProperty.IsCollection)
-                    {
-                        navPropertyInfo.SetValue(entity, await LoadOrCreateAsync(navPropertyInfo.PropertyType, p.Value, true));
-                        continue;
-                    }
+                PropertyInfo navPropertyInfo = navProperty.PropertyInfo;
+                if (!navProperty.IsCollection)
+                {
+                    navPropertyInfo.SetValue(entity, await LoadOrCreateAsync(navPropertyInfo.PropertyType, p.Value, true));
+                    continue;
+                }
 
-                    // what to do in collection...
-                    var pt = navProperty.TargetEntityType.ClrType;
+                // what to do in collection...
+                var pt = navProperty.TargetEntityType.ClrType;
 
-                    // get or create...
-                    var coll = (navPropertyInfo.GetOrCreateCollection(entity, pt) as System.Collections.IList)!;
-                    // this will be an array..
-                    if (p.Value.ValueKind != JsonValueKind.Array)
-                    {
-                        throw new InvalidOperationException($"{p.Name} should be an Array");
-                    }
-                    foreach (var item in p.Value.EnumerateArray())
-                    {
-                        coll.Add(await LoadOrCreateAsync(pt, item, true));
-                    }
+                // get or create...
+                var coll = (navPropertyInfo.GetOrCreateCollection(entity, pt) as System.Collections.IList)!;
+                // this will be an array..
+                if (p.Value.ValueKind != JsonValueKind.Array)
+                {
+                    throw new InvalidOperationException($"{p.Name} should be an Array");
+                }
+                foreach (var item in p.Value.EnumerateArray())
+                {
+                    coll.Add(await LoadOrCreateAsync(pt, item, true));
                 }
             }
         }
@@ -221,7 +228,7 @@ namespace NeuroSpeech.EntityAccessControl
                 return null;
             }
             var serializer = new EntityJsonSerializer(new EntitySerializationSettings {
-                GetTypeName = (x) => db.Model.FindEntityType(x)?.Name ?? x.FullName!,
+                GetTypeName = (x) => db.Model.FindEntityType(x)?.Name ?? ( x.IsAnonymous() ? x.Name : x.FullName!),
                 NamingPolicy = JsonNamingPolicy.CamelCase,
                 GetIgnoreCondition = db.GetIgnoreCondition
             });
@@ -232,7 +239,7 @@ namespace NeuroSpeech.EntityAccessControl
         {
             var serializer = new EntityJsonSerializer(new EntitySerializationSettings
             {
-                GetTypeName = (x) => db.Model.FindEntityType(x)?.Name ?? x.FullName!,
+                GetTypeName = (x) => db.Model.FindEntityType(x)?.Name ?? (x.IsAnonymous() ? x.Name : x.FullName!),
                 NamingPolicy = JsonNamingPolicy.CamelCase,
                 GetIgnoreCondition = db.GetIgnoreCondition
             });

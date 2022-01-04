@@ -33,6 +33,8 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
         private async Task SelectMethodAsync(IScopeServices services)
         {
             var db = services.GetRequiredService<AppDbContext>();
+
+
             var sdb = new SecureAppTestDbContext(db, 2, new AppTestDbContextRules());
 
             var controller = new TestEntityController(sdb);
@@ -40,7 +42,7 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
 
             var m = System.Text.Json.JsonSerializer.Serialize(new object[] {
                 new {
-                    where = new object[] { "x => x.PostID > @0", 1 }
+                    where = new object[] { "x => x.PostID > @0", 0 }
                 },
                 new
                 {
@@ -54,6 +56,8 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
             var r = await controller.Methods(name,
                 methods: m
                 );
+
+            Assert.IsNotNull(r);
         }
 
         private async Task SelectAsync(IScopeServices services)
