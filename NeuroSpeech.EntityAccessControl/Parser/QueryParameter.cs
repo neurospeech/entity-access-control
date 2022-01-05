@@ -1,15 +1,52 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Text.Json;
 
 namespace NeuroSpeech.EntityAccessControl
 {
-    public readonly struct QueryParameter
+    public readonly struct QueryParameter: IEnumerable<object>
     {
         private readonly JsonElement element;
 
         public QueryParameter(System.Text.Json.JsonElement element)
         {
             this.element = element;
+        }
+
+        public IEnumerator<object> GetEnumerator()
+        {
+            foreach (var item in element.EnumerateArray())
+            {
+                switch (item.ValueKind)
+                {
+                    case JsonValueKind.Undefined:
+                        break;
+                    case JsonValueKind.Object:
+                        break;
+                    case JsonValueKind.Array:
+                        break;
+                    case JsonValueKind.String:
+                        yield return item.GetString()!;
+                        break;
+                    case JsonValueKind.Number:
+                        yield return item.GetInt64()!;
+                        break;
+                    case JsonValueKind.True:
+                        yield return true;
+                        break;
+                    case JsonValueKind.False:
+                        yield return false;
+                        break;
+                    case JsonValueKind.Null:
+                        break;
+                }
+            }
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
 
         public static implicit operator long (QueryParameter q)
