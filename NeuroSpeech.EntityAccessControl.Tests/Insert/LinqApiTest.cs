@@ -30,6 +30,41 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
             await SelectMethodAsync(scope);
         }
 
+        [TestMethod]
+        public async Task SelectContainsAsync()
+        {
+            using var scope = CreateScope();
+
+            var db = scope.GetRequiredService<AppDbContext>();
+
+
+            var sdb = new SecureAppTestDbContext(db, 2, new AppTestDbContextRules());
+
+            var controller = new TestEntityController(sdb);
+            var name = "NeuroSpeech.EntityAccessControl.Tests.Model.Post";
+
+            var m = System.Text.Json.JsonSerializer.Serialize(new object[] {
+                new {
+                    where = new object[] { "x => x.PostID > @0 && @1.Contains(x.PostID)", 0 , new long[] { 
+                        1,2,3,4
+                    } }
+                },
+                new
+                {
+                    include = new object[] { "Tags" }
+                },
+                new {
+                    select = new object[] { "x => new { x.PostID, x.Tags }" }
+                }
+            });
+
+            var r = await controller.Methods(name,
+                methods: m
+                );
+
+            Assert.IsNotNull(r);
+        }
+
         private async Task SelectMethodAsync(IScopeServices services)
         {
             var db = services.GetRequiredService<AppDbContext>();
