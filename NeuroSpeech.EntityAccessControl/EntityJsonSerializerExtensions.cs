@@ -50,6 +50,10 @@ namespace NeuroSpeech.EntityAccessControl
 
         public JsonObject? Serialize(object? entity)
         {
+            if (entity == null)
+            {
+                return null;
+            }
             var r = SerializeToJson(entity);
             while(pending.TryDequeue(out var a))
             {
@@ -58,10 +62,8 @@ namespace NeuroSpeech.EntityAccessControl
             return r;
         }
 
-        private JsonObject? SerializeToJson(object? e)
+        private JsonObject? SerializeToJson(object e)
         {
-            if (e == null)
-                return null;
             if (added.TryGetValue(e, out var existingIndex))
             {
                 return new JsonObject() {
@@ -93,10 +95,91 @@ namespace NeuroSpeech.EntityAccessControl
                     {
                         continue;
                     }                    
-                    r[name] = null!;
+                    r[name] = null;
                     continue;
                 }
-                if (v is not string && v is System.Collections.IEnumerable coll)
+                var typeCode = Type.GetTypeCode(propertyType);
+                switch (typeCode)
+                {
+                    case TypeCode.Boolean:
+                        r[name] = JsonValue.Create((bool)v);
+                        continue;
+                    case TypeCode.Char:
+                        r[name] = JsonValue.Create((char)v);
+                        continue;
+                    case TypeCode.SByte:
+                        r[name] = JsonValue.Create((sbyte)v);
+                        continue;
+                    case TypeCode.Byte:
+                        r[name] = JsonValue.Create((byte)v);
+                        continue;
+                    case TypeCode.Int16:
+                        r[name] = JsonValue.Create((Int16)v);
+                        continue;
+                    case TypeCode.UInt16:
+                        r[name] = JsonValue.Create((UInt16)v);
+                        continue;
+                    case TypeCode.Int32:
+                        if (propertyType.IsEnum)
+                        {
+                            r[name] = propertyType.GetEnumName(v)!;
+                            continue;
+                        }
+                        r[name] = JsonValue.Create((Int32)v);
+                        continue;
+                    case TypeCode.UInt32:
+                        r[name] = JsonValue.Create((UInt32)v);
+                        continue;
+                    case TypeCode.Int64:
+                        r[name] = JsonValue.Create((Int64)v);
+                        continue;
+                    case TypeCode.UInt64:
+                        r[name] = JsonValue.Create((UInt64)v);
+                        continue;
+                    case TypeCode.Single:
+                        r[name] = JsonValue.Create((Single)v);
+                        continue;
+                    case TypeCode.Double:
+                        r[name] = JsonValue.Create((Double)v);
+                        continue;
+                    case TypeCode.Decimal:
+                        r[name] = JsonValue.Create((Decimal)v);
+                        continue;
+                    case TypeCode.DateTime:
+                        r[name] = JsonValue.Create((DateTime)v);
+                        continue;
+                    case TypeCode.String:
+                        r[name] = JsonValue.Create((string)v);
+                        continue;
+                }
+                if (propertyType == typeof(DateTimeOffset))
+                {
+                    r[name] = ((DateTimeOffset)v).UtcDateTime.ToString(DateFormat);
+                    continue;
+                }
+                if (v is JsonNode jn)
+                {
+                    r[name] = jn;
+                    continue;
+                }
+                if (v is System.Collections.IDictionary vd)
+                {
+                    var jd = new JsonObject();
+                    r[name] = jd;
+                    pending.Enqueue(() => {
+                        var ve = vd.GetEnumerator();
+                        while(ve.MoveNext())
+                        {
+                            if (ve.Value == null) {
+                                jd[ve.Key.ToString()!] = null;
+                                continue;
+                            }
+                            jd[ve.Key.ToString()!] = SerializeToJson(ve.Value);
+                        }
+                    });
+                    continue;
+                }
+                if (v is System.Collections.IEnumerable coll)
                 {
                     var list = new JsonArray();
                     r[name] = list;
@@ -104,41 +187,16 @@ namespace NeuroSpeech.EntityAccessControl
                     {
                         foreach (var c in coll)
                         {
-                            var jc = SerializeToJson(c);
-                            if (jc != null)
+                            if (c != null)
                             {
+                                var jc = SerializeToJson(c);
                                 list.Add(jc);
                             }
                         }
                     });
                     continue;
                 }
-                var t = p.PropertyType;
-                t = Nullable.GetUnderlyingType(t) ?? t;
-                if (t.IsEnum)
-                {
-                    r[name] = t.GetEnumName(v)!;
-                    continue;
-                }
-                if (t.IsValueType || t == typeof(string))
-                {
-                    switch (v)
-                    {
-                        case DateTime dt:
-                            r[name] = dt.ToString(DateFormat);
-                            continue;
-                        case DateTimeOffset dto:
-                            r[name] = dto.UtcDateTime.ToString(DateFormat);
-                            continue;
-                    }
-                    r[name] = JsonValue.Create(v);
-                    continue;
-                }
-                var sv = SerializeToJson(v);
-                if (sv != null)
-                {
-                    r[name] = sv;
-                }
+                r[name] = SerializeToJson(v);
             }
             return r;
         }
