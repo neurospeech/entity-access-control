@@ -478,7 +478,8 @@ export class Model<T extends IClrEntity> {
             [FromQuery] string methods,
             [FromQuery] int start = 0,
             [FromQuery] int size = 200,
-            [FromQuery] bool splitInclude = true
+            [FromQuery] bool splitInclude = true,
+            CancellationToken cancellationToken = default
             )
         {
             return PostMethod(entity, new MethodOptions { 
@@ -486,14 +487,15 @@ export class Model<T extends IClrEntity> {
                 Start = start,
                 Size = size,
                 SplitInclude = splitInclude
-            });
+            }, cancellationToken);
         }
 
 
         [HttpPost("methods/{entity}")]
         public Task<IActionResult> PostMethod(
             [FromRoute] string entity,
-            [FromBody] MethodOptions model
+            [FromBody] MethodOptions model,
+            CancellationToken cancellationToken = default
             )
         {
             var methods = model.Methods;
@@ -551,7 +553,7 @@ export class Model<T extends IClrEntity> {
             }
             return this.GetInstanceGenericMethod(nameof(InvokeAsync), t.ClrType)
                 .As<Task<IActionResult>>()
-                .Invoke(methodList, start, size, splitInclude && hasInclude, this.HttpContext?.RequestAborted ?? default);
+                .Invoke(methodList, start, size, splitInclude && hasInclude, cancellationToken);
         }
 
         public async Task<IActionResult> InvokeAsync<T>(
