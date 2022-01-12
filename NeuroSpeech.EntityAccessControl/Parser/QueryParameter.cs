@@ -1,10 +1,19 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Text.Json;
 
 namespace NeuroSpeech.EntityAccessControl
 {
+    public static class CastAs
+    {
+        public static string String(int n) => n.ToString();
+
+        internal static MethodInfo StringMethod = typeof(CastAs)
+            .GetRuntimeMethod(nameof(StringMethod), new Type[] { typeof(int) })!;
+    }
+
     public readonly struct QueryParameter: IEnumerable<object>
     {
         private readonly JsonElement element;

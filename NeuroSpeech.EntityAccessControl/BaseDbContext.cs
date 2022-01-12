@@ -43,6 +43,12 @@ namespace NeuroSpeech.EntityAccessControl
             this.RaiseEvents = events != null;
         }
 
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+            modelBuilder.HasDbFunction(CastAs.StringMethod).HasTranslation(a => a.ElementAt(0));
+        }
+
         public bool RaiseEvents { get; set; }
 
         private Task OnInsertingAsync(Type type, object entity)
