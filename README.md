@@ -1,7 +1,7 @@
 # Entity Access Control for Entity Framework Core
 Entity Access Control provides secure way to expose IQueryable to REST Clients with simple security rules in the form of lambda expressions. It is better alternative than OData and GraphQL, as you can use lambda expressions (arrow functions) in JavaScript to easily query the database.
 
-![Entity Acess Control](https://github.com/neurospeech/entity-access-control/blob/mainb1c72b70f240e34abe47f778129dbdec301d6d5a/EntityAccessControl.png)
+![Entity Acess Control](https://github.com/neurospeech/entity-access-control/blob/main/EntityAccessControl.png?raw=true)
 
 ## Features
 1. Lambda Expressions for Security Rules.
