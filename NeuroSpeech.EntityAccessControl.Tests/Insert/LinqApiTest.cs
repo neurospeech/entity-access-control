@@ -31,6 +31,39 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
         }
 
         [TestMethod]
+        public async Task SelectEnumAsync()
+        {
+            using var scope = CreateScope();
+
+            var db = scope.GetRequiredService<AppDbContext>();
+
+
+            var sdb = new SecureAppTestDbContext(db, 2, new AppTestDbContextRules());
+
+            var controller = new TestEntityController(sdb);
+            var name = "NeuroSpeech.EntityAccessControl.Tests.Model.Post";
+
+            var m = System.Text.Json.JsonSerializer.Serialize(new object[] {
+                new {
+                    where = new object[] { "x => CastAs.String(x.PostType) == @0", "Page" }
+                },
+                new
+                {
+                    include = new object[] { "Tags" }
+                },
+                new {
+                    select = new object[] { "x => new { x.PostID, x.Tags }" }
+                }
+            });
+
+            var r = await controller.Methods(name,
+                methods: m
+                );
+
+            Assert.IsNotNull(r);
+        }
+
+        [TestMethod]
         public async Task SelectContainsAsync()
         {
             using var scope = CreateScope();

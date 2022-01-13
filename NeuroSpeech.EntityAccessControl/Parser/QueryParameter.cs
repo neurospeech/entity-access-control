@@ -8,10 +8,12 @@ namespace NeuroSpeech.EntityAccessControl
 {
     public static class CastAs
     {
+        public static string String(object n) => n.ToString()!;
+
         public static string String(int n) => n.ToString();
 
         internal static MethodInfo StringMethod = typeof(CastAs)
-            .GetRuntimeMethod(nameof(StringMethod), new Type[] { typeof(int) })!;
+            .GetRuntimeMethod(nameof(String), new Type[] { typeof(int) })!;
     }
 
     public readonly struct QueryParameter: IEnumerable<object>

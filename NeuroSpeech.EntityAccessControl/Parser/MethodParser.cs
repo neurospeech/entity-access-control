@@ -120,6 +120,7 @@ namespace NeuroSpeech.EntityAccessControl.Parser
                     var vn = $"var p{finalIndex} = args[{finalIndex}];";
                     sb.AppendLine(vn);
                     code = code.Replace(pn, $"p{finalIndex}");
+                    code = code.Replace("CastAs.String(", "CastAs.String((int)");
                 }
                 exec.AppendLine($".{m.Method}({code})");
             }

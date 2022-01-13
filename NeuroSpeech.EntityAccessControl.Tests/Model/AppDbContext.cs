@@ -58,6 +58,8 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Model
         [MaxLength(100)]
         public string Name { get; set; }
 
+        public PostType PostType { get; set; }
+
 
         public long AuthorID { get; set; }
 
@@ -70,6 +72,12 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Model
 
         public string AdminComments { get; set; }
 
+    }
+
+    public enum PostType
+    {
+        Page,
+        Blog
     }
 
     [Table("PostTags")]

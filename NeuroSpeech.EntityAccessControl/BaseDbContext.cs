@@ -1,5 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Concurrent;
@@ -46,7 +48,15 @@ namespace NeuroSpeech.EntityAccessControl
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-            modelBuilder.HasDbFunction(CastAs.StringMethod).HasTranslation(a => a.ElementAt(0));
+            modelBuilder.HasDbFunction(CastAs.StringMethod)
+                .HasTranslation(a =>
+                {
+                    var p = a.ElementAt(0);
+                    if (p is SqlUnaryExpression u)
+                        return new SqlUnaryExpression(System.Linq.Expressions.ExpressionType.Convert,
+                            u.Operand, typeof(string), new IntTypeMapping("nvarchar(50)", System.Data.DbType.String));
+                    return new SqlUnaryExpression(System.Linq.Expressions.ExpressionType.Convert, p, typeof(string), p.TypeMapping);
+                });
         }
 
         public bool RaiseEvents { get; set; }
