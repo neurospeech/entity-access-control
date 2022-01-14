@@ -44,16 +44,9 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
             var name = "NeuroSpeech.EntityAccessControl.Tests.Model.Post";
 
             var m = System.Text.Json.JsonSerializer.Serialize(new object[] {
-                new {
-                    where = new object[] { "x => CastAs.String(x.PostType) == @0", "Page" }
-                },
-                new
-                {
-                    include = new object[] { "Tags" }
-                },
-                new {
-                    select = new object[] { "x => new { x.PostID, x.Tags }" }
-                }
+                new object[] {"where", "x => CastAs.String(x.PostType) == @0", "Page" },
+                new object[] {"include", "Tags" },
+                new object[] { "select", "x => new { x.PostID, x.Tags }" }
             });
 
             var r = await controller.Methods(name,
@@ -77,18 +70,11 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
             var name = "NeuroSpeech.EntityAccessControl.Tests.Model.Post";
 
             var m = System.Text.Json.JsonSerializer.Serialize(new object[] {
-                new {
-                    where = new object[] { "x => x.PostID > @0 && @1.Contains(x.PostID)", 0 , new long[] { 
+                new object[] { "where", "x => x.PostID > @0 && @1.Contains(x.PostID)", 0 , new long[] {
                         1,2,3,4
-                    } }
-                },
-                new
-                {
-                    include = new object[] { "Tags" }
-                },
-                new {
-                    select = new object[] { "x => new { x.PostID, x.Tags }" }
-                }
+                    } },
+                new object[] {"include", "Tags" },
+                new object[] {"select", "x => new { x.PostID, x.Tags }" }
             });
 
             var r = await controller.Methods(name,
@@ -109,16 +95,9 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
             var name = "NeuroSpeech.EntityAccessControl.Tests.Model.Post";
 
             var m = System.Text.Json.JsonSerializer.Serialize(new object[] {
-                new {
-                    where = new object[] { "x => x.PostID > @0", 0 }
-                },
-                new
-                {
-                    include = new object[] { "Tags" }
-                },
-                new {
-                    select = new object[] { "x => new { x.PostID, x.Tags }" }
-                }
+                new object[] {"where", "x => x.PostID > @0", 0 },
+                new object[] {"include", "Tags" },
+                new object[] {"select", "x => new { x.PostID, x.Tags }" }
             });
 
             var r = await controller.Methods(name,

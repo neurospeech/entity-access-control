@@ -521,51 +521,68 @@ export class Model<T extends IClrEntity> {
             {
                 options.Trace = TraceQuery;
             }
-            foreach(var method in JsonDocument.Parse(methods).RootElement.EnumerateArray())
+
+            var root = JsonDocument.Parse(methods).RootElement;
+
+            foreach(var method in root.EnumerateArray())
             {
                 LinqMethod lm = new LinqMethod();
-                foreach(var property in method.EnumerateObject())
-                {
-                    lm.Expression = property.Value[0].ToString();
-                    for (int i = 1; i < property.Value.GetArrayLength(); i++)
-                    {
-                        lm.Parameters.Add(new QueryParameter(property.Value[i]));
-                    }
 
-                    switch (property.Name) {
-                        case "select":
-                            lm.Method = "Select";
-                            hasSelect = true;
-                            break;
-                        case "where":
-                            lm.Method = "Where";
-                            break;
-                        case "orderBy":
-                            lm.Method = "OrderBy";
-                            break;
-                        case "orderByDescending":
-                            lm.Method = "OrderByDescending";
-                            break;
-                        case "thenBy":
-                            lm.Method = "ThenBy";
-                            break;
-                        case "thenByDescending":
-                            lm.Method = "ThenByDescending";
-                            break;
-                        case "include":
-                            lm.Method = "Include";
-                            hasInclude = true;
-                            lm.Expression = System.Text.Json.JsonSerializer.Serialize(lm.Expression);
-                            break;
-                        case "thenInclude":
-                            lm.Method = "ThenInclude";
-                            lm.Expression = System.Text.Json.JsonSerializer.Serialize(lm.Expression);
-                            break;
-                        default:
-                            continue;
-                    }
-                    methodList.Add(lm);
+                if (method.ValueKind != JsonValueKind.Array)
+                {
+                    throw new NotSupportedException($"Each method should be an array with format [name, query, ... parameters ]");
                 }
+
+                int n = method.GetArrayLength();
+                if (n < 2)
+                {
+                    throw new ArgumentException($"Method Siganture must have two elements atleast");
+                }
+
+                string name = method[0].GetString()!;
+
+                lm.Expression = method[1].GetString()!;
+
+                for (int i = 2; i < n; i++)
+                {
+                    lm.Parameters.Add(new QueryParameter(method[i]));
+                }
+
+                switch (name)
+                {
+                    case "select":
+                        lm.Method = "Select";
+                        hasSelect = true;
+                        break;
+                    case "where":
+                        lm.Method = "Where";
+                        break;
+                    case "orderBy":
+                        lm.Method = "OrderBy";
+                        break;
+                    case "orderByDescending":
+                        lm.Method = "OrderByDescending";
+                        break;
+                    case "thenBy":
+                        lm.Method = "ThenBy";
+                        break;
+                    case "thenByDescending":
+                        lm.Method = "ThenByDescending";
+                        break;
+                    case "include":
+                        lm.Method = "Include";
+                        hasInclude = true;
+                        lm.Expression = System.Text.Json.JsonSerializer.Serialize(lm.Expression);
+                        break;
+                    case "thenInclude":
+                        lm.Method = "ThenInclude";
+                        lm.Expression = System.Text.Json.JsonSerializer.Serialize(lm.Expression);
+                        break;
+                    default:
+                        continue;
+                }
+
+                methodList.Add(lm);
             }
             options.SplitInclude = hasInclude && !hasSelect;
             return this.GetInstanceGenericMethod(nameof(InvokeAsync), t.ClrType)
