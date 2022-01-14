@@ -321,6 +321,12 @@ namespace NeuroSpeech.EntityAccessControl.Internal
             {
                 return genericMethod.CreateDelegate<Func<T, T1, T2, T3, T4, T5, RT>>()(target, p1, p2, p3, p4, p5);
             }
+
+            public RT Invoke<T1, T2, T3, T4, T5, T6>(T1 p1, T2 p2, T3 p3, T4 p4, T5 p5, T6 p6)
+            {
+                return genericMethod.CreateDelegate<Func<T, T1, T2, T3, T4, T5, T6, RT>>()(target, p1, p2, p3, p4, p5, p6);
+            }
+
         }
 
         public static GenericMethodWithTarget<T> GetInstanceGenericMethod<T>(this T target, string methodName, Type type)

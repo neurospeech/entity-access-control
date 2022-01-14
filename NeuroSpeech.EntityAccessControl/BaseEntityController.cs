@@ -470,6 +470,7 @@ export class Model<T extends IClrEntity> {
             public int Start { get; set; } = 0;
             public int Size { get; set; } = 200;
             public bool SplitInclude { get; set; } = true;
+            public bool Trace { get; set; }
         }
 
         [HttpGet("methods/{entity}")]
@@ -479,6 +480,7 @@ export class Model<T extends IClrEntity> {
             [FromQuery] int start = 0,
             [FromQuery] int size = 200,
             [FromQuery] bool splitInclude = true,
+            [FromQuery] bool trace = false,
             CancellationToken cancellationToken = default
             )
         {
@@ -486,7 +488,8 @@ export class Model<T extends IClrEntity> {
                 Methods = methods,
                 Start = start,
                 Size = size,
-                SplitInclude = splitInclude
+                SplitInclude = splitInclude,
+                Trace = trace
             }, cancellationToken);
         }
 
@@ -502,6 +505,7 @@ export class Model<T extends IClrEntity> {
             var start = model.Start;
             var size = model.Size;
             var splitInclude = model.SplitInclude;
+            var trace = model.Trace;
             var t = FindEntityType(entity);
             bool hasInclude = false;
             List<LinqMethod> methodList = new List<LinqMethod>();
@@ -553,13 +557,14 @@ export class Model<T extends IClrEntity> {
             }
             return this.GetInstanceGenericMethod(nameof(InvokeAsync), t.ClrType)
                 .As<Task<IActionResult>>()
-                .Invoke(methodList, start, size, splitInclude && hasInclude, cancellationToken);
+                .Invoke(methodList, start, size, splitInclude && hasInclude, trace, cancellationToken);
         }
 
         public async Task<IActionResult> InvokeAsync<T>(
             List<LinqMethod> methods,
             int start, int size,
             bool splitInclude,
+            bool trace,
             CancellationToken cancelToken)
             where T : class
         {

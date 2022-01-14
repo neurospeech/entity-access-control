@@ -49,14 +49,38 @@ namespace NeuroSpeech.EntityAccessControl.Parser
 
     }
 
+    public class LinqMethodParameters<T>
+    {
+        public readonly IQueryContext<T> Query;
+        public readonly List<LinqMethod> Methods;
+        public readonly int Start;
+        public readonly int Size;
+        public readonly bool SplitInclude;
+        public readonly Action<string>? Trace;
+        public readonly CancellationToken CancelToken;
+
+        public LinqMethodParameters(
+            IQueryContext<T> query,
+            List<LinqMethod> methods,
+            int start,
+            int size,
+            bool splitInclude,
+            Action<string>? trace = null,
+            CancellationToken cancelToken = default
+            )
+        {
+            this.Query = query;
+            this.Methods = methods;
+            this.Start = start;
+            this.Size = size;
+            this.SplitInclude = splitInclude;
+            this.Trace = trace;
+            this.CancelToken = cancelToken;
+        }
+    }
+
     public delegate Task<LinqResult>
-        LinqMethodDelegate<T>(
-        IQueryContext<T> query, 
-        List<QueryParameter> plist, 
-        int start, 
-        int size,
-        bool splitInclude,
-        CancellationToken cancelToken);
+        LinqMethodDelegate<T>(LinqMethodParameters<T> args);
 
     public class MethodParser
     {
@@ -68,17 +92,11 @@ namespace NeuroSpeech.EntityAccessControl.Parser
         private ConcurrentDictionary<string, Task> cache
             = new ConcurrentDictionary<string, Task>();
 
-        public async Task<LinqResult> Parse<T>(
-            IQueryContext<T> q, 
-            List<LinqMethod> methods, 
-            int start, 
-            int size,
-            bool splitInclude,
-            CancellationToken cancelToken)
+        public async Task<LinqResult> Parse<T>(LinqMethodParameters<T> args)
         {
-            var d = await Parse<T>(new LinqSection(typeof(T), methods));
+            var d = await Parse<T>(new LinqSection(typeof(T), args.Methods));
             var list = new List<QueryParameter>();
-            foreach(var m in methods)
+            foreach(var m in args.Methods)
             {
                 foreach(var p in m.Parameters)
                 {
