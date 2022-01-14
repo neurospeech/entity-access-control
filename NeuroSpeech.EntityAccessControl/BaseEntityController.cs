@@ -44,7 +44,7 @@ namespace NeuroSpeech.EntityAccessControl
                 .MakeGenericMethod(type.ClrType)!.Invoke(this, null) as IQueryable;
         }
 
-        protected async Task<object> LoadOrCreateAsync(Type type,
+        protected virtual async Task<object> LoadOrCreateAsync(Type type,
             JsonElement body, 
             bool isChild = false,
             CancellationToken cancellationToken = default)
@@ -90,7 +90,7 @@ namespace NeuroSpeech.EntityAccessControl
                 db.Add(e);
             }
             
-            await SetProperties(e, t, body);
+            await LoadPropertiesAsync(e, t, body);
 
             if (!body.TryGetProperty("$navigations", out var nav))
                 return e!;
@@ -152,13 +152,13 @@ namespace NeuroSpeech.EntityAccessControl
 
         }
 
-        protected async Task SetProperties(object entity, IEntityType entityType, JsonElement model)
+        protected virtual async Task LoadPropertiesAsync(object entity, IEntityType entityType, JsonElement model)
         {
             var clrType = entityType.ClrType;
             foreach (var p in model.EnumerateObject())
             {
                 var property = clrType.StaticCacheGetOrCreate(p.Name,
-                    (x) => clrType.GetProperties().FirstOrDefault(x => x.Name.EqualsIgnoreCase(p.Name)));
+                    () => clrType.GetProperties().FirstOrDefault(x => x.Name.EqualsIgnoreCase(p.Name)));
                 if (property == null)
                 {
                     continue;
@@ -174,7 +174,7 @@ namespace NeuroSpeech.EntityAccessControl
                     continue;
                 }
                 var navProperty = clrType.StaticCacheGetOrCreate((p.Name, p.Name),
-                    (x) => entityType.GetNavigations().FirstOrDefault(x => x.Name.EqualsIgnoreCase(p.Name)));
+                    () => entityType.GetNavigations().FirstOrDefault(x => x.Name.EqualsIgnoreCase(p.Name)));
 
                 PropertyInfo navPropertyInfo = navProperty.PropertyInfo;
                 if (!navProperty.IsCollection)
@@ -214,7 +214,7 @@ namespace NeuroSpeech.EntityAccessControl
             if (type == null)
                 throw new ArgumentNullException($"Type cannot be null");
             var t = db.GetType();
-            var e = t.StaticCacheGetOrCreate(type, key => db.Model.GetEntityTypes().FirstOrDefault(x => x.Name.EqualsIgnoreCase(type)));
+            var e = t.StaticCacheGetOrCreate(type, () => db.Model.GetEntityTypes().FirstOrDefault(x => x.Name.EqualsIgnoreCase(type)));
             if (e == null)
                 throw new ArgumentOutOfRangeException($"Entity {type} not found");
             return e;
@@ -458,7 +458,7 @@ export class Model<T extends IClrEntity> {
                     }
                     continue;
                 }
-                await SetProperties(entity, t, model.Update);
+                await LoadPropertiesAsync(entity, t, model.Update);
             }
             await db.SaveChangesAsync();
             return Ok(new { });

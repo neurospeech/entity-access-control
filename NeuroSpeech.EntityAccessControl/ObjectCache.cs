@@ -18,9 +18,11 @@ namespace NeuroSpeech.EntityAccessControl
             return Cache<T, TV>.CacheDictionary.GetOrAdd(key, factory);
         }
 
-        public static TV StaticCacheGetOrCreate<T, T2, TV>(this T primary, T2 secondary, Func<T, TV> factory)
+        public static TV StaticCacheGetOrCreate<T2, TV>(this Type primary, T2 secondary, Func<TV> factory)
         {
-            return Cache<(T, T2), TV>.CacheDictionary.GetOrAdd((primary, secondary), (x) => factory(x.Item1));
+
+            var key = string.Concat(primary.FullName, secondary.ToString());
+            return Cache<string, TV>.CacheDictionary.GetOrAdd(key, (x) => factory());
         }
 
     }
