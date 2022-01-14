@@ -493,6 +493,11 @@ export class Model<T extends IClrEntity> {
             }, cancellationToken);
         }
 
+        protected virtual void TraceQuery(string text)
+        {
+            System.Diagnostics.Debug.WriteLine(text);
+        }
+
 
         [HttpPost("methods/{entity}")]
         public Task<IActionResult> PostMethod(
@@ -507,8 +512,15 @@ export class Model<T extends IClrEntity> {
             var splitInclude = model.SplitInclude;
             var trace = model.Trace;
             var t = FindEntityType(entity);
-            bool hasInclude = false;
+            var hasSelect = false;
+            var hasInclude = false;
+            var options = new LinqMethodOptions();
             List<LinqMethod> methodList = new List<LinqMethod>();
+            options.Methods = methodList;
+            if (model.Trace)
+            {
+                options.Trace = TraceQuery;
+            }
             foreach(var method in JsonDocument.Parse(methods).RootElement.EnumerateArray())
             {
                 LinqMethod lm = new LinqMethod();
@@ -517,13 +529,13 @@ export class Model<T extends IClrEntity> {
                     lm.Expression = property.Value[0].ToString();
                     for (int i = 1; i < property.Value.GetArrayLength(); i++)
                     {
-                        lm.Parameters.Add(property.Value[i]);
+                        lm.Parameters.Add(new QueryParameter(property.Value[i]));
                     }
 
                     switch (property.Name) {
                         case "select":
                             lm.Method = "Select";
-                            splitInclude = false;
+                            hasSelect = true;
                             break;
                         case "where":
                             lm.Method = "Where";
@@ -555,22 +567,18 @@ export class Model<T extends IClrEntity> {
                     methodList.Add(lm);
                 }
             }
+            options.SplitInclude = hasInclude && !hasSelect;
             return this.GetInstanceGenericMethod(nameof(InvokeAsync), t.ClrType)
                 .As<Task<IActionResult>>()
-                .Invoke(methodList, start, size, splitInclude && hasInclude, trace, cancellationToken);
+                .Invoke(options);
         }
 
         public async Task<IActionResult> InvokeAsync<T>(
-            List<LinqMethod> methods,
-            int start, int size,
-            bool splitInclude,
-            bool trace,
-            CancellationToken cancelToken)
+            LinqMethodOptions options)
             where T : class
         {
             var q = new QueryContext<T>(db, db.Query<T>()!);
-
-            var result = await MethodParser.Instance.Parse<T>(q, methods, start, size, splitInclude, cancelToken);
+            var result = await MethodParser.Instance.Parse<T>(q, options);
             var json = SerializeList(result.Items.ToList());
             return Json(new { 
                 items = json,

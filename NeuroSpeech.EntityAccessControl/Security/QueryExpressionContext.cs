@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace NeuroSpeech.EntityAccessControl
@@ -82,12 +83,17 @@ namespace NeuroSpeech.EntityAccessControl
             throw new NotImplementedException();
         }
 
-        public Task<int> CountAsync()
+        public string ToQueryString()
         {
             throw new NotImplementedException();
         }
 
-        public Task<List<T>> ToListAsync()
+        public Task<int> CountAsync(CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<List<T>> ToListAsync(CancellationToken cancellationToken)
         {
             throw new NotImplementedException();
         }

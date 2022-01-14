@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace NeuroSpeech.EntityAccessControl
@@ -24,9 +25,11 @@ namespace NeuroSpeech.EntityAccessControl
 
         IQueryContext<T> AsSplitQuery();
 
-        Task<int> CountAsync();
+        string ToQueryString();
 
-        Task<List<T>> ToListAsync();
+        Task<int> CountAsync(CancellationToken cancellationToken = default);
+
+        Task<List<T>> ToListAsync(CancellationToken cancellationToken = default);
 
         IOrderedQueryContext<T> OrderBy(Expression<Func<T, object>> expression);
 
