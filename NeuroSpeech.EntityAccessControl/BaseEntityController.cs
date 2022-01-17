@@ -583,7 +583,10 @@ export class Model<T extends IClrEntity> {
 
                 methodList.Add(lm);
             }
-            options.SplitInclude = hasInclude && !hasSelect;
+            if (options.SplitInclude)
+            {
+                options.SplitInclude = hasInclude && !hasSelect;
+            }
             return this.GetInstanceGenericMethod(nameof(InvokeAsync), t.ClrType)
                 .As<Task<IActionResult>>()
                 .Invoke(options);
