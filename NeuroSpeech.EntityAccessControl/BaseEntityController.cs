@@ -377,12 +377,33 @@ export class Model<T extends IClrEntity> {
             [FromBody] JsonElement body
             )
         {
+            if (body.ValueKind == JsonValueKind.Array)
+                return await SaveMultiple(body);
             if (!body.TryGetStringProperty("$type", out var typeName))
                 throw new KeyNotFoundException($"$type not found");
             var t = FindEntityType(typeName);
             var e = await LoadOrCreateAsync(t.ClrType, body);
             await db.SaveChangesAsync();
             return Json(Serialize(e));
+        }
+
+
+        [HttpPut("multiple")]
+        [HttpPost("multiple")]
+        public async Task<IActionResult> SaveMultiple(
+            [FromBody] JsonElement model
+            )
+        {
+            List<object> results = new List<object>();
+            foreach (var body in model.EnumerateArray())
+            {
+                if (!body.TryGetStringProperty("$type", out var typeName))
+                    throw new KeyNotFoundException($"$type not found");
+                var t = FindEntityType(typeName);
+                await LoadOrCreateAsync(t.ClrType, body);
+            }
+            await db.SaveChangesAsync();
+            return Json(SerializeList(results));
         }
 
         [HttpDelete]
