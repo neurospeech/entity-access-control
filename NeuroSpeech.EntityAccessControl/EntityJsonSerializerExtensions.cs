@@ -146,7 +146,7 @@ namespace NeuroSpeech.EntityAccessControl
                         r[name] = JsonValue.Create((Decimal)v);
                         continue;
                     case TypeCode.DateTime:
-                        r[name] = JsonValue.Create((DateTime)v);
+                        r[name] = JsonValue.Create(((DateTime)v).ToString(DateFormat));
                         continue;
                     case TypeCode.String:
                         r[name] = JsonValue.Create((string)v);
