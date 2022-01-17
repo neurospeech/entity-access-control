@@ -507,16 +507,15 @@ export class Model<T extends IClrEntity> {
             )
         {
             var methods = model.Methods;
-            var start = model.Start;
-            var size = model.Size;
-            var splitInclude = model.SplitInclude;
-            var trace = model.Trace;
             var t = FindEntityType(entity);
             var hasSelect = false;
             var hasInclude = false;
             var options = new LinqMethodOptions();
             List<LinqMethod> methodList = new List<LinqMethod>();
             options.Methods = methodList;
+            options.Start = model.Start;
+            options.Size = model.Size;
+            options.SplitInclude = model.SplitInclude;
             if (model.Trace)
             {
                 options.Trace = TraceQuery;
