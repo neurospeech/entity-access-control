@@ -62,6 +62,29 @@ namespace NeuroSpeech.EntityAccessControl
             return r;
         }
 
+        public JsonObject? SerializeList<T>(List<T>? items)
+        {
+            if (items == null)
+            {
+                return null;
+            }
+            var r = new JsonArray(items.Count);
+            foreach (var item in items)
+            {
+                if (item == null)
+                {
+                    r.Add(null);
+                    continue;
+                }
+                r.Add(SerializeToJson(item));
+            }
+            while (pending.TryDequeue(out var a))
+            {
+                a();
+            }
+            return r;
+        }
+
         private JsonObject? SerializeToJson(object e)
         {
             if (added.TryGetValue(e, out var existingIndex))
