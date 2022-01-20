@@ -62,7 +62,7 @@ namespace NeuroSpeech.EntityAccessControl
             return r;
         }
 
-        public JsonObject? SerializeList<T>(List<T>? items)
+        public JsonNode? SerializeList<T>(List<T>? items)
         {
             if (items == null)
             {
