@@ -82,6 +82,8 @@ namespace NeuroSpeech.EntityAccessControl
             var properties = et.StaticCacheGetOrCreate((et) => et.GetProperties());
             foreach (var p in properties)
             {
+                if (p.GetIndexParameters()?.Length > 0)
+                    continue;
                 var ignoreCondition = settings.GetIgnoreCondition(p);
                 
                 if (ignoreCondition == JsonIgnoreCondition.Always)
