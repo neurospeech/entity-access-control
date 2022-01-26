@@ -18,6 +18,7 @@ using System.Collections.Concurrent;
 using System.Threading;
 using System.Text.Json.Nodes;
 using NeuroSpeech.EntityAccessControl.Parser;
+using Microsoft.AspNetCore.Http;
 
 namespace NeuroSpeech.EntityAccessControl
 {
@@ -492,6 +493,8 @@ export class Model<T extends IClrEntity> {
             public int Size { get; set; } = 200;
             public bool SplitInclude { get; set; } = true;
             public bool Trace { get; set; }
+
+            public int CacheSeconds { get; set; }
         }
 
         [HttpGet("methods/{entity}")]
@@ -502,6 +505,7 @@ export class Model<T extends IClrEntity> {
             [FromQuery] int size = 200,
             [FromQuery] bool splitInclude = true,
             [FromQuery] bool trace = false,
+            [FromQuery] int cacheSeconds = 0,
             CancellationToken cancellationToken = default
             )
         {
@@ -510,7 +514,8 @@ export class Model<T extends IClrEntity> {
                 Start = start,
                 Size = size,
                 SplitInclude = splitInclude,
-                Trace = trace
+                Trace = trace,
+                CacheSeconds = cacheSeconds
             }, cancellationToken);
         }
 
@@ -521,7 +526,7 @@ export class Model<T extends IClrEntity> {
 
 
         [HttpPost("methods/{entity}")]
-        public Task<IActionResult> PostMethod(
+        public async Task<IActionResult> PostMethod(
             [FromRoute] string entity,
             [FromBody] MethodOptions model,
             CancellationToken cancellationToken = default
@@ -608,9 +613,16 @@ export class Model<T extends IClrEntity> {
             {
                 options.SplitInclude = hasInclude && !hasSelect;
             }
-            return this.GetInstanceGenericMethod(nameof(InvokeAsync), t.ClrType)
+            var result = await this.GetInstanceGenericMethod(nameof(InvokeAsync), t.ClrType)
                 .As<Task<IActionResult>>()
                 .Invoke(options);
+            if (model.CacheSeconds > 0) {
+                Response.GetTypedHeaders().CacheControl = new Microsoft.Net.Http.Headers.CacheControlHeaderValue { 
+                    Public = true,
+                    MaxAge = TimeSpan.FromSeconds(model.CacheSeconds)
+                };
+            }
+            return result;
         }
 
         public async Task<IActionResult> InvokeAsync<T>(
