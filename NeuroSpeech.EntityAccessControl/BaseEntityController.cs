@@ -621,6 +621,11 @@ export class Model<T extends IClrEntity> {
                     Public = true,
                     MaxAge = TimeSpan.FromSeconds(model.CacheSeconds)
                 };
+                if(Response.Headers.TryGetValue("vary", out var _))
+                {
+                    Response.Headers.Remove("vary");
+                }
+                Response.Headers.Add("vary", "*");
             }
             return result;
         }
