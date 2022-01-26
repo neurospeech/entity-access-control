@@ -505,11 +505,32 @@ export class Model<T extends IClrEntity> {
             [FromQuery] int size = 200,
             [FromQuery] bool splitInclude = true,
             [FromQuery] bool trace = false,
-            [FromQuery] int cacheSeconds = 0,
             CancellationToken cancellationToken = default
             )
         {
             return PostMethod(entity, new MethodOptions { 
+                Methods = methods,
+                Start = start,
+                Size = size,
+                SplitInclude = splitInclude,
+                Trace = trace,
+            }, cancellationToken);
+        }
+
+        [HttpGet("cached/{entity}/{methods}/{start}/{size}/{splitInclude}/{trace}/{cacheSeconds}")]
+        public Task<IActionResult> CachedMethods(
+            [FromRoute] string entity,
+            [FromRoute] string methods,
+            [FromRoute] int start = 0,
+            [FromRoute] int size = 200,
+            [FromRoute] bool splitInclude = true,
+            [FromRoute] bool trace = false,
+            [FromRoute] int cacheSeconds = 0,
+            CancellationToken cancellationToken = default
+        )
+        {
+            return PostMethod(entity, new MethodOptions
+            {
                 Methods = methods,
                 Start = start,
                 Size = size,
