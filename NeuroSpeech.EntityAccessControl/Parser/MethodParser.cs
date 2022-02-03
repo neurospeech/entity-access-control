@@ -79,43 +79,14 @@ using System.Collections.Generic;
 using System.Text;
 using System;
 
-public static async Task<LinqResult> Query(
+public static Task<LinqResult> Query(
     IQueryContext<{type.FullName}> q, 
     NeuroSpeech.EntityAccessControl.Parser.LinqMethodOptions methods) {{
     NeuroSpeech.EntityAccessControl.Parser.LinqMethod method;
 
-    var start = methods.Start;
-    var size = methods.Size;
-    var splitInclude = methods.SplitInclude;
-    var trace = methods.Trace;
-
-{sb}
-    IQueryContext<{type.FullName}> rq = q{exec};
-    var oq = rq;
-    var total = 0;
-    var loadTotal = false;
-    if (start > 0) {{
-        loadTotal = true;
-        rq = rq.Skip(start);
-    }}
-    if (size > 0) {{
-        loadTotal = true;
-        rq = rq.Take(size);
-    }}
-    if (loadTotal) {{
-        total = await oq.CountAsync(methods.CancelToken);
-    }}
-    if (splitInclude) {{
-        rq = rq.AsSplitQuery();
-    }}
-    
-    trace?.Invoke(rq.ToQueryString());
-    
-    var rl = await rq.ToListAsync(methods.CancelToken);
-    return new LinqResult {{
-        Items = rl,
-        Total = total
-    }};
+    {sb}
+    var rq = q{exec};    
+    return rq.ToPagedListAsync(methods);
 }}
 
 return Query;

@@ -1,7 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using NeuroSpeech.EntityAccessControl.Parser;
 using NeuroSpeech.EntityAccessControl.Security;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -176,6 +178,40 @@ namespace NeuroSpeech.EntityAccessControl
         public IQueryContext<T> AsSplitQuery()
         {
             return new QueryContext<T>(db, queryable.AsSplitQuery(), errorModel);
+        }
+
+    }
+
+    public static class QueryContextExtensions {
+
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public static async Task<LinqResult> ToPagedListAsync<T>(this IQueryContext<T> @this, LinqMethodOptions options)
+        {
+            int start = options.Start;
+            int size = options.Size;
+            var cancellationToken = options.CancelToken;
+            var q = @this as IQueryContext<T>;
+            if (start > 0)
+            {
+                q = q.Skip(start);
+            }
+            if (size > 0)
+            {
+                q = q.Take(size);
+            }
+            if (q != @this)
+            {
+                return new LinqResult
+                {
+                    Total = await @this.CountAsync(cancellationToken),
+                    Items = (await q.ToListAsync(cancellationToken)).OfType<object>(),
+                };
+            }
+            return new LinqResult
+            {
+                Items = (await @this.ToListAsync(cancellationToken)).OfType<object>(),
+                Total = 0
+            };
         }
     }
 }
