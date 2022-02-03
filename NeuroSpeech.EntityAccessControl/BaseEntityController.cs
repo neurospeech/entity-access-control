@@ -378,14 +378,20 @@ export class Model<T extends IClrEntity> {
             [FromBody] JsonElement body
             )
         {
-            if (body.ValueKind == JsonValueKind.Array)
-                return await SaveMultiple(body);
-            if (!body.TryGetStringProperty("$type", out var typeName))
-                throw new KeyNotFoundException($"$type not found");
-            var t = FindEntityType(typeName);
-            var e = await LoadOrCreateAsync(t.ClrType, body);
-            await db.SaveChangesAsync();
-            return Json(Serialize(e));
+            try
+            {
+                if (body.ValueKind == JsonValueKind.Array)
+                    return await SaveMultiple(body);
+                if (!body.TryGetStringProperty("$type", out var typeName))
+                    throw new KeyNotFoundException($"$type not found");
+                var t = FindEntityType(typeName);
+                var e = await LoadOrCreateAsync(t.ClrType, body);
+                await db.SaveChangesAsync();
+                return Json(Serialize(e));
+            }catch (EntityAccessException eae)
+            {
+                return this.UnprocessableEntity(eae.ErrorModel);
+            }
         }
 
 
@@ -395,16 +401,22 @@ export class Model<T extends IClrEntity> {
             [FromBody] JsonElement model
             )
         {
-            List<object> results = new List<object>();
-            foreach (var body in model.EnumerateArray())
+            try
             {
-                if (!body.TryGetStringProperty("$type", out var typeName))
-                    throw new KeyNotFoundException($"$type not found");
-                var t = FindEntityType(typeName);
-                await LoadOrCreateAsync(t.ClrType, body);
+                List<object> results = new List<object>();
+                foreach (var body in model.EnumerateArray())
+                {
+                    if (!body.TryGetStringProperty("$type", out var typeName))
+                        throw new KeyNotFoundException($"$type not found");
+                    var t = FindEntityType(typeName);
+                    await LoadOrCreateAsync(t.ClrType, body);
+                }
+                await db.SaveChangesAsync();
+                return Json(SerializeList(results));
+            }catch (EntityAccessException ex)
+            {
+                return this.UnprocessableEntity(ex.ErrorModel);
             }
-            await db.SaveChangesAsync();
-            return Json(SerializeList(results));
         }
 
         [HttpDelete]
@@ -412,14 +424,20 @@ export class Model<T extends IClrEntity> {
             [FromBody] JsonElement entity
             )
         {
-            var t = FindEntityType(entity);
-            var d = await db.FindByKeysAsync(t, entity);
-            if (d != null)
+            try
             {
-                db.Remove(d);
+                var t = FindEntityType(entity);
+                var d = await db.FindByKeysAsync(t, entity);
+                if (d != null)
+                {
+                    db.Remove(d);
+                }
+                await db.SaveChangesAsync();
+                return Ok(new { });
+            } catch( EntityAccessException ex)
+            {
+                return this.UnprocessableEntity(ex.ErrorModel);
             }
-            await db.SaveChangesAsync();
-            return Ok(new { });
         }
 
         [HttpDelete("bulk")]
@@ -430,23 +448,29 @@ export class Model<T extends IClrEntity> {
         {
             if (model.Keys == null)
                 return BadRequest();
-            foreach (var item in model.Keys)
+            try
             {
-                var t = FindEntityType(item);
-                var entity = await db.FindByKeysAsync(t, item, cancellation);
-                if (entity == null)
+                foreach (var item in model.Keys)
                 {
-                    if (model.ThrowWhenNotFound)
+                    var t = FindEntityType(item);
+                    var entity = await db.FindByKeysAsync(t, item, cancellation);
+                    if (entity == null)
                     {
-                        return BadRequest();
+                        if (model.ThrowWhenNotFound)
+                        {
+                            return BadRequest();
+                        }
+                        continue;
                     }
-                    continue;
+                    db.Remove(entity);
                 }
-                db.Remove(entity);
-            }
 
-            await db.SaveChangesAsync();
-            return Ok(new { });
+                await db.SaveChangesAsync();
+                return Ok(new { });
+            }catch (EntityAccessException ex)
+            {
+                return UnprocessableEntity(ex.ErrorModel);
+            }
         }
 
         public class BulkOperation
@@ -468,22 +492,28 @@ export class Model<T extends IClrEntity> {
                 || model.Update.ValueKind == JsonValueKind.Null)
                 return BadRequest();
 
-            foreach (var item in model.Keys)
+            try
             {
-                var t = FindEntityType(item);
-                var entity = await db.FindByKeysAsync(t, item, cancellation);
-                if (entity == null)
+                foreach (var item in model.Keys)
                 {
-                    if (model.ThrowWhenNotFound)
+                    var t = FindEntityType(item);
+                    var entity = await db.FindByKeysAsync(t, item, cancellation);
+                    if (entity == null)
                     {
-                        return BadRequest();
+                        if (model.ThrowWhenNotFound)
+                        {
+                            return BadRequest();
+                        }
+                        continue;
                     }
-                    continue;
+                    await LoadPropertiesAsync(entity, t, model.Update);
                 }
-                await LoadPropertiesAsync(entity, t, model.Update);
+                await db.SaveChangesAsync();
+                return Ok(new { });
+            }catch (EntityAccessException ex)
+            {
+                return UnprocessableEntity(ex.ErrorModel);
             }
-            await db.SaveChangesAsync();
-            return Ok(new { });
         }
 
         public class MethodOptions
@@ -650,7 +680,7 @@ export class Model<T extends IClrEntity> {
             LinqMethodOptions options)
             where T : class
         {
-            var q = new QueryContext<T>(db, db.Query<T>()!);
+            var q = new QueryContext<T>(db, db.Query<T>()!, new ErrorModel());
             var result = await MethodParser.Instance.Parse<T>(q, options);
             var json = SerializeList(result.Items.ToList());
             return Json(new { 

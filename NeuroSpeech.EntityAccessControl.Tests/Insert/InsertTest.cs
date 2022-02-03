@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NeuroSpeech.EntityAccessControl.Security;
 using NeuroSpeech.EntityAccessControl.Tests.Model;
 using System;
 using System.Collections.Generic;
@@ -54,7 +55,7 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
 
 
                 throw new InvalidOperationException();
-            } catch (UnauthorizedAccessException)
+            } catch (EntityAccessException)
             {
 
             }

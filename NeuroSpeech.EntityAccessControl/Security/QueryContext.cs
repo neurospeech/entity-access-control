@@ -16,22 +16,30 @@ namespace NeuroSpeech.EntityAccessControl
     {
         private readonly ISecureRepository db;
         private readonly IQueryable<T> queryable;
+        private readonly ErrorModel? errorModel;
 
-        public QueryContext(ISecureRepository db, IQueryable<T> queryable)
+        public QueryContext(ISecureRepository db, IQueryable<T> queryable, ErrorModel? errorModel = null)
         {
             this.db = db;
             this.queryable = queryable;
+            this.errorModel = errorModel;
         }
 
         public IQueryContext<T1> Set<T1>()
             where T1: class
         {
-            return new QueryContext<T1>(db, db.Query<T1>());
+            return new QueryContext<T1>(db, db.Query<T1>(), errorModel);
         }
 
         public IQueryContext<T> Where(Expression<Func<T, bool>> filter)
         {
-            return new QueryContext<T>(db, queryable.Where(filter));
+            return new QueryContext<T>(db, queryable.Where(filter), errorModel);
+        }
+
+        public IQueryContext<T> Requires(Expression<Func<T, bool>> filter, string error)
+        {
+            errorModel?.Add("Error", error);
+            return new QueryContext<T>(db, queryable.Where(filter), errorModel);
         }
 
         public IQueryable<T> ToQuery()
@@ -42,7 +50,7 @@ namespace NeuroSpeech.EntityAccessControl
         public IQueryContext<T1> OfType<T1>()
             where T1: class
         {
-            return new QueryContext<T1>(db, queryable.OfType<T1>());
+            return new QueryContext<T1>(db, queryable.OfType<T1>(), errorModel);
         }
 
         public IQueryContext<T2> Select<T2>(Expression<Func<T, T2>> expression)
@@ -56,7 +64,7 @@ namespace NeuroSpeech.EntityAccessControl
             }
             ne = ne.Update(list);
             expression = Expression.Lambda<Func<T, T2>>(ne, expression.Parameters);
-            return new QueryContext<T2>(db, queryable.Select(expression));
+            return new QueryContext<T2>(db, queryable.Select(expression), errorModel);
         }
 
         Expression Replace(Expression original)
@@ -103,7 +111,7 @@ namespace NeuroSpeech.EntityAccessControl
         public Expression Apply<T1>(Expression expression)
             where T1: class
         {
-            var qec = new QueryExpressionContext<T1>(new QueryContext<T1>(db, db.Query<T1>()!), expression);
+            var qec = new QueryExpressionContext<T1>(new QueryContext<T1>(db, db.Query<T1>()!, errorModel), expression);
             var r = db.Apply<T1>(qec);
             qec = (QueryExpressionContext<T1>)r;
             var fe = qec.Expression;
@@ -117,12 +125,12 @@ namespace NeuroSpeech.EntityAccessControl
 
         public IQueryContext<T> Skip(int n)
         {
-            return new QueryContext<T>(db, queryable.Skip(n));
+            return new QueryContext<T>(db, queryable.Skip(n), errorModel);
         }
 
         public IQueryContext<T> Take(int n)
         {
-            return new QueryContext<T>(db, queryable.Take(n));
+            return new QueryContext<T>(db, queryable.Take(n), errorModel);
         }
 
         public Task<int> CountAsync(CancellationToken cancellationToken)
@@ -142,32 +150,32 @@ namespace NeuroSpeech.EntityAccessControl
 
         public IQueryContext<T> Include(string include)
         {
-            return new QueryContext<T>(db, queryable.Include(include));
+            return new QueryContext<T>(db, queryable.Include(include), errorModel);
         }
 
         public IOrderedQueryContext<T> ThenBy(Expression<Func<T, object>> expression)
         {
-            return new QueryContext<T>(db, (queryable as IOrderedQueryable<T>).ThenBy(expression));
+            return new QueryContext<T>(db, (queryable as IOrderedQueryable<T>).ThenBy(expression), errorModel);
         }
 
         public IOrderedQueryContext<T> ThenByDescending(Expression<Func<T, object>> expression)
         {
-            return new QueryContext<T>(db, (queryable as IOrderedQueryable<T>).ThenByDescending(expression));
+            return new QueryContext<T>(db, (queryable as IOrderedQueryable<T>).ThenByDescending(expression), errorModel);
         }
 
         public IOrderedQueryContext<T> OrderBy(Expression<Func<T, object>> expression)
         {
-            return new QueryContext<T>(db, queryable.OrderBy(expression));
+            return new QueryContext<T>(db, queryable.OrderBy(expression), errorModel);
         }
 
         public IOrderedQueryContext<T> OrderByDescending(Expression<Func<T, object>> expression)
         {
-            return new QueryContext<T>(db, queryable.OrderByDescending(expression));
+            return new QueryContext<T>(db, queryable.OrderByDescending(expression), errorModel);
         }
 
         public IQueryContext<T> AsSplitQuery()
         {
-            return new QueryContext<T>(db, queryable.AsSplitQuery());
+            return new QueryContext<T>(db, queryable.AsSplitQuery(), errorModel);
         }
     }
 }

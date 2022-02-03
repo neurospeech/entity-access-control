@@ -117,5 +117,10 @@ namespace NeuroSpeech.EntityAccessControl
         {
             throw new NotImplementedException();
         }
+
+        public IQueryContext<T> Requires(Expression<Func<T, bool>> filter, string errorMessage)
+        {
+            return Where(filter);
+        }
     }
 }

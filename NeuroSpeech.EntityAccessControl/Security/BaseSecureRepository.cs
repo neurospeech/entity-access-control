@@ -47,7 +47,7 @@ namespace NeuroSpeech.EntityAccessControl.Security
         {
             if(SecurityDisabled)
                 return db.Set<T>();
-            return rules.Apply<T>(new QueryContext<T>(this, db.Set<T>()), AssociatedUser).ToQuery();
+            return rules.Apply<T>(new QueryContext<T>(this, db.Set<T>(), new ErrorModel()), AssociatedUser).ToQuery();
         }
 
         public IQueryContext<T?> Apply<T>(IQueryContext<T> q)
@@ -66,7 +66,7 @@ namespace NeuroSpeech.EntityAccessControl.Security
             {
                 return q;
             }
-            return rules.Apply<T>(new QueryContext<T>(this, q), AssociatedUser).ToQuery();
+            return rules.Apply<T>(new QueryContext<T>(this, q, new ErrorModel()), AssociatedUser).ToQuery();
         }
 
         public JsonIgnoreCondition GetIgnoreCondition(PropertyInfo property)
@@ -241,22 +241,23 @@ namespace NeuroSpeech.EntityAccessControl.Security
             }
             var lambda = Expression.Lambda<Func<T, bool>>(start, tx);
             var q = db.Set<T>().Where(lambda);
+            var errorModel = new ErrorModel();
             switch (entry.State)
             {
                 case EntityState.Added:
-                    q = rules.ApplyInsert<T>(new QueryContext<T>(this, q), AssociatedUser);
+                    q = rules.ApplyInsert<T>(new QueryContext<T>(this, q, errorModel), AssociatedUser);
                     break;
                 case EntityState.Deleted:
-                    q = rules.ApplyDelete<T>(new QueryContext<T>(this, q), AssociatedUser);
+                    q = rules.ApplyDelete<T>(new QueryContext<T>(this, q, errorModel), AssociatedUser);
                     break;
                 case EntityState.Modified:
-                    q = rules.ApplyUpdate<T>(new QueryContext<T>(this, q), AssociatedUser);
+                    q = rules.ApplyUpdate<T>(new QueryContext<T>(this, q, errorModel), AssociatedUser);
                     break;
                 default:
                     return;
             }
             if (!await q.AnyAsync())
-                throw new UnauthorizedAccessException();
+                throw new EntityAccessException(errorModel);
             //var d = await q.FirstOrDefaultAsync();
             //if (d != entry.Entity)
             //{
@@ -264,5 +265,49 @@ namespace NeuroSpeech.EntityAccessControl.Security
             //}
         }
 
+    }
+
+    public class FieldError
+    {
+        public FieldError(string name, string reason)
+        {
+            this.Name = name;
+            this.Reason = reason;
+        }
+        public string Name { get; }
+        public string Reason { get; }
+    }
+
+    public class ErrorModel
+    {
+        public string Title { get; set; } = "Access Denied";
+
+        public string Detail
+            => string.Join(",\r\n",
+                ParamErrors.Select(x => x.Name == null
+                    ? x.Reason
+                    : $"{x.Name}: {x.Reason}"));
+
+        public List<FieldError> ParamErrors { get; } = new List<FieldError>();
+
+        public override string ToString()
+        {
+            return $"{Title}\r\n{Detail}";
+        }
+
+        public void Add(string name, string reason)
+        {
+            ParamErrors.Add(new FieldError(name, reason));
+        }
+    }
+
+    public class EntityAccessException: Exception
+    {
+        public readonly ErrorModel ErrorModel;
+
+        public EntityAccessException(ErrorModel model): base(model.ToString())
+        {
+            this.ErrorModel = model;
+        }
     }
 }
