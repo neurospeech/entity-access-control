@@ -90,7 +90,7 @@ public static async Task<LinqResult> Query(
     var trace = methods.Trace;
 
 {sb}
-    var rq = q{exec};
+    IQueryContext<{type.FullName}> rq = q{exec};
     var oq = rq;
     var total = 0;
     var loadTotal = false;

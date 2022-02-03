@@ -46,7 +46,8 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
             var m = System.Text.Json.JsonSerializer.Serialize(new object[] {
                 new object[] {"where", "x => CastAs.String(x.PostType) == @0", "Page" },
                 new object[] {"include", "Tags" },
-                new object[] { "select", "x => new { x.PostID, x.Tags }" }
+                new object[] { "orderByDescending", "x => x.PostID"},
+                // new object[] { "select", "x => new { x.PostID, x.Tags }" }
             });
 
             var r = await controller.Methods(name,
