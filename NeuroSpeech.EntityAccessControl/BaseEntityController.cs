@@ -75,10 +75,6 @@ namespace NeuroSpeech.EntityAccessControl
             object? e = null;
             Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry? entry = null;
             e = await db.FindByKeysAsync(t, body, cancellationToken);
-            if (e != null)
-            {
-                entry = db.Entry(e);
-            }
             bool insert = false;
             if (e == null)
             {

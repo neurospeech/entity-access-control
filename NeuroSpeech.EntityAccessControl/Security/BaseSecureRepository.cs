@@ -102,21 +102,30 @@ namespace NeuroSpeech.EntityAccessControl.Security
             ParameterExpression? tx = null;// = Expression.Parameter(type, "x");
             Expression? start = null;
             var k = t.FindPrimaryKey();
+            var copy = Activator.CreateInstance<T>();
+            var copyConst = Expression.Constant(copy);
             foreach (var p in k.Properties)
             {
                 if (!keys.TryGetPropertyCaseInsensitive(p.Name, out var v))
                 {
                     return nullResult;
                 }
-                var value = v.DeserializeJsonElement(p.PropertyInfo.PropertyType);
+
+                PropertyInfo property = p.PropertyInfo;
+                Type propertyType = property.PropertyType;
+                var value = v.DeserializeJsonElement(propertyType);
                 // check if it is default...
-                if (value == null || value.Equals(p.PropertyInfo.PropertyType.GetDefaultForType()))
+                if (value == null || value.Equals(propertyType.GetDefaultForType()))
                 {
                     return nullResult;
                 }
 
+                property.SetValue(copy, value);
+
                 tx ??= Expression.Parameter(type, "x");
-                var equals = Expression.Equal(Expression.Property(tx, p.PropertyInfo), Expression.Constant(value, p.PropertyInfo.PropertyType));
+                var equals = Expression.Equal(
+                    Expression.Property(tx, property),
+                    Expression.Property(copyConst, property));
                 if (start == null)
                 {
                     start = equals;
