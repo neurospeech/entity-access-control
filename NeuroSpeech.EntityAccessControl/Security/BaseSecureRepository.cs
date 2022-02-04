@@ -138,46 +138,47 @@ namespace NeuroSpeech.EntityAccessControl.Security
             return q.FirstOrDefaultAsync(token).ContinueAsObject();
         }
 
-        public async Task<int> SaveChangesAsync(CancellationToken token = default) {
-            if (SecurityDisabled)
-            {
-                return await db.SaveChangesAsync();
-            }
-            await using var tx = await db.Database.BeginTransactionAsync(token);
-            var changes = db.ChangeTracker.Entries().ToList();
+        public Task<int> SaveChangesAsync(CancellationToken token = default) {
+            return db.SaveChangesAsync(token);
+            //if (SecurityDisabled)
+            //{
+            //    return await db.SaveChangesAsync();
+            //}
+            //await using var tx = await db.Database.BeginTransactionAsync(token);
+            //var changes = db.ChangeTracker.Entries().ToList();
 
-            var pendingVerifications = new List<PreservedState>();
+            //var pendingVerifications = new List<PreservedState>();
 
-            // verify delete
-            foreach(var entry in changes)
-            {
-                switch (entry.State)
-                {
-                    case EntityState.Modified:
-                        foreach(var member in entry.Members.Where(x => x.IsModified))
-                        {
-                            VerifyMemberModify(entry.Entity, member.Metadata.PropertyInfo);
-                        }
-                        await VerifyAccessAsync(entry);
-                        pendingVerifications.Add(entry);
-                        break;
-                    case EntityState.Deleted:
-                        await VerifyAccessAsync(entry);
-                        pendingVerifications.Add(entry);
-                        break;
-                    case EntityState.Added:
-                        pendingVerifications.Add(entry);
-                        break;
-                }
-            }
+            //// verify delete
+            //foreach(var entry in changes)
+            //{
+            //    switch (entry.State)
+            //    {
+            //        case EntityState.Modified:
+            //            foreach(var member in entry.Members.Where(x => x.IsModified))
+            //            {
+            //                VerifyMemberModify(entry.Entity, member.Metadata.PropertyInfo);
+            //            }
+            //            await VerifyAccessAsync(entry);
+            //            pendingVerifications.Add(entry);
+            //            break;
+            //        case EntityState.Deleted:
+            //            await VerifyAccessAsync(entry);
+            //            pendingVerifications.Add(entry);
+            //            break;
+            //        case EntityState.Added:
+            //            pendingVerifications.Add(entry);
+            //            break;
+            //    }
+            //}
 
-            int r = await db.SaveChangesAsync();
-            foreach(var entry in pendingVerifications)
-            {
-                await VerifyAccessAsync(entry);
-            }
+            //int r = await db.SaveChangesAsync();
+            //foreach(var entry in pendingVerifications)
+            //{
+            //    await VerifyAccessAsync(entry);
+            //}
 
-            await tx.CommitAsync();
+            //await tx.CommitAsync();
             return r;
         }
 

@@ -14,10 +14,10 @@ namespace NeuroSpeech.EntityAccessControl
     public abstract class BaseSecurityRules<TC>
     {
         private RulesDictionary select = new RulesDictionary();
-        private RulesDictionary insert = new RulesDictionary();
-        private RulesDictionary update = new RulesDictionary();
-        private RulesDictionary delete = new RulesDictionary();
-        private RulesDictionary modify = new RulesDictionary();
+        //private RulesDictionary insert = new RulesDictionary();
+        //private RulesDictionary update = new RulesDictionary();
+        //private RulesDictionary delete = new RulesDictionary();
+        //private RulesDictionary modify = new RulesDictionary();
 
         private ConcurrentDictionary<PropertyInfo, JsonIgnoreCondition> ignoreConditions
             = new ConcurrentDictionary<PropertyInfo, JsonIgnoreCondition>();
@@ -33,20 +33,20 @@ namespace NeuroSpeech.EntityAccessControl
                 (k) => property.GetCustomAttribute<JsonIgnoreAttribute>()?.Condition ?? JsonIgnoreCondition.Never);
         }
 
-        internal IQueryable<T> ApplyInsert<T>(IQueryContext<T> q, TC client) where T : class
-        {
-            return insert.As<T, TC>()(q, client).ToQuery();
-        }
+        //internal IQueryable<T> ApplyInsert<T>(IQueryContext<T> q, TC client) where T : class
+        //{
+        //    return insert.As<T, TC>()(q, client).ToQuery();
+        //}
 
-        internal IQueryable<T> ApplyDelete<T>(IQueryContext<T> q, TC client) where T : class
-        {
-            return delete.As<T, TC>()(q, client).ToQuery();
-        }
+        //internal IQueryable<T> ApplyDelete<T>(IQueryContext<T> q, TC client) where T : class
+        //{
+        //    return delete.As<T, TC>()(q, client).ToQuery();
+        //}
 
-        internal IQueryable<T> ApplyUpdate<T>(IQueryContext<T> q, TC client) where T : class
-        {
-            return update.As<T,TC>()(q, client).ToQuery();
-        }
+        //internal IQueryable<T> ApplyUpdate<T>(IQueryContext<T> q, TC client) where T : class
+        //{
+        //    return update.As<T,TC>()(q, client).ToQuery();
+        //}
 
         /**
          * This will disable Json serialization for given property
@@ -90,19 +90,21 @@ namespace NeuroSpeech.EntityAccessControl
         /// <param name="update"></param>
         /// <param name="delete"></param>
         protected void SetFilters<T>(
-            Func<IQueryContext<T>, TC, IQueryContext<T>>? select = null,
-            Func<IQueryContext<T>, TC, IQueryContext<T>>? insert = null,
-            Func<IQueryContext<T>, TC, IQueryContext<T>>? update = null,
-            Func<IQueryContext<T>, TC, IQueryContext<T>>? delete = null)
+            Func<IQueryContext<T>, TC, IQueryContext<T>>? select = null
+            //,
+            //Func<IQueryContext<T>, TC, IQueryContext<T>>? insert = null,
+            //Func<IQueryContext<T>, TC, IQueryContext<T>>? update = null,
+            //Func<IQueryContext<T>, TC, IQueryContext<T>>? delete = null
+            )
         {
             if (select != null)
                 this.select.SetFunc<T, TC>(select);
-            if (insert != null)
-                this.insert.SetFunc<T, TC>(insert);
-            if (update != null)
-                this.update.SetFunc<T, TC>(update);
-            if (delete != null)
-                this.delete.SetFunc<T, TC>(delete);
+            //if (insert != null)
+            //    this.insert.SetFunc<T, TC>(insert);
+            //if (update != null)
+            //    this.update.SetFunc<T, TC>(update);
+            //if (delete != null)
+            //    this.delete.SetFunc<T, TC>(delete);
         }
 
         /// <summary>
@@ -113,7 +115,9 @@ namespace NeuroSpeech.EntityAccessControl
         public void SetAllFilters<T>(
             Func<IQueryContext<T>, TC, IQueryContext<T>> all)
         {
-            SetFilters<T>(all, all, all, all);
+            SetFilters<T>(all
+                // , all, all, all
+                );
         }
 
 
