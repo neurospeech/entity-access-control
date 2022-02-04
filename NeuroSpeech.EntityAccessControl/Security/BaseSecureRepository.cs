@@ -101,38 +101,29 @@ namespace NeuroSpeech.EntityAccessControl.Security
             var type = typeof(T);
             ParameterExpression? tx = null;// = Expression.Parameter(type, "x");
             Expression? start = null;
-            bool hasAllKeyMembers = true;
-            foreach (var k in t.GetKeys())
+            var k = t.FindPrimaryKey();
+            foreach (var p in k.Properties)
             {
-                foreach (var p in k.Properties)
+                if (!keys.TryGetPropertyCaseInsensitive(p.Name, out var v))
                 {
-                    if (!keys.TryGetPropertyCaseInsensitive(p.Name, out var v))
-                    {
-                        hasAllKeyMembers = false;
-                        break;
-                    }
-                    var value = v.DeserializeJsonElement(p.PropertyInfo.PropertyType);
-                    // check if it is default...
-                    if (value == null || value.Equals(p.PropertyInfo.PropertyType.GetDefaultForType()))
-                    {
-                        hasAllKeyMembers = false;
-                        break;
-                    }
-
-                    tx ??= Expression.Parameter(type, "x");
-                    var equals = Expression.Equal(Expression.Property(tx, p.PropertyInfo), Expression.Constant(value, p.PropertyInfo.PropertyType));
-                    if (start == null)
-                    {
-                        start = equals;
-                        continue;
-                    }
-                    start = Expression.AndAlso(start, equals);
+                    return nullResult;
                 }
-                if (!hasAllKeyMembers)
-                    break;
+                var value = v.DeserializeJsonElement(p.PropertyInfo.PropertyType);
+                // check if it is default...
+                if (value == null || value.Equals(p.PropertyInfo.PropertyType.GetDefaultForType()))
+                {
+                    return nullResult;
+                }
+
+                tx ??= Expression.Parameter(type, "x");
+                var equals = Expression.Equal(Expression.Property(tx, p.PropertyInfo), Expression.Constant(value, p.PropertyInfo.PropertyType));
+                if (start == null)
+                {
+                    start = equals;
+                    continue;
+                }
+                start = Expression.AndAlso(start, equals);
             }
-            if (!hasAllKeyMembers)
-                return nullResult;
             var lambda = Expression.Lambda<Func<T?, bool>>(start, tx);
             var q = Query<T>().Where(lambda);
             return q.FirstOrDefaultAsync(token).ContinueAsObject();
