@@ -15,7 +15,7 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Model
             SetAllFilters<PostContent>((q, u) => q.Where(x => x.Post.AuthorID == u));
             SetAllFilters<PostContentTag>((q, u) => q.Where(x => x.PostContent.Post.AuthorID == u));
 
-            SetFilters<Post>(insert: (q, u) => q.Where(x => x.AuthorID == u && u != 3));
+            // SetFilters<Post>(insert: (q, u) => q.Where(x => x.AuthorID == u && u != 3));
 
             // we can select all tags but cannot modify it...
             SetFilters<Tag>(select: Allow);

@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using NeuroSpeech.EntityAccessControl.Security;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,6 +12,11 @@ namespace NeuroSpeech.EntityAccessControl
 {
     public class DbEntityEvents<T> : IEntityEvents
     {
+        public EntityAccessException NewEntityAccessException(string title)
+        {
+            return new EntityAccessException(new ErrorModel { Title = title });
+        }
+
         public virtual Task DeletedAsync(T entity)
         {
             return Task.CompletedTask;
@@ -102,16 +108,16 @@ namespace NeuroSpeech.EntityAccessControl
             return null;
         }
 
-        public void Register<T, TE>()
-            where TE: DbEntityEvents<T>
+        public void Register<T1, TE>()
+            where TE: DbEntityEvents<T1>
         {
-            registrations[typeof(T)] = typeof(TE);
+            registrations[typeof(T1)] = typeof(TE);
         }
 
-        public void Register<T>()
-            where T: IEntityEvents
+        public void Register<T1>()
+            where T1: IEntityEvents
         {
-            var t = typeof(T);
+            var t = typeof(T1);
             var start = t;
             while (!start.IsConstructedGenericType)
             {

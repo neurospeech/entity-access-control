@@ -25,6 +25,10 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Model
             public override Task InsertingAsync(Post entity)
             {
                 entity.AuthorID = db.UserID;
+                if (entity.AuthorID == 3)
+                {
+                    throw NewEntityAccessException("Invalid AuthorID");
+                }
                 return Task.CompletedTask;
             }
         }

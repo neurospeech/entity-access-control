@@ -179,92 +179,92 @@ namespace NeuroSpeech.EntityAccessControl.Security
             //}
 
             //await tx.CommitAsync();
-            return r;
+            // return r;
         }
 
-        private void VerifyMemberModify(object entity, PropertyInfo propertyInfo)
-        {
-            this.GetInstanceGenericMethod(nameof(InternalVerifyMemberModify), entity.GetType())
-                .As<bool>()
-                .Invoke(propertyInfo);
-        }
+        //private void VerifyMemberModify(object entity, PropertyInfo propertyInfo)
+        //{
+        //    this.GetInstanceGenericMethod(nameof(InternalVerifyMemberModify), entity.GetType())
+        //        .As<bool>()
+        //        .Invoke(propertyInfo);
+        //}
 
-        public bool InternalVerifyMemberModify<T>(PropertyInfo propertyInfo)
-        {
-            // rules.VerifyModifyMember<T>(propertyInfo, AssociatedUser);
-            return true;
-        }
+        //public bool InternalVerifyMemberModify<T>(PropertyInfo propertyInfo)
+        //{
+        //    // rules.VerifyModifyMember<T>(propertyInfo, AssociatedUser);
+        //    return true;
+        //}
 
-        public readonly struct PreservedState
-        {
-            public readonly EntityState State;
-            public readonly object Entity;
+        //public readonly struct PreservedState
+        //{
+        //    public readonly EntityState State;
+        //    public readonly object Entity;
 
-            public static implicit operator PreservedState(EntityEntry entry)
-                => new PreservedState(entry.State, entry.Entity);
+        //    public static implicit operator PreservedState(EntityEntry entry)
+        //        => new PreservedState(entry.State, entry.Entity);
 
-            public PreservedState(EntityState state, object entry)
-            {
-                this.State = state;
-                this.Entity = entry;
-            }
-        }
+        //    public PreservedState(EntityState state, object entry)
+        //    {
+        //        this.State = state;
+        //        this.Entity = entry;
+        //    }
+        //}
 
-        private Task VerifyAccessAsync(PreservedState entity)
-        {
-            return this.GetInstanceGenericMethod(nameof(VerifyAccessGenericAsync), entity.Entity.GetType())
-                .As<Task>()
-                .Invoke(entity);
-            //return (this.GetType()
-            //    .GetMethod(nameof(VerifyAccessGenericAsync))!
-            //    .MakeGenericMethod(entity.Entity.GetType())
-            //    .Invoke(this, new object[] { entity }) as Task)!;
-        }
+        //private Task VerifyAccessAsync(PreservedState entity)
+        //{
+        //    return this.GetInstanceGenericMethod(nameof(VerifyAccessGenericAsync), entity.Entity.GetType())
+        //        .As<Task>()
+        //        .Invoke(entity);
+        //    //return (this.GetType()
+        //    //    .GetMethod(nameof(VerifyAccessGenericAsync))!
+        //    //    .MakeGenericMethod(entity.Entity.GetType())
+        //    //    .Invoke(this, new object[] { entity }) as Task)!;
+        //}
 
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public async Task VerifyAccessGenericAsync<T>(PreservedState entry)
-            where T:class
-        {
-            var type = typeof(T);
-            var tx = Expression.Parameter(type, "x");
-            var t = db.Model.GetEntityTypes().FirstOrDefault(x => x.ClrType == type);
-            Expression? start = null;
-            var entity = entry.Entity;
-            foreach (var p in t.GetKeys().SelectMany(x => x.Properties))
-            {
-                var equals = Expression.Equal(Expression.Property(tx, p.PropertyInfo), Expression.Constant(p.PropertyInfo.GetValue(entity)));
-                if (start == null)
-                {
-                    start = equals;
-                    continue;
-                }
-                start = Expression.AndAlso(start, equals);
-            }
-            var lambda = Expression.Lambda<Func<T, bool>>(start, tx);
-            var q = db.Set<T>().Where(lambda);
-            var errorModel = new ErrorModel();
-            switch (entry.State)
-            {
-                case EntityState.Added:
-                    q = rules.ApplyInsert<T>(new QueryContext<T>(this, q, errorModel), AssociatedUser);
-                    break;
-                case EntityState.Deleted:
-                    q = rules.ApplyDelete<T>(new QueryContext<T>(this, q, errorModel), AssociatedUser);
-                    break;
-                case EntityState.Modified:
-                    q = rules.ApplyUpdate<T>(new QueryContext<T>(this, q, errorModel), AssociatedUser);
-                    break;
-                default:
-                    return;
-            }
-            if (!await q.AnyAsync())
-                throw new EntityAccessException(errorModel);
-            //var d = await q.FirstOrDefaultAsync();
-            //if (d != entry.Entity)
-            //{
-            //    throw new UnauthorizedAccessException();
-            //}
-        }
+        //[EditorBrowsable(EditorBrowsableState.Never)]
+        //public async Task VerifyAccessGenericAsync<T>(PreservedState entry)
+        //    where T:class
+        //{
+        //    var type = typeof(T);
+        //    var tx = Expression.Parameter(type, "x");
+        //    var t = db.Model.GetEntityTypes().FirstOrDefault(x => x.ClrType == type);
+        //    Expression? start = null;
+        //    var entity = entry.Entity;
+        //    foreach (var p in t.GetKeys().SelectMany(x => x.Properties))
+        //    {
+        //        var equals = Expression.Equal(Expression.Property(tx, p.PropertyInfo), Expression.Constant(p.PropertyInfo.GetValue(entity)));
+        //        if (start == null)
+        //        {
+        //            start = equals;
+        //            continue;
+        //        }
+        //        start = Expression.AndAlso(start, equals);
+        //    }
+        //    var lambda = Expression.Lambda<Func<T, bool>>(start, tx);
+        //    var q = db.Set<T>().Where(lambda);
+        //    var errorModel = new ErrorModel();
+        //    switch (entry.State)
+        //    {
+        //        case EntityState.Added:
+        //            q = rules.ApplyInsert<T>(new QueryContext<T>(this, q, errorModel), AssociatedUser);
+        //            break;
+        //        case EntityState.Deleted:
+        //            q = rules.ApplyDelete<T>(new QueryContext<T>(this, q, errorModel), AssociatedUser);
+        //            break;
+        //        case EntityState.Modified:
+        //            q = rules.ApplyUpdate<T>(new QueryContext<T>(this, q, errorModel), AssociatedUser);
+        //            break;
+        //        default:
+        //            return;
+        //    }
+        //    if (!await q.AnyAsync())
+        //        throw new EntityAccessException(errorModel);
+        //    //var d = await q.FirstOrDefaultAsync();
+        //    //if (d != entry.Entity)
+        //    //{
+        //    //    throw new UnauthorizedAccessException();
+        //    //}
+        //}
 
     }
 
