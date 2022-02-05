@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using NeuroSpeech.EntityAccessControl.Internal;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -8,36 +9,30 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Reflection;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
+using System.ComponentModel;
+using System.Linq.Expressions;
+using System.Text.Json;
+using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace NeuroSpeech.EntityAccessControl
 {
-    public interface IEntityEvents
-    {
-        Task InsertingAsync(object entity);
-        Task InsertedAsync(object entity);
-
-        Task UpdatingAsync(object entity);
-
-        Task UpdatedAsync(object entity);
-
-        Task DeletingAsync(object entity);
-        Task DeletedAsync(object entity);
-    }
 
     public delegate Task OnEntityEvent<T, TEntity>(T context, TEntity entity);
 
-    public class BaseDbContext<T> : DbContext
-        where T: BaseDbContext<T>
+    public class BaseDbContext<TContext> : DbContext, ISecureQueryProvider
+        where TContext: BaseDbContext<TContext>
     {
-        private readonly DbContextEvents<T> events;
+        private readonly DbContextEvents<TContext> events;
         private readonly IServiceProvider services;
 
         public BaseDbContext(
-            DbContextOptions<T> options,
-            DbContextEvents<T> events,
+            DbContextOptions<TContext> options,
+            DbContextEvents<TContext> events,
             IServiceProvider services) : base(options)
         {
             this.events = events;
@@ -60,6 +55,85 @@ namespace NeuroSpeech.EntityAccessControl
         }
 
         public bool RaiseEvents { get; set; }
+
+        public IQueryable<T> FilteredQuery<T>()
+            where T: class
+        {
+            var q = new QueryContext<T>(this, Set<T>());
+            var eh = events.GetEvents(services, typeof(T));
+            if (eh == null)
+            {
+                throw new EntityAccessException("Access denied");
+            }
+            return ((IQueryContext<T>)eh.Filter(q)).ToQuery();
+        }
+
+        private async Task VerifyAccessAsync(Type type, EntityEntry e, object item, bool insert = false)
+        {
+            if (insert)
+            {
+                foreach(var re in e.References)
+                {
+                    if (re.Metadata.IsCollection)
+                        continue;
+                    var nav = re.Metadata as INavigation;
+                    if (nav == null)
+                    {
+                        continue;
+                    }
+                    bool isModified = false;
+                    foreach(var p in nav.ForeignKey.Properties)
+                    {
+                        var px = e.Property(p.Name);
+                        if (px.IsTemporary)
+                            continue;
+                        if (px.OriginalValue != px.CurrentValue)
+                        {
+                            isModified = true;
+                            break;
+                        }
+                    }
+                    if (!isModified)
+                        continue;
+                    await this.GetInstanceGenericMethod(nameof(VerifyFilterAsync), re.Metadata.TargetEntityType.ClrType)
+                        .As<Task>()
+                        .Invoke(re.Query(), e, item);
+                }
+                return;
+            }
+            await this.GetInstanceGenericMethod(nameof(VerifyFilterAsync), type)
+                .As<Task>()
+                .Invoke((IQueryable?)null, e, item);
+        }
+
+        public async Task VerifyFilterAsync<T>(IQueryable? query, EntityEntry e, object? item)
+            where T: class
+        {
+            var q = query == null ? Set<T>() : (IQueryable<T>)query;
+            if (e.State != EntityState.Added) {
+                var pe = Expression.Parameter(typeof(T));
+                var ce = Expression.Constant(item, typeof(T));
+                var pKey = e.Metadata.FindPrimaryKey();
+                Expression? body = null;
+                foreach(var p in pKey.Properties)
+                {
+                    var equal = Expression.Equal(
+                        Expression.Property(pe, p.PropertyInfo),
+                        Expression.Property(ce, p.PropertyInfo));
+                    if (body == null)
+                    {
+                        body = equal;
+                        continue;
+                    }
+                    body = Expression.AndAlso(body, equal);
+                }
+                q = q.Where(Expression.Lambda<Func<T,bool>>(body, pe));
+            }
+            q = Apply<T>(new QueryContext<T>(this, q)).ToQuery();
+            if (await q.AnyAsync())
+                return;
+            throw new EntityAccessException("Access denied");
+        }
 
         private Task OnInsertingAsync(Type type, object entity)
         {
@@ -203,16 +277,19 @@ namespace NeuroSpeech.EntityAccessControl
                     case EntityState.Added:
                         pending.Add((e.State, item, type));
                         await OnInsertingAsync(type, item);
+                        await VerifyAccessAsync(type, e, item, true);
                         Validator.TryValidateObject(item, new ValidationContext(item), errors);
                         break;
                     case EntityState.Modified:
                         pending.Add((e.State, item, type));
                         await OnUpdatingAsync(type, item);
+                        await VerifyAccessAsync(type, e, item);
                         Validator.TryValidateObject(item, new ValidationContext(item), errors);
                         break;
                     case EntityState.Deleted:
                         pending.Add((e.State, item, type));
                         await OnDeletingAsync(type, item);
+                        await VerifyAccessAsync(type, e, item);
                         Validator.TryValidateObject(item, new ValidationContext(item), errors);
                         break;
                 }
@@ -259,6 +336,119 @@ namespace NeuroSpeech.EntityAccessControl
             {
                 this.RaiseEvents = true;
             }
+        }
+
+        IQueryable<T> ISecureQueryProvider.Query<T>()
+        {
+            return FilteredQuery<T>();
+        }
+
+        private Dictionary<Type, IEntityEvents> cached
+            = new Dictionary<Type, IEntityEvents>();
+
+        JsonIgnoreCondition ISecureQueryProvider.GetIgnoreCondition(PropertyInfo property)
+        {
+            var eh = cached.GetOrCreate( property.PropertyType, (k) => events.GetEvents(services, property.PropertyType));
+            if (eh == null)
+                return JsonIgnoreCondition.Never;
+            return eh.GetIgnoreCondition(property);
+        }
+
+        public IQueryContext<T> Apply<T>(IQueryContext<T> qec)
+            where T: class
+        {
+            var type = typeof(T);
+            var baseType = type.BaseType;
+            if (baseType != null && baseType != typeof(object))
+            {
+                qec = this.GetInstanceGenericMethod(
+                    nameof(ApplyInternal), type, baseType).As<IQueryContext<T>>()
+                    .Invoke(qec);
+            }
+            var eh = events.GetEvents(services, typeof(T));
+            if (eh == null)
+            {
+                throw new EntityAccessException("Access denied");
+            }
+            return (IQueryContext<T>)eh.Filter(qec);
+        }
+
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public IQueryContext<RT> ApplyInternal<RT,BT>(IQueryContext<RT> q)
+            where RT: class, BT
+            where BT: class
+        {
+            return Apply(q.OfType<BT>()).OfType<RT>();
+        }
+
+        Task ISecureQueryProvider.SaveChangesAsync(CancellationToken cancellationToken)
+        {
+            return SaveChangesAsync(cancellationToken);
+        }
+
+        private static Task<object?> nullResult = Task.FromResult<object?>(null);
+
+        Task<object?> ISecureQueryProvider.FindByKeysAsync(
+            Microsoft.EntityFrameworkCore.Metadata.IEntityType t,
+            JsonElement keys, CancellationToken cancellation)
+        {
+            return this.GetInstanceGenericMethod(nameof(FindByKeysInternalAsync), t.ClrType)
+                .As<Task<object?>>()
+                .Invoke(t, keys, cancellation);
+        }
+        public Task<object?> FindByKeysInternalAsync<T>(
+            Microsoft.EntityFrameworkCore.Metadata.IEntityType t,
+            JsonElement keys, CancellationToken token)
+            where T: class
+        {
+            var type = typeof(T);
+            ParameterExpression? tx = null;// = Expression.Parameter(type, "x");
+            Expression? start = null;
+            var k = t.FindPrimaryKey();
+            var copy = Activator.CreateInstance<T>();
+            var copyConst = Expression.Constant(copy);
+            foreach (var p in k.Properties)
+            {
+                if (!keys.TryGetPropertyCaseInsensitive(p.Name, out var v))
+                {
+                    return nullResult;
+                }
+
+                PropertyInfo property = p.PropertyInfo;
+                Type propertyType = property.PropertyType;
+                var value = v.DeserializeJsonElement(propertyType);
+                // check if it is default...
+                if (value == null || value.Equals(propertyType.GetDefaultForType()))
+                {
+                    return nullResult;
+                }
+
+                property.SetValue(copy, value);
+
+                tx ??= Expression.Parameter(type, "x");
+                var equals = Expression.Equal(
+                    Expression.Property(tx, property),
+                    Expression.Property(copyConst, property));
+                if (start == null)
+                {
+                    start = equals;
+                    continue;
+                }
+                start = Expression.AndAlso(start, equals);
+            }
+            var lambda = Expression.Lambda<Func<T?, bool>>(start, tx);
+            var q = FilteredQuery<T>().Where(lambda);
+            return q.FirstOrDefaultAsync(token).ContinueAsObject();
+
+        }
+        void ISecureQueryProvider.Remove(object entity)
+        {
+            Remove(entity);
+        }
+
+        void ISecureQueryProvider.Add(object entity)
+        {
+            Add(entity);
         }
     }
 }

@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using NeuroSpeech.EntityAccessControl.Security;
 using NeuroSpeech.EntityAccessControl.Tests.Model;
 using System;
 using System.Collections.Generic;
@@ -20,8 +19,8 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
 
                 using var scope = CreateScope();
                 using var db = scope.GetRequiredService<AppDbContext>();
-
-                var sdb = new SecureAppTestDbContext(db, 3, new AppTestDbContextRules());
+                db.UserID = 3;
+                var sdb = db;
 
                 sdb.Add(new Post
                 {
@@ -67,8 +66,8 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
         {
             using var scope = CreateScope();
             using var db = scope.GetRequiredService<AppDbContext>();
-
-            var sdb = new SecureAppTestDbContext(db, 2, new AppTestDbContextRules());
+            db.UserID = 2;
+            var sdb = db;
 
             sdb.Add(new Post { 
                 Name = "a",

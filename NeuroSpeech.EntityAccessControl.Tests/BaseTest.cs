@@ -1,8 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using NeuroSpeech.EFCoreAutomaticMigration;
-using NeuroSpeech.EntityAccessControl.Security;
 using NeuroSpeech.EntityAccessControl.Tests.Model;
+using NeuroSpeech.EntityAccessControl.Tests.Model.Events;
 using System;
 using System.Linq;
 using System.Text;
@@ -48,9 +48,9 @@ namespace NeuroSpeech.EntityAccessControl.Tests
 
         protected override void Configure(ServiceCollection services)
         {
-            services.AddSingleton<ISecureRepository, SecureAppTestDbContext>();
+            // services.AddSingleton<ISecureRepository, SecureAppTestDbContext>();
             services.AddSingleton<DbContextEvents<AppDbContext>, AppDbContextEvents>();
-            services.AddSingleton<BaseSecurityRules<long>, AppTestDbContextRules>();
+            // services.AddSingleton<BaseSecurityRules<long>, AppTestDbContextRules>();
 
             services.AddDbContext<AppDbContext>(options => {
                 options.UseSqlServer(ConnectionString);
@@ -102,14 +102,16 @@ namespace NeuroSpeech.EntityAccessControl.Tests
         {
             Seed(db, new Account { 
                 // admin
-                AccountID = 1
+                AccountID = 1,
+                IsAdmin = true
             },new Account { 
                 // non admin
                 AccountID = 2
             }, new Account
             {
                 // banned user
-                AccountID = 3
+                AccountID = 3,
+                Banned = true
             });
 
             Seed(db, new Post { 

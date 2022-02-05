@@ -342,6 +342,21 @@ namespace NeuroSpeech.EntityAccessControl.Internal
             return new GenericMethodWithTarget<T>(m, target);
         }
 
+        public static GenericMethodWithTarget<T> GetInstanceGenericMethod<T>(this T target, 
+            string methodName, 
+            Type type1,
+            Type type2)
+            where T : notnull
+        {
+            var m = GetOrAdd((target, methodName, type1, type2), (x) =>
+            {
+                var method = typeof(T)
+                    .GetMethod(methodName)!
+                    .MakeGenericMethod(type1, type2);
+                return new GenericMethod<T>(method);
+            });
+            return new GenericMethodWithTarget<T>(m, target);
+        }
     }
 
     public static class TaskExtensions

@@ -37,8 +37,8 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
 
             var db = scope.GetRequiredService<AppDbContext>();
 
-
-            var sdb = new SecureAppTestDbContext(db, 2, new AppTestDbContextRules());
+            db.UserID = 2;
+            var sdb = db;
 
             var controller = new TestEntityController(sdb);
             var name = "NeuroSpeech.EntityAccessControl.Tests.Model.Post";
@@ -63,9 +63,9 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
             using var scope = CreateScope();
 
             var db = scope.GetRequiredService<AppDbContext>();
+            db.UserID = 2;
 
-
-            var sdb = new SecureAppTestDbContext(db, 2, new AppTestDbContextRules());
+            var sdb = db;
 
             var controller = new TestEntityController(sdb);
             var name = "NeuroSpeech.EntityAccessControl.Tests.Model.Post";
@@ -88,9 +88,9 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
         private async Task SelectMethodAsync(IScopeServices services)
         {
             var db = services.GetRequiredService<AppDbContext>();
+            db.UserID = 2;
 
-
-            var sdb = new SecureAppTestDbContext(db, 2, new AppTestDbContextRules());
+            var sdb = db;
 
             var controller = new TestEntityController(sdb);
             var name = "NeuroSpeech.EntityAccessControl.Tests.Model.Post";
@@ -111,7 +111,8 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
         private async Task SelectAsync(IScopeServices services)
         {
             var db = services.GetRequiredService<AppDbContext>();
-            var sdb = new SecureAppTestDbContext(db, 2, new AppTestDbContextRules());
+            db.UserID = 2;
+            var sdb = db;
 
             var userId = 2;
 

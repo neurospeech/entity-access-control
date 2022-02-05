@@ -46,6 +46,10 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Model
     {
         [Key, DatabaseGenerated(DatabaseGeneratedOption.None)]
         public long AccountID { get; set; }
+
+        public bool Banned { get; set; }
+
+        public bool IsAdmin { get; set; }
     }
 
     [Table("Posts")]

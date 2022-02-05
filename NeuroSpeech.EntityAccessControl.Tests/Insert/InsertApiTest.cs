@@ -10,7 +10,7 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
 {
     public class TestEntityController: BaseEntityController
     {
-        public TestEntityController(SecureAppTestDbContext db)
+        public TestEntityController(AppDbContext db)
             : base(db)
         {
 
@@ -55,9 +55,8 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
         private async Task ReInsertPostAsync(IServiceProvider services, int userId = 2)
         {
             var db = services.GetRequiredService<AppDbContext>();
-            var sdb = new SecureAppTestDbContext(db, userId, new AppTestDbContextRules());
-
-            var controller = new TestEntityController(sdb);
+            db.UserID = userId;
+            var controller = new TestEntityController(db);
 
             var doc = System.Text.Json.JsonDocument.Parse(
                 JsonSerialize(new Dictionary<string, object>{
@@ -103,9 +102,8 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
         private async Task InsertPostAsync(IServiceProvider services, int userId = 2)
         {
             var db = services.GetRequiredService<AppDbContext>();
-            var sdb = new SecureAppTestDbContext(db, userId, new AppTestDbContextRules());
-
-            var controller = new TestEntityController(sdb);
+            db.UserID = userId;
+            var controller = new TestEntityController(db);
 
             var doc = System.Text.Json.JsonDocument.Parse(
                 JsonSerialize(new Dictionary<string, object>{

@@ -1,5 +1,4 @@
-﻿using NeuroSpeech.EntityAccessControl.Security;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,9 +26,9 @@ namespace NeuroSpeech.EntityAccessControl
 
         protected static readonly string DateFormat = "yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'FFFFFFFZ";
 
-        protected readonly ISecureRepository db;
+        protected readonly ISecureQueryProvider db;
 
-        public BaseController(ISecureRepository db)
+        public BaseController(ISecureQueryProvider db)
         {
             this.db = db;
         }
@@ -262,7 +261,7 @@ namespace NeuroSpeech.EntityAccessControl
     public abstract class BaseEntityController : BaseController
     {
 
-        public BaseEntityController(ISecureRepository db) : base(db)
+        public BaseEntityController(ISecureQueryProvider db) : base(db)
         {
         }
 

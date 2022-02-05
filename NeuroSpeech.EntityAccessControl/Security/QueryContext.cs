@@ -1,26 +1,41 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 using NeuroSpeech.EntityAccessControl.Parser;
-using NeuroSpeech.EntityAccessControl.Security;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace NeuroSpeech.EntityAccessControl
 {
+    public interface ISecureQueryProvider
+    {
+        IModel Model { get; }
+
+        IQueryable<T> Query<T>() where T : class;
+        JsonIgnoreCondition GetIgnoreCondition(PropertyInfo property);
+        IQueryContext<T> Apply<T>(IQueryContext<T> qec) where T : class;
+        Task SaveChangesAsync(CancellationToken cancellationToken = default);
+        Task<object?> FindByKeysAsync(IEntityType t, JsonElement item, CancellationToken cancellation = default);
+        void Remove(object entity);
+
+        void Add(object entity);
+    }
+
     public readonly struct QueryContext<T>: IOrderedQueryContext<T>
         where T: class
     {
-        private readonly ISecureRepository db;
+        private readonly ISecureQueryProvider db;
         private readonly IQueryable<T> queryable;
         private readonly ErrorModel? errorModel;
 
-        public QueryContext(ISecureRepository db, IQueryable<T> queryable, ErrorModel? errorModel = null)
+        public QueryContext(ISecureQueryProvider db, IQueryable<T> queryable, ErrorModel? errorModel = null)
         {
             this.db = db;
             this.queryable = queryable;
