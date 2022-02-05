@@ -63,7 +63,7 @@ namespace NeuroSpeech.EntityAccessControl
             var eh = events.GetEvents(services, typeof(T));
             if (eh == null)
             {
-                throw new EntityAccessException("Access denied");
+                throw new EntityAccessException($"No security rule defined for entity {typeof(T).Name}");
             }
             return ((IQueryContext<T>)eh.Filter(q)).ToQuery();
         }
