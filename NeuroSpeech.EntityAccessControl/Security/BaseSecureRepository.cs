@@ -138,133 +138,121 @@ namespace NeuroSpeech.EntityAccessControl.Security
             return q.FirstOrDefaultAsync(token).ContinueAsObject();
         }
 
-        public Task<int> SaveChangesAsync(CancellationToken token = default) {
-            return db.SaveChangesAsync(token);
-            //if (SecurityDisabled)
-            //{
-            //    return await db.SaveChangesAsync();
-            //}
-            //await using var tx = await db.Database.BeginTransactionAsync(token);
-            //var changes = db.ChangeTracker.Entries().ToList();
+        public async Task<int> SaveChangesAsync(CancellationToken token = default) {
+            // return db.SaveChangesAsync(token);
+            if (SecurityDisabled)
+            {
+                return await db.SaveChangesAsync();
+            }
+            await using var tx = await db.Database.BeginTransactionAsync(token);
+            var changes = db.ChangeTracker.Entries().ToList();
 
-            //var pendingVerifications = new List<PreservedState>();
+            var pendingVerifications = new List<PreservedState>();
 
-            //// verify delete
-            //foreach(var entry in changes)
-            //{
-            //    switch (entry.State)
-            //    {
-            //        case EntityState.Modified:
-            //            foreach(var member in entry.Members.Where(x => x.IsModified))
-            //            {
-            //                VerifyMemberModify(entry.Entity, member.Metadata.PropertyInfo);
-            //            }
-            //            await VerifyAccessAsync(entry);
-            //            pendingVerifications.Add(entry);
-            //            break;
-            //        case EntityState.Deleted:
-            //            await VerifyAccessAsync(entry);
-            //            pendingVerifications.Add(entry);
-            //            break;
-            //        case EntityState.Added:
-            //            pendingVerifications.Add(entry);
-            //            break;
-            //    }
-            //}
+            // verify delete
+            foreach (var entry in changes)
+            {
+                switch (entry.State)
+                {
+                    case EntityState.Modified:
+                        foreach (var member in entry.Members.Where(x => x.IsModified))
+                        {
+                            VerifyMemberModify(entry.Entity, member.Metadata.PropertyInfo);
+                        }
+                        await VerifyAccessAsync(entry);
+                        pendingVerifications.Add(entry);
+                        break;
+                    case EntityState.Deleted:
+                        await VerifyAccessAsync(entry);
+                        // pendingVerifications.Add(entry);
+                        break;
+                    case EntityState.Added:
+                        pendingVerifications.Add(entry);
+                        break;
+                }
+            }
 
-            //int r = await db.SaveChangesAsync();
-            //foreach(var entry in pendingVerifications)
-            //{
-            //    await VerifyAccessAsync(entry);
-            //}
+            int r = await db.SaveChangesAsync();
+            foreach (var entry in pendingVerifications)
+            {
+                await VerifyAccessAsync(entry);
+            }
 
-            //await tx.CommitAsync();
-            // return r;
+            await tx.CommitAsync();
+            return r;
         }
 
-        //private void VerifyMemberModify(object entity, PropertyInfo propertyInfo)
-        //{
-        //    this.GetInstanceGenericMethod(nameof(InternalVerifyMemberModify), entity.GetType())
-        //        .As<bool>()
-        //        .Invoke(propertyInfo);
-        //}
+        private void VerifyMemberModify(object entity, PropertyInfo propertyInfo)
+        {
+            this.GetInstanceGenericMethod(nameof(InternalVerifyMemberModify), entity.GetType())
+                .As<bool>()
+                .Invoke(propertyInfo);
+        }
 
-        //public bool InternalVerifyMemberModify<T>(PropertyInfo propertyInfo)
-        //{
-        //    // rules.VerifyModifyMember<T>(propertyInfo, AssociatedUser);
-        //    return true;
-        //}
+        public bool InternalVerifyMemberModify<T>(PropertyInfo propertyInfo)
+        {
+            // rules.VerifyModifyMember<T>(propertyInfo, AssociatedUser);
+            return true;
+        }
 
-        //public readonly struct PreservedState
-        //{
-        //    public readonly EntityState State;
-        //    public readonly object Entity;
+        public readonly struct PreservedState
+        {
+            public readonly EntityState State;
+            public readonly object Entity;
 
-        //    public static implicit operator PreservedState(EntityEntry entry)
-        //        => new PreservedState(entry.State, entry.Entity);
+            public static implicit operator PreservedState(EntityEntry entry)
+                => new PreservedState(entry.State, entry.Entity);
 
-        //    public PreservedState(EntityState state, object entry)
-        //    {
-        //        this.State = state;
-        //        this.Entity = entry;
-        //    }
-        //}
+            public PreservedState(EntityState state, object entry)
+            {
+                this.State = state;
+                this.Entity = entry;
+            }
+        }
 
-        //private Task VerifyAccessAsync(PreservedState entity)
-        //{
-        //    return this.GetInstanceGenericMethod(nameof(VerifyAccessGenericAsync), entity.Entity.GetType())
-        //        .As<Task>()
-        //        .Invoke(entity);
-        //    //return (this.GetType()
-        //    //    .GetMethod(nameof(VerifyAccessGenericAsync))!
-        //    //    .MakeGenericMethod(entity.Entity.GetType())
-        //    //    .Invoke(this, new object[] { entity }) as Task)!;
-        //}
+        private Task VerifyAccessAsync(PreservedState entity)
+        {
+            return this.GetInstanceGenericMethod(nameof(VerifyAccessGenericAsync), entity.Entity.GetType())
+                .As<Task>()
+                .Invoke(entity);
+            //return (this.GetType()
+            //    .GetMethod(nameof(VerifyAccessGenericAsync))!
+            //    .MakeGenericMethod(entity.Entity.GetType())
+            //    .Invoke(this, new object[] { entity }) as Task)!;
+        }
 
-        //[EditorBrowsable(EditorBrowsableState.Never)]
-        //public async Task VerifyAccessGenericAsync<T>(PreservedState entry)
-        //    where T:class
-        //{
-        //    var type = typeof(T);
-        //    var tx = Expression.Parameter(type, "x");
-        //    var t = db.Model.GetEntityTypes().FirstOrDefault(x => x.ClrType == type);
-        //    Expression? start = null;
-        //    var entity = entry.Entity;
-        //    foreach (var p in t.GetKeys().SelectMany(x => x.Properties))
-        //    {
-        //        var equals = Expression.Equal(Expression.Property(tx, p.PropertyInfo), Expression.Constant(p.PropertyInfo.GetValue(entity)));
-        //        if (start == null)
-        //        {
-        //            start = equals;
-        //            continue;
-        //        }
-        //        start = Expression.AndAlso(start, equals);
-        //    }
-        //    var lambda = Expression.Lambda<Func<T, bool>>(start, tx);
-        //    var q = db.Set<T>().Where(lambda);
-        //    var errorModel = new ErrorModel();
-        //    switch (entry.State)
-        //    {
-        //        case EntityState.Added:
-        //            q = rules.ApplyInsert<T>(new QueryContext<T>(this, q, errorModel), AssociatedUser);
-        //            break;
-        //        case EntityState.Deleted:
-        //            q = rules.ApplyDelete<T>(new QueryContext<T>(this, q, errorModel), AssociatedUser);
-        //            break;
-        //        case EntityState.Modified:
-        //            q = rules.ApplyUpdate<T>(new QueryContext<T>(this, q, errorModel), AssociatedUser);
-        //            break;
-        //        default:
-        //            return;
-        //    }
-        //    if (!await q.AnyAsync())
-        //        throw new EntityAccessException(errorModel);
-        //    //var d = await q.FirstOrDefaultAsync();
-        //    //if (d != entry.Entity)
-        //    //{
-        //    //    throw new UnauthorizedAccessException();
-        //    //}
-        //}
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public async Task VerifyAccessGenericAsync<T>(PreservedState entry)
+            where T : class
+        {
+            var type = typeof(T);
+            var tx = Expression.Parameter(type, "x");
+            var t = db.Model.GetEntityTypes().FirstOrDefault(x => x.ClrType == type);
+            Expression? start = null;
+            var entity = entry.Entity;
+            var entityConstant = Expression.Constant(entity);
+            var pk = t.FindPrimaryKey();
+            if (pk == null)
+            {
+                throw new EntityAccessException("Cannot modify entity without primary key");
+            }
+            foreach (var p in pk.Properties)
+            {
+                var equals = Expression.Equal(
+                    Expression.Property(tx, p.PropertyInfo), 
+                    Expression.Property(entityConstant, p.PropertyInfo));
+                if (start == null)
+                {
+                    start = equals;
+                    continue;
+                }
+                start = Expression.AndAlso(start, equals);
+            }
+            var lambda = Expression.Lambda<Func<T, bool>>(start, tx);
+            var q = Query<T>().Where(lambda);
+            if (!await q.AnyAsync())
+                throw new EntityAccessException($"Access denied");
+        }
 
     }
 
