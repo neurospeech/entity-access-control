@@ -17,6 +17,7 @@ namespace NeuroSpeech.EntityAccessControl
     public interface ISecureQueryProvider
     {
         IModel Model { get; }
+        bool EnforceSecurity { get; set; }
 
         IQueryable<T> Query<T>() where T : class;
         JsonIgnoreCondition GetIgnoreCondition(PropertyInfo property);

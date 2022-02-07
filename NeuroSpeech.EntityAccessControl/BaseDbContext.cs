@@ -56,6 +56,8 @@ namespace NeuroSpeech.EntityAccessControl
 
         public bool RaiseEvents { get; set; }
 
+        public bool EnforceSecurity { get; set; }
+
         public IQueryable<T> FilteredQuery<T>()
             where T: class
         {
@@ -277,20 +279,29 @@ namespace NeuroSpeech.EntityAccessControl
                     case EntityState.Added:
                         pending.Add((e.State, item, type));
                         await OnInsertingAsync(type, item);
-                        await VerifyAccessAsync(type, e, item, true);
                         Validator.TryValidateObject(item, new ValidationContext(item), errors);
+                        if (EnforceSecurity)
+                        {
+                            await VerifyAccessAsync(type, e, item, true);
+                        }
                         break;
                     case EntityState.Modified:
                         pending.Add((e.State, item, type));
                         await OnUpdatingAsync(type, item);
-                        await VerifyAccessAsync(type, e, item);
                         Validator.TryValidateObject(item, new ValidationContext(item), errors);
+                        if (EnforceSecurity)
+                        {
+                            await VerifyAccessAsync(type, e, item);
+                        }
                         break;
                     case EntityState.Deleted:
                         pending.Add((e.State, item, type));
                         await OnDeletingAsync(type, item);
-                        await VerifyAccessAsync(type, e, item);
                         Validator.TryValidateObject(item, new ValidationContext(item), errors);
+                        if (EnforceSecurity)
+                        {
+                            await VerifyAccessAsync(type, e, item);
+                        }
                         break;
                 }
             }

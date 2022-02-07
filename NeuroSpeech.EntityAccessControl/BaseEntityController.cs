@@ -375,6 +375,7 @@ export class Model<T extends IClrEntity> {
         {
             try
             {
+                db.EnforceSecurity = true;
                 if (body.ValueKind == JsonValueKind.Array)
                     return await SaveMultiple(body);
                 if (!body.TryGetStringProperty("$type", out var typeName))
@@ -398,6 +399,7 @@ export class Model<T extends IClrEntity> {
         {
             try
             {
+                db.EnforceSecurity = true;
                 List<object> results = new List<object>();
                 foreach (var body in model.EnumerateArray())
                 {
@@ -421,6 +423,7 @@ export class Model<T extends IClrEntity> {
         {
             try
             {
+                db.EnforceSecurity = true;
                 var t = FindEntityType(entity);
                 var d = await db.FindByKeysAsync(t, entity);
                 if (d != null)
@@ -441,6 +444,7 @@ export class Model<T extends IClrEntity> {
             CancellationToken cancellation
             )
         {
+            db.EnforceSecurity = true;
             if (model.Keys == null)
                 return BadRequest();
             try
@@ -482,6 +486,7 @@ export class Model<T extends IClrEntity> {
             CancellationToken cancellation
             )
         {
+            db.EnforceSecurity = true;
             if (model.Keys == null
                 || model.Update.ValueKind == JsonValueKind.Undefined
                 || model.Update.ValueKind == JsonValueKind.Null)
