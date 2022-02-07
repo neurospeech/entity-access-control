@@ -99,20 +99,20 @@ namespace NeuroSpeech.EntityAccessControl
                         continue;
                     await this.GetInstanceGenericMethod(nameof(VerifyFilterAsync), re.Metadata.TargetEntityType.ClrType)
                         .As<Task>()
-                        .Invoke(re.Query(), e, item);
+                        .Invoke(re.Query(), e, item, true);
                 }
                 return;
             }
             await this.GetInstanceGenericMethod(nameof(VerifyFilterAsync), type)
                 .As<Task>()
-                .Invoke((IQueryable?)null, e, item);
+                .Invoke((IQueryable?)null, e, item, false);
         }
 
-        public async Task VerifyFilterAsync<T>(IQueryable? query, EntityEntry e, object? item)
+        public async Task VerifyFilterAsync<T>(IQueryable? query, EntityEntry e, object? item, bool insert)
             where T: class
         {
             var q = query == null ? Set<T>() : (IQueryable<T>)query;
-            if (e.State != EntityState.Added) {
+            if (!insert) {
                 var pe = Expression.Parameter(typeof(T));
                 var ce = Expression.Constant(item, typeof(T));
                 var pKey = e.Metadata.FindPrimaryKey();
