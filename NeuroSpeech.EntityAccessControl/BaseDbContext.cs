@@ -427,7 +427,8 @@ namespace NeuroSpeech.EntityAccessControl
 
                 PropertyInfo property = p.PropertyInfo;
                 Type propertyType = property.PropertyType;
-                var value = v.DeserializeJsonElement(propertyType);
+                var value = property.SaveJsonOrValue(copy, v);
+                // var value = v.DeserializeJsonElement(propertyType);
                 // check if it is default...
                 if (value == null || value.Equals(propertyType.GetDefaultForType()))
                 {

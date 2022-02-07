@@ -19,6 +19,7 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
 
                 using var scope = CreateScope();
                 using var db = scope.GetRequiredService<AppDbContext>();
+                db.EnforceSecurity = true;
                 db.UserID = 3;
                 var sdb = db;
 
