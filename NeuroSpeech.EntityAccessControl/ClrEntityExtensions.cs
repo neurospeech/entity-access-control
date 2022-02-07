@@ -101,7 +101,9 @@ namespace NeuroSpeech.EntityAccessControl
                     return DateTime.Parse(target.GetString()!);
 
             }
-            var text = target.GetString()!;
+            string text = target.ValueKind == JsonValueKind.String
+                ? target.GetString()!
+                : target.GetRawText();
             if(type == typeof(DateTimeOffset))
             {
                 return DateTimeOffset.Parse(text);
