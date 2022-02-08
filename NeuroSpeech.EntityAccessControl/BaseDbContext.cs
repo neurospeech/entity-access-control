@@ -74,6 +74,8 @@ namespace NeuroSpeech.EntityAccessControl
         {
             if (insert)
             {
+                var metdata = e.Metadata;
+                var properties = metdata.GetDeclaredProperties();
                 foreach(var re in e.References)
                 {
                     if (re.Metadata.IsCollection)
@@ -86,6 +88,8 @@ namespace NeuroSpeech.EntityAccessControl
                     bool isModified = false;
                     foreach(var p in nav.ForeignKey.Properties)
                     {
+                        if (!properties.Contains(p))
+                            continue;
                         var px = e.Property(p.Name);
                         if (px.IsTemporary)
                             continue;
