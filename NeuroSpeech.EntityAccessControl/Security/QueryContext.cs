@@ -215,6 +215,10 @@ namespace NeuroSpeech.EntityAccessControl
             {
                 q = q.Take(size);
             }
+            if (options.SplitInclude)
+            {
+                q = q.AsSplitQuery();
+            }
             if (q != @this)
             {
                 return new LinqResult
