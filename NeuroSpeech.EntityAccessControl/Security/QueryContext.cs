@@ -254,7 +254,7 @@ namespace NeuroSpeech.EntityAccessControl
             {
 
                 var r = this.GetInstanceGenericMethod(nameof(IncludeChildren), itemType, typeof(TP))
-                    .As<object>()
+                    .As<IIncludableQueryContext<T,TP>>()
                     .Invoke(path.Body, path.Parameters);
                 var rc = r as IIncludableQueryContext<T, TP>;
                 return rc;
@@ -263,14 +263,15 @@ namespace NeuroSpeech.EntityAccessControl
             return new IncludableQueryContext<T, TP>(db, q, errorModel);
         }
 
-        public object IncludeChildren<TP, RT>(
+        public IIncludableQueryContext<T,RT> IncludeChildren<TP, RT>(
             Expression body, 
             IReadOnlyCollection<ParameterExpression> parameters)
             where TP : class
+            where RT: IEnumerable<TP>
         {
             var path = Expression.Lambda<Func<T, IEnumerable<TP>>>(body, parameters);
             var q = queryable.Include(Replace(path));
-            return new IncludableChildrenQueryContext<T, TP>(db, q, errorModel);
+            return new IncludableChildrenQueryContext<T, RT, TP>(db, q, errorModel);
         }
 
     }
@@ -291,9 +292,11 @@ namespace NeuroSpeech.EntityAccessControl
         }
     }
 
-    public class IncludableChildrenQueryContext<T, TP> : QueryContext<T>
-        , IIncludableQueryContext<T, IEnumerable<TP>>
+    public class IncludableChildrenQueryContext<T, ITP, TP> : QueryContext<T>
+        , IIncludableQueryContext<T, ITP>
         where T : class
+        where TP: class
+        where ITP: IEnumerable<TP>
     {
         public IncludableChildrenQueryContext(ISecureQueryProvider db, IQueryable<T> queryable, ErrorModel? errorModel = null)
             : base(db, queryable, errorModel)

@@ -70,8 +70,9 @@ namespace NeuroSpeech.EntityAccessControl
             this IIncludableQueryContext<TEntity, IEnumerable<TPreviousProperty>> @this, 
             Expression<Func<TPreviousProperty, TProperty>> path)
             where TEntity : class
+            where TPreviousProperty: class
         {
-            var q = @this as IncludableChildrenQueryContext<TEntity, TPreviousProperty>;
+            var q = @this as IncludableChildrenQueryContext<TEntity, IEnumerable<TPreviousProperty>, TPreviousProperty>;
             return q.ThenInclude(path);
         }
 
