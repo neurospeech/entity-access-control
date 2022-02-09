@@ -27,6 +27,8 @@ namespace NeuroSpeech.EntityAccessControl
 
         IQueryContext<T> Include(string include);
 
+        IIncludableQueryContext<T, TP> Include<TP>(Expression<Func<T,TP>> path) where TP: class;
+
         IQueryContext<T> AsSplitQuery();
 
         string ToQueryString();
@@ -39,6 +41,11 @@ namespace NeuroSpeech.EntityAccessControl
 
         IOrderedQueryContext<T> OrderByDescending(Expression<Func<T, object>> expression);
 
+    }
+
+    public interface IIncludableQueryContext<T, TP>: IQueryContext<T>
+    {
+        IIncludableQueryContext<T, TProperty> ThenInclude<TProperty>(Expression<Func<TP, TProperty>> path) where TProperty: class;
     }
 
     public interface IOrderedQueryContext<T>: IQueryContext<T>

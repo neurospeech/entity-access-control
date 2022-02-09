@@ -185,6 +185,29 @@ namespace NeuroSpeech.EntityAccessControl.Internal
             return $"any /*{type.FullName}*/";
         }
 
+        public static bool TryGetEnumerableItem(this Type type, out Type? itemType )
+        {
+            itemType = type.StaticCacheGetOrCreate("EN" + type.FullName, () =>
+            {
+                if (!(type is System.Collections.IEnumerable))
+                    return null;
+                do
+                {
+                    var td = typeof(IEnumerable<>);
+                    foreach (var i in type.GetInterfaces())
+                    {
+                        if (i.IsConstructedGenericType && i.GetGenericTypeDefinition() == td)
+                        {
+                            return i.GetGenericArguments()[0];
+                        }
+                    }
+                    type = type.BaseType!;
+                } while (type != null);
+                return null;
+            });
+            return itemType != null;
+        }
+
         public static System.Collections.IList? GetOrCreateCollection(this PropertyInfo property, object target, Type itemType)
         {
             var value = property.GetValue(target);
@@ -353,6 +376,23 @@ namespace NeuroSpeech.EntityAccessControl.Internal
                 var method = typeof(T)
                     .GetMethod(methodName)!
                     .MakeGenericMethod(type1, type2);
+                return new GenericMethod<T>(method);
+            });
+            return new GenericMethodWithTarget<T>(m, target);
+        }
+
+        public static GenericMethodWithTarget<T> GetInstanceGenericMethod<T>(this T target,
+            string methodName,
+            Type type1,
+            Type type2,
+            Type type3)
+            where T : notnull
+        {
+            var m = GetOrAdd((target, methodName, type1, type2, type3), (x) =>
+            {
+                var method = typeof(T)
+                    .GetMethod(methodName)!
+                    .MakeGenericMethod(type1, type2, type3);
                 return new GenericMethod<T>(method);
             });
             return new GenericMethodWithTarget<T>(m, target);

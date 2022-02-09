@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Query;
+using NeuroSpeech.EntityAccessControl.Internal;
 using NeuroSpeech.EntityAccessControl.Parser;
 using System;
 using System.Collections.Generic;
@@ -7,34 +8,19 @@ using System.ComponentModel;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace NeuroSpeech.EntityAccessControl
 {
-    public interface ISecureQueryProvider
-    {
-        IModel Model { get; }
-        bool EnforceSecurity { get; set; }
 
-        IQueryable<T> Query<T>() where T : class;
-        JsonIgnoreCondition GetIgnoreCondition(PropertyInfo property);
-        IQueryContext<T> Apply<T>(IQueryContext<T> qec) where T : class;
-        Task SaveChangesAsync(CancellationToken cancellationToken = default);
-        Task<object?> FindByKeysAsync(IEntityType t, JsonElement item, CancellationToken cancellation = default);
-        void Remove(object entity);
-
-        void Add(object entity);
-    }
-
-    public readonly struct QueryContext<T>: IOrderedQueryContext<T>
+    public class QueryContext<T>: IOrderedQueryContext<T>
         where T: class
     {
-        private readonly ISecureQueryProvider db;
-        private readonly IQueryable<T> queryable;
-        private readonly ErrorModel? errorModel;
+        protected readonly ISecureQueryProvider db;
+        protected readonly IQueryable<T> queryable;
+        protected readonly ErrorModel? errorModel;
 
         public QueryContext(ISecureQueryProvider db, IQueryable<T> queryable, ErrorModel? errorModel = null)
         {
@@ -85,6 +71,11 @@ namespace NeuroSpeech.EntityAccessControl
             return new QueryContext<T2>(db, queryable.Select(expression), errorModel);
         }
 
+        protected Expression<Func<TInput,TOutput>> Replace<TInput,TOutput>(Expression<Func<TInput,TOutput>> exp)
+        {
+            return exp.Update(Replace(exp.Body), exp.Parameters);
+        }
+
         Expression Replace(Expression original)
         {
             if (original is MemberExpression memberExpressiion)
@@ -119,8 +110,7 @@ namespace NeuroSpeech.EntityAccessControl
                     var itemType = nav.TargetEntityType.ClrType;
 
                     // apply where...
-                    var method = this.GetType().GetMethod(nameof(Apply))!.MakeGenericMethod(itemType);
-                    return (Expression)method.Invoke(this, new object[] { memberExpressiion })!;
+                    return this.GetInstanceGenericMethod(nameof(Apply), itemType).As<Expression>().Invoke(memberExpressiion);
                 }
             }
             return original;
@@ -168,7 +158,55 @@ namespace NeuroSpeech.EntityAccessControl
 
         public IQueryContext<T> Include(string include)
         {
-            return new QueryContext<T>(db, queryable.Include(include), errorModel);
+            var q = this.queryable;
+            var type = typeof(T);
+            int index = include.IndexOf('.');
+            var propertyName = index == -1 ? include : include.Substring(0, index);
+            var propertyInfo = type.GetPropertyIgnoreCase(propertyName);
+            var propertyType = propertyInfo.PropertyType;
+            bool isList = propertyType.TryGetEnumerableItem(out var itemPropertyType);
+            if (isList)
+            {
+                propertyType = itemPropertyType!;
+            }
+            q = this.GetInstanceGenericMethod(nameof(IncludeProperty), type, propertyType)
+                .As<IQueryable<T>>()
+                .Invoke(q, propertyInfo);
+            while(index != -1)
+            {
+                var tp = propertyType;
+                index = include.IndexOf('.');
+                propertyName = index == -1 ? include : include.Substring(0, index);
+                propertyInfo = type.GetPropertyIgnoreCase(propertyName);
+                q = this.GetInstanceGenericMethod(nameof(ThenIncludeProperty), type, tp, propertyInfo.PropertyType)
+                    .As<IQueryable<T>>()
+                    .Invoke(q, propertyInfo);
+            }
+            return new QueryContext<T>(db, q, errorModel);
+        }
+
+        public IQueryable<TE> IncludeProperty<TE, TP>(IQueryable<TE> q,
+            PropertyInfo propertyInfo)
+            where TE: class
+            where TP: class
+        {
+            var pe = Expression.Parameter(typeof(TE));
+            var property = Replace(Expression.Property(pe, propertyInfo));
+                
+            var lambda = Expression.Lambda<Func<TE,TP>>(property, pe);
+            return q.Include(lambda);
+        }
+
+        public IQueryable<TE> ThenIncludeProperty<TE, TP, TProperty>(IIncludableQueryable<TE, TP> q,
+            PropertyInfo propertyInfo)
+            where TE : class
+            where TP : class
+        {
+            var pe = Expression.Parameter(typeof(TP));
+            var property = Replace(Expression.Property(pe, propertyInfo));
+
+            var lambda = Expression.Lambda<Func<TP, TProperty>>(property, pe);
+            return q.ThenInclude(lambda);
         }
 
         public IOrderedQueryContext<T> ThenBy(Expression<Func<T, object>> expression)
@@ -196,6 +234,29 @@ namespace NeuroSpeech.EntityAccessControl
             return new QueryContext<T>(db, queryable.AsSplitQuery(), errorModel);
         }
 
+        public IIncludableQueryContext<T, TP> Include<TP>(Expression<Func<T, TP>> path)
+            where TP: class
+        {
+            return new IncludableQueryContext<T, TP>(db, queryable.Include(Replace(path)), errorModel);
+        }
+    }
+
+    public class IncludableQueryContext<T, TP> : QueryContext<T>, IIncludableQueryContext<T, TP>
+        where T: class
+        where TP: class
+    {
+        public IncludableQueryContext(ISecureQueryProvider db, IQueryable<T> queryable, ErrorModel? errorModel = null)
+            : base(db, queryable, errorModel)
+        {
+        }
+
+        public IIncludableQueryContext<T, TProperty> ThenInclude<TProperty>(Expression<Func<TP, TProperty>> path)
+            where TProperty: class
+        {
+            var q = (IIncludableQueryable<TP, TProperty>)queryable;
+            var iq = q.ThenInclude(Replace(path));
+            return new IncludableQueryContext<TP, TProperty>(db, iq, errorModel);
+        }
     }
 
     public static class QueryContextExtensions {
