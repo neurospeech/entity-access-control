@@ -255,6 +255,59 @@ namespace NeuroSpeech.EntityAccessControl.Internal
 
     }
 
+    //public static class DynamicHelper
+    //{
+    //    public class Method
+    //    {
+    //        private MethodInfo method;
+    //        private object? @delegate;
+
+    //        public Method(MethodInfo method)
+    //        {
+    //            this.method = method;
+    //            @delegate = null;
+    //        }
+
+    //        internal TDelegate CreateDelegate<TDelegate>()
+    //        {
+    //            return (TDelegate)(@delegate ??= method.CreateDelegate(typeof(TDelegate)));
+    //        }
+    //    }
+
+    //    public struct MethodWithTarget<RT>
+    //    {
+    //        private Method method;
+    //        private object target;
+
+    //        public MethodWithTarget(Method method, object target)
+    //        {
+    //            this.method = method;
+    //            this.target = target;
+    //        }
+
+    //        public RT Invoke()
+    //        {
+    //            return method.CreateDelegate<Func<RT>>();
+    //        }
+
+    //    }
+
+    //    public struct MethodWithTarget
+    //    {
+    //        private readonly Method method;
+    //        private readonly object target;
+
+    //        public MethodWithTarget(Method method, object target)
+    //        {
+    //            this.method = method;
+    //            this.target = target;
+    //        }
+
+    //        public MethodWithTarget<RT> As<RT>() => new MethodWithTarget<RT>(method, target);
+
+    //    }
+        
+    //}
 
 
     public static class GenericHelper1
