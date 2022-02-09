@@ -648,11 +648,13 @@ export class Model<T extends IClrEntity> {
                     case "include":
                         lm.Method = "Include";
                         hasInclude = true;
-                        lm.Expression = System.Text.Json.JsonSerializer.Serialize(lm.Expression);
+                        if (!lm.Expression.Contains("=>"))
+                            lm.Expression = System.Text.Json.JsonSerializer.Serialize(lm.Expression);
                         break;
                     case "thenInclude":
                         lm.Method = "ThenInclude";
-                        lm.Expression = System.Text.Json.JsonSerializer.Serialize(lm.Expression);
+                        if (!lm.Expression.Contains("=>"))
+                            lm.Expression = System.Text.Json.JsonSerializer.Serialize(lm.Expression);
                         break;
                     default:
                         continue;

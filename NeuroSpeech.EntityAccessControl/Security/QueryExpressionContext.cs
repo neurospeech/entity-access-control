@@ -122,5 +122,16 @@ namespace NeuroSpeech.EntityAccessControl
         {
             return Where(filter);
         }
+
+        public IIncludableQueryContext<T, TP> Include<TP>(Expression<Func<T, TP>> path) where TP : class
+        {
+            throw new NotImplementedException();
+        }
+
+        public IIncludableQueryContext<T, TP> Include<TP>(Expression<Func<T, IEnumerable<TP>>> path) where TP : class
+        {
+            throw new NotImplementedException();
+        }
+
     }
 }

@@ -189,15 +189,18 @@ namespace NeuroSpeech.EntityAccessControl.Internal
         {
             itemType = type.StaticCacheGetOrCreate("EN" + type.FullName, () =>
             {
-                if (!(type is System.Collections.IEnumerable))
+                if (!(typeof(System.Collections.IEnumerable).IsAssignableFrom(type)))
                     return null;
                 do
                 {
                     var td = typeof(IEnumerable<>);
+                    var tdc = typeof(ICollection<>);
                     foreach (var i in type.GetInterfaces())
                     {
-                        if (i.IsConstructedGenericType && i.GetGenericTypeDefinition() == td)
+                        if (i.IsConstructedGenericType)
                         {
+                            if (i.GetGenericTypeDefinition() == td 
+                            || i.GetGenericTypeDefinition() == tdc)
                             return i.GetGenericArguments()[0];
                         }
                     }

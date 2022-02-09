@@ -1,10 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
 using NeuroSpeech.EntityAccessControl.Internal;
-using NeuroSpeech.EntityAccessControl.Parser;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -64,7 +62,7 @@ namespace NeuroSpeech.EntityAccessControl
             var list = new List<Expression>();
             foreach(var p in ne.Arguments)
             {
-                list.Add(Replace(p));
+                list.Add(Replace(p, true));
             }
             ne = ne.Update(list);
             expression = Expression.Lambda<Func<T, T2>>(ne, expression.Parameters);
@@ -76,8 +74,18 @@ namespace NeuroSpeech.EntityAccessControl
             return exp.Update(Replace(exp.Body), exp.Parameters);
         }
 
-        Expression Replace(Expression original)
+        protected Expression<Func<TInput, IEnumerable<TOutput>>> Replace<TInput, TOutput>(Expression<Func<TInput, IEnumerable<TOutput>>> exp)
         {
+            return exp.Update(Replace(exp.Body, false, typeof(IEnumerable<TOutput>)), exp.Parameters);
+        }
+
+
+        Expression Replace(Expression original, bool toList = false, Type? returnType = null)
+        {
+            if (returnType == null)
+            {
+                returnType = original.Type;
+            }
             if (original is MemberExpression memberExpressiion)
             {
                 if (memberExpressiion.Expression is not ParameterExpression)
@@ -110,23 +118,29 @@ namespace NeuroSpeech.EntityAccessControl
                     var itemType = nav.TargetEntityType.ClrType;
 
                     // apply where...
-                    return this.GetInstanceGenericMethod(nameof(Apply), itemType).As<Expression>().Invoke(memberExpressiion);
+                    return this.GetInstanceGenericMethod(nameof(Apply), itemType)
+                        .As<Expression>()
+                        .Invoke(memberExpressiion, toList, returnType);
                 }
             }
             return original;
         }
 
-        public Expression Apply<T1>(Expression expression)
+        public Expression Apply<T1>(Expression expression, bool toList, Type returnType)
             where T1: class
         {
             var qec = new QueryExpressionContext<T1>(new QueryContext<T1>(db, db.Query<T1>()!, errorModel), expression);
             var r = db.Apply<T1>(qec);
             qec = (QueryExpressionContext<T1>)r;
             var fe = qec.Expression;
-            if (fe.Type != expression.Type)
+            if (fe.Type != returnType)
             {
-                // tolist required...
-                return QueryExpressionContext<T1>.ToList(fe);
+                if (toList)
+                {
+                    // tolist required...
+                    return QueryExpressionContext<T1>.ToList(fe);
+                }
+                return Expression.TypeAs(fe, expression.Type);
             }
             return fe;
         }
@@ -167,7 +181,7 @@ namespace NeuroSpeech.EntityAccessControl
             bool isList = propertyType.TryGetEnumerableItem(out var itemPropertyType);
             if (isList)
             {
-                propertyType = itemPropertyType!;
+                propertyType = typeof(IEnumerable<>).MakeGenericType(itemPropertyType!);
             }
             q = this.GetInstanceGenericMethod(nameof(IncludeProperty), type, propertyType)
                 .As<IQueryable<T>>()
@@ -191,7 +205,7 @@ namespace NeuroSpeech.EntityAccessControl
             where TP: class
         {
             var pe = Expression.Parameter(typeof(TE));
-            var property = Replace(Expression.Property(pe, propertyInfo));
+            var property = Replace(Expression.Property(pe, propertyInfo), false, typeof(TP));
                 
             var lambda = Expression.Lambda<Func<TE,TP>>(property, pe);
             return q.Include(lambda);
@@ -219,12 +233,12 @@ namespace NeuroSpeech.EntityAccessControl
             return new QueryContext<T>(db, (queryable as IOrderedQueryable<T>).ThenByDescending(expression), errorModel);
         }
 
-        public IOrderedQueryContext<T> OrderBy(Expression<Func<T, object>> expression)
+        public IOrderedQueryContext<T> OrderBy<TP>(Expression<Func<T, TP>> expression)
         {
             return new QueryContext<T>(db, queryable.OrderBy(expression), errorModel);
         }
 
-        public IOrderedQueryContext<T> OrderByDescending(Expression<Func<T, object>> expression)
+        public IOrderedQueryContext<T> OrderByDescending<TP>(Expression<Func<T, TP>> expression)
         {
             return new QueryContext<T>(db, queryable.OrderByDescending(expression), errorModel);
         }
@@ -234,16 +248,35 @@ namespace NeuroSpeech.EntityAccessControl
             return new QueryContext<T>(db, queryable.AsSplitQuery(), errorModel);
         }
 
-        public IIncludableQueryContext<T, TP> Include<TP>(Expression<Func<T, TP>> path)
-            where TP: class
+        public IIncludableQueryContext<T, TP> Include<TP>(Expression<Func<T, TP>> path)            
         {
-            return new IncludableQueryContext<T, TP>(db, queryable.Include(Replace(path)), errorModel);
+            if (typeof(TP).TryGetEnumerableItem(out var itemType))
+            {
+
+                var r = this.GetInstanceGenericMethod(nameof(IncludeChildren), itemType, typeof(TP))
+                    .As<object>()
+                    .Invoke(path.Body, path.Parameters);
+                var rc = r as IIncludableQueryContext<T, TP>;
+                return rc;
+            }
+            var q = queryable.Include(Replace(path));
+            return new IncludableQueryContext<T, TP>(db, q, errorModel);
         }
+
+        public object IncludeChildren<TP, RT>(
+            Expression body, 
+            IReadOnlyCollection<ParameterExpression> parameters)
+            where TP : class
+        {
+            var path = Expression.Lambda<Func<T, IEnumerable<TP>>>(body, parameters);
+            var q = queryable.Include(Replace(path));
+            return new IncludableChildrenQueryContext<T, TP>(db, q, errorModel);
+        }
+
     }
 
     public class IncludableQueryContext<T, TP> : QueryContext<T>, IIncludableQueryContext<T, TP>
-        where T: class
-        where TP: class
+        where T : class
     {
         public IncludableQueryContext(ISecureQueryProvider db, IQueryable<T> queryable, ErrorModel? errorModel = null)
             : base(db, queryable, errorModel)
@@ -251,48 +284,28 @@ namespace NeuroSpeech.EntityAccessControl
         }
 
         public IIncludableQueryContext<T, TProperty> ThenInclude<TProperty>(Expression<Func<TP, TProperty>> path)
-            where TProperty: class
         {
-            var q = (IIncludableQueryable<TP, TProperty>)queryable;
+            var q = (IIncludableQueryable<T, TP>)queryable;
             var iq = q.ThenInclude(Replace(path));
-            return new IncludableQueryContext<TP, TProperty>(db, iq, errorModel);
+            return new IncludableQueryContext<T, TProperty>(db, iq, errorModel);
         }
     }
 
-    public static class QueryContextExtensions {
-
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public static async Task<LinqResult> ToPagedListAsync<T>(this IQueryContext<T> @this, LinqMethodOptions options)
+    public class IncludableChildrenQueryContext<T, TP> : QueryContext<T>
+        , IIncludableQueryContext<T, IEnumerable<TP>>
+        where T : class
+    {
+        public IncludableChildrenQueryContext(ISecureQueryProvider db, IQueryable<T> queryable, ErrorModel? errorModel = null)
+            : base(db, queryable, errorModel)
         {
-            int start = options.Start;
-            int size = options.Size;
-            var cancellationToken = options.CancelToken;
-            var q = @this as IQueryContext<T>;
-            if (start > 0)
-            {
-                q = q.Skip(start);
-            }
-            if (size > 0)
-            {
-                q = q.Take(size);
-            }
-            if (options.SplitInclude)
-            {
-                q = q.AsSplitQuery();
-            }
-            if (q != @this)
-            {
-                return new LinqResult
-                {
-                    Total = await @this.CountAsync(cancellationToken),
-                    Items = (await q.ToListAsync(cancellationToken)).OfType<object>(),
-                };
-            }
-            return new LinqResult
-            {
-                Items = (await @this.ToListAsync(cancellationToken)).OfType<object>(),
-                Total = 0
-            };
+        }
+
+        public IIncludableQueryContext<T, TProperty> ThenInclude<TProperty>(Expression<Func<TP, TProperty>> path)
+        {
+            var q = (IIncludableQueryable<T,IEnumerable<TP>>)queryable;
+            var iq = q.ThenInclude(Replace(path));
+            return new IncludableQueryContext<T, TProperty>(db, iq, errorModel);
         }
     }
+
 }

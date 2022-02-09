@@ -1,8 +1,10 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NeuroSpeech.EntityAccessControl.Tests.Model;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -19,6 +21,7 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
 
                 using var scope = CreateScope();
                 using var db = scope.GetRequiredService<AppDbContext>();
+
                 db.EnforceSecurity = true;
                 db.UserID = 3;
                 var sdb = db;

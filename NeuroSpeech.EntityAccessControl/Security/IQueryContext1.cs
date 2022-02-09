@@ -8,18 +8,18 @@ using System.Threading.Tasks;
 
 namespace NeuroSpeech.EntityAccessControl
 {
-    public interface IQueryContext<T>: IQueryContext
+    public interface IQueryContext<out T>: IQueryContext
     {
-        IQueryContext<T> Where(Expression<Func<T, bool>> filter);
+        // IQueryContext<T> Where(Expression<Func<T, bool>> filter);
 
-        IQueryContext<T> Requires(Expression<Func<T, bool>> filter, string errorMessage);
+        // IQueryContext<T> Requires(Expression<Func<T, bool>> filter, string errorMessage);
 
         IQueryContext<T1> Set<T1>() where T1: class;
 
         IQueryable<T> ToQuery();
 
-        IQueryContext<T2> Select<T2>(Expression<Func<T, T2>> expression)
-            where T2: class;
+        //IQueryContext<T2> Select<T2>(Expression<Func<T, T2>> expression)
+        //    where T2: class;
 
         IQueryContext<T> Skip(int n);
 
@@ -27,7 +27,8 @@ namespace NeuroSpeech.EntityAccessControl
 
         IQueryContext<T> Include(string include);
 
-        IIncludableQueryContext<T, TP> Include<TP>(Expression<Func<T,TP>> path) where TP: class;
+        // IIncludableQueryContext<T, TP> Include<TP>(Expression<Func<T,TP>> path) where TP: class;
+
 
         IQueryContext<T> AsSplitQuery();
 
@@ -35,24 +36,24 @@ namespace NeuroSpeech.EntityAccessControl
 
         Task<int> CountAsync(CancellationToken cancellationToken = default);
 
-        Task<List<T>> ToListAsync(CancellationToken cancellationToken = default);
+        // Task<List<out T>> ToListAsync(CancellationToken cancellationToken = default);
 
-        IOrderedQueryContext<T> OrderBy(Expression<Func<T, object>> expression);
+        //IOrderedQueryContext<T> OrderBy(Expression<Func<T, object>> expression);
 
-        IOrderedQueryContext<T> OrderByDescending(Expression<Func<T, object>> expression);
+        //IOrderedQueryContext<T> OrderByDescending(Expression<Func<T, object>> expression);
 
     }
 
-    public interface IIncludableQueryContext<T, TP>: IQueryContext<T>
+    public interface IIncludableQueryContext<out T, out TP> : IQueryContext<T>
     {
-        IIncludableQueryContext<T, TProperty> ThenInclude<TProperty>(Expression<Func<TP, TProperty>> path) where TProperty: class;
+        // IIncludableQueryContext<T, TProperty> ThenInclude<TProperty>(Expression<Func<TP, TProperty>> path) where TProperty : class;
     }
 
-    public interface IOrderedQueryContext<T>: IQueryContext<T>
+    public interface IOrderedQueryContext<out T>: IQueryContext<T>
     {
-        IOrderedQueryContext<T> ThenBy(Expression<Func<T, object>> expression);
+        //IOrderedQueryContext<T> ThenBy(Expression<Func<T, object>> expression);
 
-        IOrderedQueryContext<T> ThenByDescending(Expression<Func<T, object>> expression);
+        //IOrderedQueryContext<T> ThenByDescending(Expression<Func<T, object>> expression);
 
     }
 }

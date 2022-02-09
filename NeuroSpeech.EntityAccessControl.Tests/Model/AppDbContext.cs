@@ -38,6 +38,10 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Model
                 x.PostID,
                 x.Name
             });
+            modelBuilder.Entity<TagKeyword>().HasKey(x => new { 
+                x.Name,
+                x.Keyword
+            });
         }
     }
 
@@ -141,6 +145,20 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Model
         public ICollection<PostTag> PostTags { get; set; }
 
         public ICollection<PostContent> PostContents { get; set; }
+
+        public ICollection<TagKeyword> Keywords { get; set; }
     }
 
+    [Table("Keywords")]
+    public class TagKeyword
+    {
+        [MaxLength(100)]
+        public string Name { get; set; }
+
+        [MaxLength(200)]
+        public string Keyword { get; set; }
+
+        [ForeignKey(nameof(Name))]
+        public Tag Tag { get; set; }
+    }
 }
