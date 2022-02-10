@@ -46,7 +46,7 @@ namespace NeuroSpeech.EntityAccessControl
 
     public interface IIncludableQueryContext<out T, out TP> : IQueryContext<T>
     {
-        // IIncludableQueryContext<T, TProperty> ThenInclude<TProperty>(Expression<Func<TP, TProperty>> path) where TProperty : class;
+        internal IIncludableQueryContext<T, TProperty> ThenInclude<TProperty>(LambdaExpression path);
     }
 
     public interface IOrderedQueryContext<out T>: IQueryContext<T>

@@ -72,10 +72,7 @@ namespace NeuroSpeech.EntityAccessControl
             where TEntity : class
             where TPreviousProperty: class
         {
-            return (IIncludableQueryContext<TEntity, TProperty>)
-                @this.GetType().GetMethod("ThenInclude")
-                .MakeGenericMethod(typeof(TProperty)).Invoke(@this, new object[] { path});
-            // return q.ThenInclude(path);
+            return @this.ThenInclude<TProperty>((LambdaExpression)path);
         }
 
         public static IIncludableQueryContext<T, TProperty> ThenInclude<T, TP, TProperty>(

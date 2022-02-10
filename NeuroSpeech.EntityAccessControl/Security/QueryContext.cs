@@ -290,6 +290,11 @@ namespace NeuroSpeech.EntityAccessControl
             var iq = q.ThenInclude(Replace(path));
             return new IncludableQueryContext<T, TProperty>(db, iq, errorModel);
         }
+
+        IIncludableQueryContext<T, TProperty> IIncludableQueryContext<T, TP>.ThenInclude<TProperty>(LambdaExpression path)
+        {
+            return ThenInclude<TProperty>(Expression.Lambda<Func<TP,TProperty>>(path, path.Parameters));
+        }
     }
 
     public class IncludableChildrenQueryContext<T, ITP, TP> : QueryContext<T>
@@ -303,31 +308,32 @@ namespace NeuroSpeech.EntityAccessControl
         {
         }
 
-        public IIncludableQueryContext<T, TProperty> ThenInclude<TProperty>(Expression<Func<IEnumerable<TP>, TProperty>> path)
+        public IIncludableQueryContext<T, TPropertyEnumerable> ThenIncludeChildren<TProperty, TPropertyEnumerable>(
+            Expression body,
+            IReadOnlyCollection<ParameterExpression> parameters)
+                where TProperty : class
+                where TPropertyEnumerable : IEnumerable<TProperty>
         {
-            if (typeof(ITP).TryGetEnumerableItem(out var itemType))
-            {
+            var q = (IIncludableQueryable<T, IEnumerable<TP>>)queryable;
+            var exp = Expression.Lambda<Func<TP, TPropertyEnumerable>>(body, parameters);
+            var iq = q.ThenInclude(Replace(exp));
+            return new IncludableChildrenQueryContext<T, TPropertyEnumerable, TProperty>(db, iq, errorModel);
+        }
 
-                var r = this.GetInstanceGenericMethod(nameof(ThenIncludeChildren), itemType, typeof(TP))
+        IIncludableQueryContext<T, TProperty> IIncludableQueryContext<T, ITP>.ThenInclude<TProperty>(LambdaExpression path)
+        {
+            if (typeof(TProperty).TryGetEnumerableItem(out var itemType))
+            {
+                var r = this.GetInstanceGenericMethod(nameof(ThenIncludeChildren), itemType, typeof(TProperty))
                     .As<IIncludableQueryContext<T, TProperty>>()
                     .Invoke(path.Body, path.Parameters);
                 var rc = r as IIncludableQueryContext<T, TProperty>;
                 return rc;
             }
-            var q = (IIncludableQueryable<T,IEnumerable<TP>>)queryable;
-            var iq = q.ThenInclude(Replace(path));
+            var q = (IIncludableQueryable<T, IEnumerable<TP>>)queryable;
+            var exp = Expression.Lambda<Func<TP, TProperty>>(path.Body, path.Parameters);
+            var iq = q.ThenInclude(Replace(exp));
             return new IncludableQueryContext<T, TProperty>(db, iq, errorModel);
-        }
-
-        public IIncludableQueryContext<T, TProperty> ThenIncludeChildren<TPrevious, TProperty>(
-            Expression body,
-            IReadOnlyCollection<ParameterExpression> parameters)
-                where TPrevious : class
-                where TProperty : IEnumerable<TPrevious>
-        {
-            var path = Expression.Lambda<Func<T, IEnumerable<TPrevious>>>(body, parameters);
-            var q = queryable.Include(Replace(path));
-            return new IncludableChildrenQueryContext<T, TProperty, TPrevious>(db, q, errorModel);
         }
     }
 
