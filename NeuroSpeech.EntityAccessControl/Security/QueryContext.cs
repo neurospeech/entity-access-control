@@ -303,11 +303,31 @@ namespace NeuroSpeech.EntityAccessControl
         {
         }
 
-        public IIncludableQueryContext<T, TProperty> ThenInclude<TProperty>(Expression<Func<TP, TProperty>> path)
+        public IIncludableQueryContext<T, TProperty> ThenInclude<TProperty>(Expression<Func<IEnumerable<TP>, TProperty>> path)
         {
+            if (typeof(ITP).TryGetEnumerableItem(out var itemType))
+            {
+
+                var r = this.GetInstanceGenericMethod(nameof(ThenIncludeChildren), itemType, typeof(TP))
+                    .As<IIncludableQueryContext<T, TProperty>>()
+                    .Invoke(path.Body, path.Parameters);
+                var rc = r as IIncludableQueryContext<T, TProperty>;
+                return rc;
+            }
             var q = (IIncludableQueryable<T,IEnumerable<TP>>)queryable;
             var iq = q.ThenInclude(Replace(path));
             return new IncludableQueryContext<T, TProperty>(db, iq, errorModel);
+        }
+
+        public IIncludableQueryContext<T, TProperty> ThenIncludeChildren<TPrevious, TProperty>(
+            Expression body,
+            IReadOnlyCollection<ParameterExpression> parameters)
+                where TPrevious : class
+                where TProperty : IEnumerable<TPrevious>
+        {
+            var path = Expression.Lambda<Func<T, IEnumerable<TPrevious>>>(body, parameters);
+            var q = queryable.Include(Replace(path));
+            return new IncludableChildrenQueryContext<T, TProperty, TPrevious>(db, q, errorModel);
         }
     }
 
