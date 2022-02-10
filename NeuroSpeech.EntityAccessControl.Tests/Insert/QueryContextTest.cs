@@ -28,10 +28,11 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
 
             // db.Posts.Include(x => x.Tags).ThenInclude(x => x.Tag.Keywords);
 
-            qc
+            await qc
                 .Include(x => x.Tags)
                 .ThenInclude(a => a.Tag.Keywords)
-                .ThenInclude(a => a.Tag.PostContents);
+                .ThenInclude(a => a.Tag.PostContents)
+                .CountAsync();
 
         }
 
