@@ -74,6 +74,11 @@ namespace NeuroSpeech.EntityAccessControl
             return exp.Update(Replace(exp.Body), exp.Parameters);
         }
 
+        protected Expression<Func<TInput, TOutput>> ReplaceEnumerable<TInput, TOutput>(Expression<Func<TInput, TOutput>> exp)
+        {
+            return exp.Update(Replace(exp.Body, false, typeof(TOutput)), exp.Parameters);
+        }
+
         protected Expression<Func<TInput, IEnumerable<TOutput>>> Replace<TInput, TOutput>(Expression<Func<TInput, IEnumerable<TOutput>>> exp)
         {
             return exp.Update(Replace(exp.Body, false, typeof(IEnumerable<TOutput>)), exp.Parameters);
@@ -316,7 +321,7 @@ namespace NeuroSpeech.EntityAccessControl
         {
             var q = (IIncludableQueryable<T, IEnumerable<TP>>)queryable;
             var exp = Expression.Lambda<Func<TP, TPropertyEnumerable>>(body, parameters);
-            var iq = q.ThenInclude(Replace(exp));
+            var iq = q.ThenInclude(ReplaceEnumerable(exp));
             return new IncludableChildrenQueryContext<T, TPropertyEnumerable, TProperty>(db, iq, errorModel);
         }
 
