@@ -13,12 +13,12 @@ using System.Threading.Tasks;
 namespace NeuroSpeech.EntityAccessControl
 {
 
-    public class QueryContext<T>: IOrderedQueryContext<T>
+    public readonly struct QueryContext<T>: IOrderedQueryContext<T>
         where T: class
     {
-        protected readonly ISecureQueryProvider db;
-        protected readonly IQueryable<T> queryable;
-        protected readonly ErrorModel? errorModel;
+        internal readonly ISecureQueryProvider db;
+        internal readonly IQueryable<T> queryable;
+        internal readonly ErrorModel? errorModel;
 
         public QueryContext(ISecureQueryProvider db, IQueryable<T> queryable, ErrorModel? errorModel = null)
         {
@@ -69,17 +69,17 @@ namespace NeuroSpeech.EntityAccessControl
             return new QueryContext<T2>(db, queryable.Select(expression), errorModel);
         }
 
-        protected Expression<Func<TInput,TOutput>> Replace<TInput,TOutput>(Expression<Func<TInput,TOutput>> exp)
+        internal Expression<Func<TInput,TOutput>> Replace<TInput,TOutput>(Expression<Func<TInput,TOutput>> exp)
         {
             return exp.Update(Replace(exp.Body), exp.Parameters);
         }
 
-        protected Expression<Func<TInput, IEnumerable<TOutput>>> ReplaceEnumerable<TInput, TOutput>(Expression<Func<TInput, IEnumerable<TOutput>>> exp)
+        internal Expression<Func<TInput, IEnumerable<TOutput>>> ReplaceEnumerable<TInput, TOutput>(Expression<Func<TInput, IEnumerable<TOutput>>> exp)
         {
             return exp.Update(Replace(exp.Body, false, typeof(IEnumerable<TOutput>)), exp.Parameters);
         }
 
-        protected Expression<Func<TInput, IEnumerable<TOutput>>> Replace<TInput, TOutput>(Expression<Func<TInput, IEnumerable<TOutput>>> exp)
+        internal Expression<Func<TInput, IEnumerable<TOutput>>> Replace<TInput, TOutput>(Expression<Func<TInput, IEnumerable<TOutput>>> exp)
         {
             return exp.Update(Replace(exp.Body, false, typeof(IEnumerable<TOutput>)), exp.Parameters);
         }
@@ -281,12 +281,14 @@ namespace NeuroSpeech.EntityAccessControl
 
     }
 
-    public class IncludableQueryContext<T, TP> : QueryContext<T>, IIncludableQueryContext<T, TP>
+    public readonly struct IncludableQueryContext<T, TP> : IIncludableQueryContext<T, TP>
         where T : class
     {
+        private readonly QueryContext<T> qc;
+
         public IncludableQueryContext(ISecureQueryProvider db, IQueryable<T> queryable, ErrorModel? errorModel = null)
-            : base(db, queryable, errorModel)
         {
+            this.qc = new QueryContext<T>(db, queryable, errorModel);
         }
 
         public IIncludableQueryContext<T, TProperty> ThenInclude<TProperty>(Expression<Func<TP, TProperty>> path)
@@ -300,9 +302,9 @@ namespace NeuroSpeech.EntityAccessControl
                 var rc = r as IIncludableQueryContext<T, TProperty>;
                 return rc;
             }
-            var iq = (IIncludableQueryable<T, TP>)queryable;
-            var q = iq.ThenInclude(Replace(path));
-            return new IncludableQueryContext<T, TProperty>(db, q, errorModel);
+            var iq = (IIncludableQueryable<T, TP>)qc.queryable;
+            var q = iq.ThenInclude(qc.Replace(path));
+            return new IncludableQueryContext<T, TProperty>(qc.db, q, qc.errorModel);
         }
 
         public IIncludableQueryContext<T, TEnumerableProperty> ThenIncludeChildren<TProperty, TEnumerableProperty>(
@@ -312,9 +314,9 @@ namespace NeuroSpeech.EntityAccessControl
             where TEnumerableProperty : IEnumerable<TProperty>
         {
             var path = Expression.Lambda<Func<TP, IEnumerable<TProperty>>>(body, parameters);
-            var iq = (IIncludableQueryable<T, TP>)queryable;
-            var q = iq.ThenInclude(Replace(path));
-            return new IncludableQueryContext<T, TEnumerableProperty>(db, q, errorModel);
+            var iq = (IIncludableQueryable<T, TP>)qc.queryable;
+            var q = iq.ThenInclude(qc.Replace(path));
+            return new IncludableQueryContext<T, TEnumerableProperty>(qc.db, q, qc.errorModel);
         }
 
         public IIncludableQueryContext<T, TProperty> AsCollectionThenInclude<TPreviousProperty, TProperty>(Expression<Func<TPreviousProperty, TProperty>> path) where TPreviousProperty : class
@@ -328,9 +330,9 @@ namespace NeuroSpeech.EntityAccessControl
                 var rc = r as IIncludableQueryContext<T, TProperty>;
                 return rc;
             }
-            var iq = (IIncludableQueryable<T, IEnumerable<TPreviousProperty>>)queryable;
-            var q = iq.ThenInclude(Replace(path));
-            return new IncludableQueryContext<T, TProperty>(db, q, errorModel);
+            var iq = (IIncludableQueryable<T, IEnumerable<TPreviousProperty>>)qc.queryable;
+            var q = iq.ThenInclude(qc.Replace(path));
+            return new IncludableQueryContext<T, TProperty>(qc.db, q, qc.errorModel);
         }
 
         public IIncludableQueryContext<T, TEnumerableProperty> AsCollectionThenIncludeChildren<TPreviousProperty, TProperty, TEnumerableProperty>(
@@ -340,12 +342,15 @@ namespace NeuroSpeech.EntityAccessControl
             where TEnumerableProperty : IEnumerable<TProperty>
         {
             var path = Expression.Lambda<Func<TPreviousProperty, IEnumerable<TProperty>>>(body, parameters);
-            var iq = (IIncludableQueryable<T, IEnumerable<TPreviousProperty>>)queryable;
-            var q = iq.ThenInclude(ReplaceEnumerable<TPreviousProperty, TProperty>(path));
-            return new IncludableQueryContext<T, TEnumerableProperty>(db, q, errorModel);
+            var iq = (IIncludableQueryable<T, IEnumerable<TPreviousProperty>>)qc.queryable;
+            var q = iq.ThenInclude(qc.ReplaceEnumerable<TPreviousProperty, TProperty>(path));
+            return new IncludableQueryContext<T, TEnumerableProperty>(qc.db, q, qc.errorModel);
         }
 
-
+        public IQueryContext<T1> OfType<T1>() where T1 : class
+        {
+            return qc.OfType<T1>();
+        }
     }
 
     //public class IncludableChildrenQueryContext<T, ITP, TP> : QueryContext<T>

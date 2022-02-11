@@ -12,7 +12,7 @@ namespace NeuroSpeech.EntityAccessControl
     public struct QueryExpressionContext<T> : IQueryContext<T>
         where T: class
     {
-        private readonly IQueryContext<T> parent;
+        public readonly IQueryContext<T> parent;
         private readonly Expression expression;
 
         public Expression Expression => expression;
@@ -56,81 +56,15 @@ namespace NeuroSpeech.EntityAccessControl
             return parent.Select(expression);
         }
 
-        public IQueryContext<T1> Set<T1>() where T1 : class
-        {
-            return parent.Set<T1>();
-        }
-
-        public IQueryable<T> ToQuery()
-        {
-            // should never be called...
-            throw new NotImplementedException();
-        }
-
         public IQueryContext<T> Where(Expression<Func<T, bool>> filter)
         {
             var e = Expression.Call(null, MethodWhere, expression, filter);
             return new QueryExpressionContext<T>(parent, e);
         }
 
-        public IQueryContext<T> Skip(int n)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IQueryContext<T> Take(int n)
-        {
-            throw new NotImplementedException();
-        }
-
-        public string ToQueryString()
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<int> CountAsync(CancellationToken cancellationToken)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<List<T>> ToListAsync(CancellationToken cancellationToken)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IQueryContext<T> Include(string include)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IOrderedQueryContext<T> OrderBy(Expression<Func<T, object>> expression)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IOrderedQueryContext<T> OrderByDescending(Expression<Func<T, object>> expression)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IQueryContext<T> AsSplitQuery()
-        {
-            throw new NotImplementedException();
-        }
-
         public IQueryContext<T> Requires(Expression<Func<T, bool>> filter, string errorMessage)
         {
             return Where(filter);
-        }
-
-        public IIncludableQueryContext<T, TP> Include<TP>(Expression<Func<T, TP>> path) where TP : class
-        {
-            throw new NotImplementedException();
-        }
-
-        public IIncludableQueryContext<T, TP> Include<TP>(Expression<Func<T, IEnumerable<TP>>> path) where TP : class
-        {
-            throw new NotImplementedException();
         }
 
     }

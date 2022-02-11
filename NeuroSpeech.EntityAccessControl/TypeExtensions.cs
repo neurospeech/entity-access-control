@@ -340,7 +340,8 @@ namespace NeuroSpeech.EntityAccessControl.Internal
 
             internal TDelegate CreateDelegate<TDelegate>()
             {
-                return (TDelegate)(@delegate ??= method.CreateDelegate(typeof(TDelegate)));
+                // return (TDelegate)(@delegate ??= method.CreateDelegate(typeof(TDelegate)));
+                return (TDelegate)(@delegate ??= Delegate.CreateDelegate(typeof(TDelegate), null, method));
             }
         }
 
