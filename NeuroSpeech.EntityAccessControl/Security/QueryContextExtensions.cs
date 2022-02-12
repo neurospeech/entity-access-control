@@ -115,26 +115,6 @@ namespace NeuroSpeech.EntityAccessControl
             throw new InvalidOperationException();
         }
 
-        public static IIncludableQueryContext<TEntity, TProperty> 
-            ThenInclude<TEntity, TPreviousProperty, TProperty>(
-            this IIncludableQueryContext<TEntity, IEnumerable<TPreviousProperty>> @this, 
-            Expression<Func<TPreviousProperty, TProperty>> path)
-            where TEntity : class
-            where TPreviousProperty: class
-        {
-            var q = @this as IIncludableQueryContext<TEntity, IEnumerable<TPreviousProperty>>;
-            return q.AsCollectionThenInclude(path);
-        }
-
-        public static IIncludableQueryContext<T, TProperty> ThenInclude<T, TP, TProperty>(
-            this IIncludableQueryContext<T, TP> @this, Expression<Func<TP, TProperty>> path)
-            where T : class
-        {
-            if (@this is IIncludableQueryContext<T,TP> q)
-                return q.ThenInclude(path);
-            throw new InvalidOperationException();
-        }
-
         [EditorBrowsable(EditorBrowsableState.Never)]
         public static async Task<LinqResult> ToPagedListAsync<T>(this IQueryContext<T> @this, LinqMethodOptions options)
             where T: class

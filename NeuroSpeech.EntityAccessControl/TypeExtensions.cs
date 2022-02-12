@@ -330,18 +330,76 @@ namespace NeuroSpeech.EntityAccessControl.Internal
         public class GenericMethod<T>
         {
             private MethodInfo method;
+            private readonly bool isStatic;
             private object? @delegate;
 
             public GenericMethod(MethodInfo method)
             {
                 this.method = method;
+                this.isStatic = method.IsStatic;
                 @delegate = null;
             }
 
             internal TDelegate CreateDelegate<TDelegate>()
             {
-                // return (TDelegate)(@delegate ??= method.CreateDelegate(typeof(TDelegate)));
-                return (TDelegate)(@delegate ??= Delegate.CreateDelegate(typeof(TDelegate), null, method));
+                return (TDelegate)(@delegate ??= method.CreateDelegate(typeof(TDelegate)));
+                // return (TDelegate)(@delegate ??= Delegate.CreateDelegate(typeof(TDelegate), null, method));
+            }
+
+            public RT Invoke<RT>(T target)
+            {
+                if (isStatic)
+                    return CreateDelegate<Func<RT>>()();
+                return CreateDelegate<Func<T, RT>>()(target);
+            }
+            internal RT Invoke<T1, RT>(T target, T1 p1)
+            {
+                if (isStatic)
+                    return CreateDelegate<Func<T1, RT>>()(p1);
+                return CreateDelegate<Func<T, T1, RT>>()(target, p1);
+            }
+            internal RT Invoke<T1, T2, RT>(T target, T1 p1, T2 p2)
+            {
+                if (isStatic)
+                    return CreateDelegate<Func<T1, T2, RT>>()(p1, p2);
+                return CreateDelegate<Func<T, T1, T2, RT>>()(target, p1, p2);
+            }
+            internal RT Invoke<T1, T2, T3, RT>(T target, T1 p1, T2 p2, T3 p3)
+            {
+                if (isStatic)
+                    return CreateDelegate<Func<T1, T2, T3, RT>>()(p1, p2, p3);
+                return CreateDelegate<Func<T, T1, T2, T3, RT>>()(target, p1, p2, p3);
+            }
+            internal RT Invoke<T1, T2, T3, T4, RT>(T target, T1 p1, T2 p2, T3 p3, T4 p4)
+            {
+                if (isStatic)
+                    return CreateDelegate<Func<T1, T2, T3, T4, RT>>()(p1, p2, p3, p4);
+                return CreateDelegate<Func<T, T1, T2, T3, T4, RT>>()(target, p1, p2, p3, p4);
+            }
+            internal RT Invoke<T1, T2, T3, T4, T5, RT>(T target, T1 p1, T2 p2, T3 p3, T4 p4, T5 p5)
+            {
+                if (isStatic)
+                    return CreateDelegate<Func<T1, T2, T3, T4, T5, RT>>()(p1, p2, p3, p4, p5);
+                return CreateDelegate<Func<T, T1, T2, T3, T4, T5, RT>>()(target, p1, p2, p3, p4, p5);
+            }
+
+            internal RT Invoke<T1, T2, T3, T4, T5, T6, RT>(T target, T1 p1, T2 p2, T3 p3, T4 p4, T5 p5, T6 p6)
+            {
+                if (isStatic)
+                    return CreateDelegate<Func<T1, T2, T3, T4, T5, T6, RT>>()(p1, p2, p3, p4, p5, p6);
+                return CreateDelegate<Func<T, T1, T2, T3, T4, T5, T6, RT>>()(target, p1, p2, p3, p4, p5, p6);
+            }
+            internal RT Invoke<T1, T2, T3, T4, T5, T6, T7, RT>(T target, T1 p1, T2 p2, T3 p3, T4 p4, T5 p5, T6 p6, T7 p7)
+            {
+                if (isStatic)
+                    return CreateDelegate<Func<T1, T2, T3, T4, T5, T6, T7, RT>>()(p1, p2, p3, p4, p5, p6, p7);
+                return CreateDelegate<Func<T, T1, T2, T3, T4, T5, T6, T7, RT>>()(target, p1, p2, p3, p4, p5, p6, p7);
+            }
+            internal RT Invoke<T1, T2, T3, T4, T5, T6, T7, T8, RT>(T target, T1 p1, T2 p2, T3 p3, T4 p4, T5 p5, T6 p6, T7 p7, T8 p8)
+            {
+                if (isStatic)
+                    return CreateDelegate<Func<T1, T2, T3, T4, T5, T6, T7, T8, RT>>()(p1, p2, p3, p4, p5, p6, p7, p8);
+                return CreateDelegate<Func<T, T1, T2, T3, T4, T5, T6, T7, T8, RT>>()(target, p1, p2, p3, p4, p5, p6, p7, p8);
             }
         }
 
@@ -374,37 +432,37 @@ namespace NeuroSpeech.EntityAccessControl.Internal
 
             public RT Invoke()
             {
-                return genericMethod.CreateDelegate<Func<T, RT>>()(target);
+                return genericMethod.Invoke<RT>(target);
             }
 
             public RT Invoke<T1>(T1 p1)
             {
-                return genericMethod.CreateDelegate<Func<T, T1, RT>>()(target, p1);
+                return genericMethod.Invoke<T1, RT>(target, p1);
             }
 
             public RT Invoke<T1, T2>(T1 p1, T2 p2)
             {
-                return genericMethod.CreateDelegate<Func<T, T1, T2, RT>>()(target, p1, p2);
+                return genericMethod.Invoke<T1, T2, RT>(target, p1, p2);
             }
 
             public RT Invoke<T1, T2, T3>(T1 p1, T2 p2, T3 p3)
             {
-                return genericMethod.CreateDelegate<Func<T, T1, T2, T3, RT>>()(target, p1, p2, p3);
+                return genericMethod.Invoke<T1, T2, T3, RT>(target, p1, p2, p3);
             }
 
             public RT Invoke<T1, T2, T3, T4>(T1 p1, T2 p2, T3 p3, T4 p4)
             {
-                return genericMethod.CreateDelegate<Func<T, T1, T2, T3, T4, RT>>()(target, p1, p2, p3, p4);
+                return genericMethod.Invoke<T1, T2, T3, T4, RT>(target, p1, p2, p3, p4);
             }
 
             public RT Invoke<T1, T2, T3, T4, T5>(T1 p1, T2 p2, T3 p3, T4 p4, T5 p5)
             {
-                return genericMethod.CreateDelegate<Func<T, T1, T2, T3, T4, T5, RT>>()(target, p1, p2, p3, p4, p5);
+                return genericMethod.Invoke<T1, T2, T3, T4, T5, RT>(target, p1, p2, p3, p4, p5);
             }
 
             public RT Invoke<T1, T2, T3, T4, T5, T6>(T1 p1, T2 p2, T3 p3, T4 p4, T5 p5, T6 p6)
             {
-                return genericMethod.CreateDelegate<Func<T, T1, T2, T3, T4, T5, T6, RT>>()(target, p1, p2, p3, p4, p5, p6);
+                return genericMethod.Invoke<T1, T2, T3, T4, T5, T6, RT>(target, p1, p2, p3, p4, p5, p6);
             }
 
         }
