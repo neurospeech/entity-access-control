@@ -67,6 +67,7 @@ namespace NeuroSpeech.EntityAccessControl
             {
                 throw new EntityAccessException($"No security rule defined for entity {typeof(T).Name}");
             }
+            eh.EnforceSecurity = EnforceSecurity;
             return ((IQueryContext<T>)eh.Filter(q)).ToQuery();
         }
 
@@ -141,17 +142,20 @@ namespace NeuroSpeech.EntityAccessControl
             throw new EntityAccessException("Access denied");
         }
 
-        private Task OnInsertingAsync(Type type, object entity)
+        private async Task OnInsertingAsync(Type type, object entity)
         {
-            var eh = events.GetEvents(services, type);
-            if (eh!=null)
-            {
-                return eh.InsertingAsync(entity);
-            }
+            // call base class events first...
             var bt = type.BaseType;
-            if (bt == null || bt == typeof(object))
-                return Task.CompletedTask;
-            return OnInsertingAsync(bt, entity);
+            if (bt != null && bt != typeof(object))
+            {
+                await OnInsertingAsync(bt, entity);
+            }
+            var eh = events.GetEvents(services, type);
+            if (eh != null)
+            {
+                eh.EnforceSecurity = EnforceSecurity;
+                await eh.InsertingAsync(entity);
+            }
         }
 
         private async Task OnInsertedAsync(Type type, object entity)
@@ -165,6 +169,7 @@ namespace NeuroSpeech.EntityAccessControl
             var eh = events.GetEvents(services, type);
             if (eh != null)
             {
+                eh.EnforceSecurity = EnforceSecurity;
                 await eh.InsertedAsync(entity);
             }
         }
@@ -180,6 +185,7 @@ namespace NeuroSpeech.EntityAccessControl
             var eh = events.GetEvents(services, type);
             if (eh != null)
             {
+                eh.EnforceSecurity = EnforceSecurity;
                 await eh.UpdatingAsync(entity);
             }
         }
@@ -195,6 +201,7 @@ namespace NeuroSpeech.EntityAccessControl
             var eh = events.GetEvents(services, type);
             if (eh != null)
             {
+                eh.EnforceSecurity = EnforceSecurity;
                 await eh.UpdatedAsync(entity);
             }
         }
@@ -211,6 +218,7 @@ namespace NeuroSpeech.EntityAccessControl
             var eh = events.GetEvents(services, type);
             if (eh != null)
             {
+                eh.EnforceSecurity = EnforceSecurity;
                 await eh.DeletingAsync(entity);
             }
         }
@@ -226,6 +234,7 @@ namespace NeuroSpeech.EntityAccessControl
             var eh = events.GetEvents(services, type);
             if (eh != null)
             {
+                eh.EnforceSecurity = EnforceSecurity;
                 await eh.DeletedAsync(entity);
             }
         }

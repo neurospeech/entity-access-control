@@ -8,31 +8,11 @@ using System.Threading.Tasks;
 
 namespace NeuroSpeech.EntityAccessControl
 {
-    public class LockedEntityEvents<T>: DbEntityEvents<T>
-    {
-        public override IQueryContext<T> Filter(IQueryContext<T> q)
-        {
-            throw new EntityAccessException("Access to entity denied");
-        }
-
-        public override Task InsertingAsync(T entity)
-        {
-            throw new EntityAccessException("Inserting entity denied");
-        }
-
-        public override Task UpdatingAsync(T entity)
-        {
-            throw new EntityAccessException("Updating entity denied");
-        }
-
-        public override Task DeletingAsync(T entity)
-        {
-            throw new EntityAccessException("Deleting entity denied");
-        }
-    }
 
     public class DbEntityEvents<T> : IEntityEvents
     {
+        public bool EnforceSecurity { get; set; }
+
         public EntityAccessException NewEntityAccessException(string title)
         {
             return new EntityAccessException(new ErrorModel { Title = title });
@@ -96,7 +76,9 @@ namespace NeuroSpeech.EntityAccessControl
 
         public virtual IQueryContext<T> Filter(IQueryContext<T> q)
         {
-            throw new EntityAccessException($"No security rule defined for {typeof(T).Name}");
+            if (EnforceSecurity)
+                throw new EntityAccessException($"No security rule defined for {typeof(T).Name}");
+            return q;
         }
 
         IQueryContext IEntityEvents.Filter(IQueryContext q)
@@ -116,6 +98,8 @@ namespace NeuroSpeech.EntityAccessControl
 
         public virtual Task DeletingAsync(T entity)
         {
+            if (EnforceSecurity)
+                throw new EntityAccessException("Deleting Entity denied");
             return Task.CompletedTask;
         }
 
@@ -136,6 +120,8 @@ namespace NeuroSpeech.EntityAccessControl
 
         public virtual Task InsertingAsync(T entity)
         {
+            if (EnforceSecurity)
+                throw new EntityAccessException("Inserting Entity denied");
             return Task.CompletedTask;
         }
 
@@ -156,6 +142,8 @@ namespace NeuroSpeech.EntityAccessControl
 
         public virtual Task UpdatingAsync(T entity)
         {
+            if (EnforceSecurity)
+                throw new EntityAccessException("Updating Entity denied");
             return Task.CompletedTask;
         }
 

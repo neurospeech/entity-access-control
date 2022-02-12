@@ -8,6 +8,8 @@ namespace NeuroSpeech.EntityAccessControl
     public interface IEntityEvents
     {
 
+        bool EnforceSecurity { get; set; }
+
         IQueryContext Filter(IQueryContext q);
 
         JsonIgnoreCondition GetIgnoreCondition(PropertyInfo propety);
