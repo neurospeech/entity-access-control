@@ -116,10 +116,11 @@ namespace NeuroSpeech.EntityAccessControl
         public async Task VerifyFilterAsync<T>(IQueryable? query, EntityEntry e, object? item, bool insert)
             where T: class
         {
+            var type = typeof(T);
             var q = query == null ? Set<T>() : (IQueryable<T>)query;
             if (!insert) {
-                var pe = Expression.Parameter(typeof(T));
-                var ce = Expression.Constant(item, typeof(T));
+                var pe = Expression.Parameter(type);
+                var ce = Expression.Constant(item, type);
                 var pKey = e.Metadata.FindPrimaryKey();
                 Expression? body = null;
                 foreach(var p in pKey.Properties)
@@ -139,7 +140,9 @@ namespace NeuroSpeech.EntityAccessControl
             q = Apply<T>(new QueryContext<T>(this, q)).ToQuery();
             if (await q.AnyAsync())
                 return;
-            throw new EntityAccessException("Access denied");
+            if (insert)
+                throw new EntityAccessException($"Insert denied for {type.FullName}");
+            throw new EntityAccessException($"Update/Delete denied for {type.FullName}");
         }
 
         private async Task OnInsertingAsync(Type type, object entity)
@@ -389,10 +392,10 @@ namespace NeuroSpeech.EntityAccessControl
                     nameof(ApplyInternal), type, baseType).As<IQueryContext<T>>()
                     .Invoke(qec);
             }
-            var eh = events.GetEvents(services, typeof(T));
+            var eh = events.GetEvents(services, type);
             if (eh == null)
             {
-                throw new EntityAccessException("Access denied");
+                throw new EntityAccessException($"Access denied to {type.FullName}");
             }
             return (IQueryContext<T>)eh.Filter(qec);
         }

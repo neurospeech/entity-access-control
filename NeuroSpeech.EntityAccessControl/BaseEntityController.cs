@@ -386,6 +386,8 @@ export class Model<T extends IClrEntity> {
                 return Json(Serialize(e));
             }catch (EntityAccessException eae)
             {
+                if (eae.StackTrace!= null)
+                    eae.ErrorModel.Add("Stack", eae.StackTrace);
                 return this.UnprocessableEntity(eae.ErrorModel);
             }
         }
@@ -412,6 +414,8 @@ export class Model<T extends IClrEntity> {
                 return Json(SerializeList(results));
             }catch (EntityAccessException ex)
             {
+                if (ex.StackTrace != null)
+                    ex.ErrorModel.Add("Stack", ex.StackTrace);
                 return this.UnprocessableEntity(ex.ErrorModel);
             }
         }
@@ -434,6 +438,8 @@ export class Model<T extends IClrEntity> {
                 return Ok(new { });
             } catch( EntityAccessException ex)
             {
+                if (ex.StackTrace != null)
+                    ex.ErrorModel.Add("Stack", ex.StackTrace);
                 return this.UnprocessableEntity(ex.ErrorModel);
             }
         }
@@ -468,6 +474,8 @@ export class Model<T extends IClrEntity> {
                 return Ok(new { });
             }catch (EntityAccessException ex)
             {
+                if (ex.StackTrace != null)
+                    ex.ErrorModel.Add("Stack", ex.StackTrace);
                 return UnprocessableEntity(ex.ErrorModel);
             }
         }
@@ -510,9 +518,11 @@ export class Model<T extends IClrEntity> {
                 }
                 await db.SaveChangesAsync();
                 return Ok(new { });
-            }catch (EntityAccessException ex)
+            }catch (EntityAccessException eae)
             {
-                return UnprocessableEntity(ex.ErrorModel);
+                if (eae.StackTrace != null)
+                    eae.ErrorModel.Add("Stack", eae.StackTrace);
+                return UnprocessableEntity(eae.ErrorModel);
             }
         }
 
