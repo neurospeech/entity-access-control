@@ -99,7 +99,7 @@ namespace NeuroSpeech.EntityAccessControl
         public virtual Task DeletingAsync(T entity)
         {
             if (EnforceSecurity)
-                throw new EntityAccessException("Deleting Entity denied");
+                throw new EntityAccessException($"Deleting Entity {typeof(T).FullName} denied");
             return Task.CompletedTask;
         }
 
@@ -121,7 +121,7 @@ namespace NeuroSpeech.EntityAccessControl
         public virtual Task InsertingAsync(T entity)
         {
             if (EnforceSecurity)
-                throw new EntityAccessException("Inserting Entity denied");
+                throw new EntityAccessException($"Inserting Entity {typeof(T).FullName} denied");
             return Task.CompletedTask;
         }
 
@@ -143,7 +143,7 @@ namespace NeuroSpeech.EntityAccessControl
         public virtual Task UpdatingAsync(T entity)
         {
             if (EnforceSecurity)
-                throw new EntityAccessException("Updating Entity denied");
+                throw new EntityAccessException($"Updating Entity {typeof(T).FullName} denied");
             return Task.CompletedTask;
         }
 
