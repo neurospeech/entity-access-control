@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using NetTopologySuite.Geometries;
 using NeuroSpeech.EntityAccessControl.Internal;
 using System;
 using System.Collections.Generic;
@@ -185,6 +186,11 @@ namespace NeuroSpeech.EntityAccessControl
                 if (v is JsonNode jn)
                 {
                     r[name] = jn;
+                    continue;
+                }
+                if (v is Geometry g)
+                {
+                    r[name] = g.ToString();
                     continue;
                 }
                 if (v is System.Collections.IDictionary vd)
