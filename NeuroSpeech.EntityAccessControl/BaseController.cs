@@ -185,7 +185,9 @@ namespace NeuroSpeech.EntityAccessControl
                 }
                 foreach (var item in p.Value.EnumerateArray())
                 {
-                    coll.Add(await LoadOrCreateAsync(pt, item, true));
+                    var child = await LoadOrCreateAsync(pt, item, true);
+                    if(coll.IndexOf(child) == -1)
+                        coll.Add(child);
                 }
             }
         }
