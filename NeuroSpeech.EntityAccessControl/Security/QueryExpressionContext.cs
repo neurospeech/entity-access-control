@@ -17,16 +17,16 @@ namespace NeuroSpeech.EntityAccessControl
 
         public Expression Expression => expression;
 
-        private static MethodInfo MethodOfType = typeof(Enumerable)
+        private static readonly MethodInfo MethodOfType = typeof(Enumerable)
             .GetMethod(nameof(Enumerable.OfType), new Type[] { typeof(IEnumerable<T>) })!;
 
-        private static MethodInfo MethodWhere = typeof(Enumerable)
+        private static readonly MethodInfo MethodWhere = typeof(Enumerable)
             .GetStaticMethod(nameof(Enumerable.Where),
             2, 
             x => x[1].IsGenericType && x[1].GetGenericTypeDefinition() == typeof(Func<,>))!
             .MakeGenericMethod(typeof(T))!;
 
-        private static MethodInfo MethodToList = typeof(Enumerable)
+        private static readonly MethodInfo MethodToList = typeof(Enumerable)
                     .GetStaticMethod(nameof(Enumerable.ToList),
                     1,
                     x => true)!

@@ -164,7 +164,7 @@ export class Model<T extends IClrEntity> {
             try
             {
                 db.EnforceSecurity = true;
-                List<object> results = new List<object>();
+                List<object> results = new();
                 foreach (var body in model.EnumerateArray())
                 {
                     if (!body.TryGetStringProperty("$type", out var typeName))
@@ -361,7 +361,7 @@ export class Model<T extends IClrEntity> {
             var hasSelect = false;
             var hasInclude = false;
             var options = new LinqMethodOptions();
-            List<LinqMethod> methodList = new List<LinqMethod>();
+            List<LinqMethod> methodList = new();
             options.Methods = methodList;
             options.Start = model.Start;
             options.Size = model.Size;
@@ -375,7 +375,7 @@ export class Model<T extends IClrEntity> {
 
             foreach(var method in root.EnumerateArray())
             {
-                LinqMethod lm = new LinqMethod();
+                LinqMethod lm = new();
 
                 if (method.ValueKind != JsonValueKind.Array)
                 {
@@ -547,8 +547,8 @@ export class Model<T extends IClrEntity> {
                             includeKeys.Add(key);
                             break;
                         }
-                        var left = x.Substring(0, index);
-                        x = x.Substring(index + 1);
+                        var left = x[..index];
+                        x = x[(index + 1)..];
                         if (!scope.GetNavigations().TryGetFirst(n => n.Name.EqualsIgnoreCase(left), out var leftProperty))
                             throw new KeyNotFoundException($"No navigation property {x} found in {scope.Name}");
                         scope = leftProperty.TargetEntityType;

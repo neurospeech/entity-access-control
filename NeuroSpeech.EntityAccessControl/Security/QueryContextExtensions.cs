@@ -13,6 +13,15 @@ namespace NeuroSpeech.EntityAccessControl
 {
     public static class QueryContextExtensions {
 
+        public static IQueryContext<T> WithSource<T>(this IQueryContext<T> @this, string source)
+            where T : class
+        {
+            if (@this is QueryContext<T> qc) {
+                return qc.WithSource(source);
+            }
+            throw new NotSupportedException();
+        }
+
         public static IQueryContext<T> Where<T>(this IQueryContext<T> @this, Expression<Func<T,bool>> filter)
             where T: class
         {
@@ -85,7 +94,10 @@ namespace NeuroSpeech.EntityAccessControl
         }
 
         [EditorBrowsable(EditorBrowsableState.Never)]
-        public static async Task<LinqResult> ToPagedListAsync<T>(this IQueryContext<T> @this, LinqMethodOptions options)
+        public static async Task<LinqResult> ToPagedListAsync<T>(
+            this IQueryContext<T> @this,
+            LinqMethodOptions options,
+            string source)
             where T: class
         {
             int start = options.Start;
@@ -103,6 +115,11 @@ namespace NeuroSpeech.EntityAccessControl
             if (options.SplitInclude)
             {
                 q = q.AsSplitQuery();
+            }
+            if (options.Trace != null)
+            {
+                string text = source + "\r\n" + q.ToQueryString();
+                options.Trace(text);
             }
             if (q != @this)
             {

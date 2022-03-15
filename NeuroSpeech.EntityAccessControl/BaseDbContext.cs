@@ -81,11 +81,8 @@ namespace NeuroSpeech.EntityAccessControl
                 {
                     if (re.Metadata.IsCollection)
                         continue;
-                    var nav = re.Metadata as INavigation;
-                    if (nav == null)
-                    {
+                    if(re.Metadata is not INavigation nav)
                         continue;
-                    }
                     bool isModified = false;
                     foreach(var p in nav.ForeignKey.Properties)
                     {
@@ -370,8 +367,8 @@ namespace NeuroSpeech.EntityAccessControl
             return FilteredQuery<T>();
         }
 
-        private Dictionary<Type, IEntityEvents> cached
-            = new Dictionary<Type, IEntityEvents>();
+        private readonly Dictionary<Type, IEntityEvents> cached
+            = new();
 
         JsonIgnoreCondition ISecureQueryProvider.GetIgnoreCondition(PropertyInfo property)
         {
@@ -413,7 +410,7 @@ namespace NeuroSpeech.EntityAccessControl
             return SaveChangesAsync(cancellationToken);
         }
 
-        private static Task<object?> nullResult = Task.FromResult<object?>(null);
+        private static readonly Task<object?> nullResult = Task.FromResult<object?>(null);
 
         Task<object?> ISecureQueryProvider.FindByKeysAsync(
             Microsoft.EntityFrameworkCore.Metadata.IEntityType t,

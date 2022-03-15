@@ -19,10 +19,10 @@ namespace NeuroSpeech.EntityAccessControl.Parser
 
 
 
-        public static MethodParser Instance = new MethodParser();
+        public static MethodParser Instance = new();
 
-        private ConcurrentDictionary<string, Task> cache
-            = new ConcurrentDictionary<string, Task>();
+        private readonly ConcurrentDictionary<string, Task> cache
+            = new();
 
         public async Task<LinqResult> Parse<T>(IQueryContext<T> queryContext, LinqMethodOptions args)
         {
@@ -49,8 +49,8 @@ namespace NeuroSpeech.EntityAccessControl.Parser
 
             var type = typeof(T);
 
-            StringBuilder sb = new StringBuilder();
-            StringBuilder exec = new StringBuilder();
+            StringBuilder sb = new();
+            StringBuilder exec = new();
             int index = 0;
             int methodIndex = 0;
             foreach(var m in methods)
@@ -69,6 +69,8 @@ namespace NeuroSpeech.EntityAccessControl.Parser
                 exec.AppendLine($".{m.Method}({code})");
             }
 
+            var execString = System.Text.Json.JsonSerializer.Serialize("q" + exec);
+
             var finalCode = @$"
 using NeuroSpeech.EntityAccessControl;
 using Microsoft.EntityFrameworkCore;
@@ -85,8 +87,8 @@ public static Task<LinqResult> Query(
     NeuroSpeech.EntityAccessControl.Parser.LinqMethod method;
 
     {sb}
-    var rq = q{exec};    
-    return rq.ToPagedListAsync(methods);
+    var rq = q{exec};
+    return rq.ToPagedListAsync(methods, {execString});
 }}
 
 return Query;

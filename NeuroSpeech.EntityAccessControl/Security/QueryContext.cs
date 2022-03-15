@@ -180,7 +180,7 @@ namespace NeuroSpeech.EntityAccessControl
             var q = this.queryable;
             var type = typeof(T);
             int index = include.IndexOf('.');
-            var propertyName = index == -1 ? include : include.Substring(0, index);
+            var propertyName = index == -1 ? include : include[..index];
             var propertyInfo = type.GetPropertyIgnoreCase(propertyName);
             var propertyType = propertyInfo.PropertyType;
             bool isList = propertyType.TryGetEnumerableItem(out var itemPropertyType);
@@ -195,7 +195,7 @@ namespace NeuroSpeech.EntityAccessControl
             {
                 var tp = propertyType;
                 index = include.IndexOf('.');
-                propertyName = index == -1 ? include : include.Substring(0, index);
+                propertyName = index == -1 ? include : include[..index];
                 propertyInfo = type.GetPropertyIgnoreCase(propertyName);
                 q = this.GetInstanceGenericMethod(nameof(ThenIncludeProperty), type, tp, propertyInfo.PropertyType)
                     .As<IQueryable<T>>()
