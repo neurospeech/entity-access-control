@@ -462,7 +462,7 @@ export class Model<T extends IClrEntity> {
                 { "items", json },
                 { "total", result.Total }
             };
-            return Content(response.ToJsonString(), "application/json");
+            return Content(response.ToJsonString(), "application/json", System.Text.Encoding.UTF8);
         }
 
         [HttpGet("query/{entity}")]
