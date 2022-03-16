@@ -3,6 +3,7 @@ using NetTopologySuite.Geometries;
 using NeuroSpeech.EntityAccessControl.Internal;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
@@ -103,17 +104,31 @@ namespace NeuroSpeech.EntityAccessControl
             var d = et.StaticCacheGetOrCreate((et) => settings.GetTypeName?.Invoke(et) ?? et.FullName);
             var namingPolicy = settings.NamingPolicy ?? JsonNamingPolicy.CamelCase;
             r["$type"] = d;
-            var properties = et.StaticCacheGetOrCreate((et) => et.GetProperties());
+            var properties = et.StaticCacheGetOrCreate((et) =>
+                et.GetProperties()
+                .Where(p => 
+                    !(p.GetIndexParameters()?.Length > 0))
+                .Select(p =>
+                {
+                    var propertyType = Nullable.GetUnderlyingType(p.PropertyType) ?? p.PropertyType;
+                    return new
+                    {
+                        PropertyType = propertyType,
+                        p.Name,
+                        GetValue = (Func<object, object>)p.GetValue!,
+                        PropertyInfo = p,
+                        TypeCode = Type.GetTypeCode(propertyType)
+                    };
+                })
+                .ToList());
             foreach (var p in properties)
             {
-                if (p.GetIndexParameters()?.Length > 0)
-                    continue;
-                var ignoreCondition = settings.GetIgnoreCondition(p);
+                var ignoreCondition = settings.GetIgnoreCondition(p.PropertyInfo);
                 
                 if (ignoreCondition == JsonIgnoreCondition.Always)
                     continue;
                 var name = namingPolicy.ConvertName(p.Name);
-                var propertyType = Nullable.GetUnderlyingType(p.PropertyType) ?? p.PropertyType;
+                var propertyType = p.PropertyType;
                 var v = p.GetValue(e);
                 if (v == null)
                 {
@@ -124,8 +139,7 @@ namespace NeuroSpeech.EntityAccessControl
                     r[name] = null;
                     continue;
                 }
-                var typeCode = Type.GetTypeCode(propertyType);
-                switch (typeCode)
+                switch (p.TypeCode)
                 {
                     case TypeCode.Boolean:
                         r[name] = JsonValue.Create((bool)v);
