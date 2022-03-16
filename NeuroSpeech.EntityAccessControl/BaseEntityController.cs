@@ -458,10 +458,11 @@ export class Model<T extends IClrEntity> {
             var q = new QueryContext<T>(db, db.Query<T>()!, new ErrorModel());
             var result = await MethodParser.Instance.Parse<T>(q, options);
             var json = SerializeList(result.Items.ToList());
-            return Json(new { 
-                items = json,
-                total = result.Total
-            });
+            var response = new JsonObject() {
+                { "items", json },
+                { "total", result.Total }
+            };
+            return Content(response.ToJsonString(), "application/json");
         }
 
         [HttpGet("query/{entity}")]
