@@ -43,16 +43,21 @@ namespace NeuroSpeech.EntityAccessControl
                 var v = key.CurrentValue;
                 if (setKeysOnly && !key.Metadata.IsKey())
                     continue;
-                object? ov = null;
-                if (State == EntityState.Added && v == null)
-                    continue;
-                if (e.State == EntityState.Modified)
+                if (State == EntityState.Added)
                 {
-                    ov = key.OriginalValue;
-                    if (ov!=null && v.Equals(ov))
-                    {
+                    if (v == null)
                         continue;
-                        }
+                }
+                var ov = key.OriginalValue;
+                if (ov == null)
+                {
+                    if (v == null)
+                        continue;
+                }
+                else
+                {
+                    if (v != null && ov.Equals(v))
+                        continue;
                 }
                 Values!.Add(new AuditEntryPair {
                     Name = key.Metadata.Name,
