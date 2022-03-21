@@ -320,28 +320,28 @@ export class Model<T extends IClrEntity> {
             }, cancellationToken);
         }
 
-        [HttpGet("cached64/{entity}/{methods}/{start}/{size}/{splitInclude}/{trace}/{cacheSeconds}")]
-        public Task<IActionResult> CachedB64Methods(
-            [FromRoute] string entity,
-            [FromRoute] string methods,
-            [FromRoute] int start = 0,
-            [FromRoute] int size = 200,
-            [FromRoute] bool splitInclude = true,
-            [FromRoute] bool trace = false,
-            [FromRoute] int cacheSeconds = 0,
-            CancellationToken cancellationToken = default
-        )
-        {
-            return PostMethod(entity, new MethodOptions
-            {
-                Methods = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(methods)),
-                Start = start,
-                Size = size,
-                SplitInclude = splitInclude,
-                Trace = trace,
-                CacheSeconds = cacheSeconds
-            }, cancellationToken);
-        }
+        //[HttpGet("cached64/{entity}/{methods}/{start}/{size}/{splitInclude}/{trace}/{cacheSeconds}")]
+        //public Task<IActionResult> CachedB64Methods(
+        //    [FromRoute] string entity,
+        //    [FromRoute] string methods,
+        //    [FromRoute] int start = 0,
+        //    [FromRoute] int size = 200,
+        //    [FromRoute] bool splitInclude = true,
+        //    [FromRoute] bool trace = false,
+        //    [FromRoute] int cacheSeconds = 0,
+        //    CancellationToken cancellationToken = default
+        //)
+        //{
+        //    return PostMethod(entity, new MethodOptions
+        //    {
+        //        Methods = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(methods)),
+        //        Start = start,
+        //        Size = size,
+        //        SplitInclude = splitInclude,
+        //        Trace = trace,
+        //        CacheSeconds = cacheSeconds
+        //    }, cancellationToken);
+        //}
 
 
         [HttpGet("cached/{entity}/{methods}/{start}/{size}/{splitInclude}/{trace}/{cacheSeconds}")]
