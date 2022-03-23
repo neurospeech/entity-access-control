@@ -17,7 +17,12 @@ namespace NeuroSpeech
             .GetMethod(nameof(Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService),
                 new Type[] { typeof(IServiceProvider) })!;
 
-        public static object? Build(this IServiceProvider services, Type type)
+        public static T Build<T>(this IServiceProvider @this) where T: class
+        {
+            return (T)Build(@this, typeof(T))!;
+        }
+
+        public static object Build(this IServiceProvider services, Type type)
         {
             var f = builders.GetOrAdd(type, (k) => {
                 var c = type.GetConstructors()
