@@ -9,6 +9,13 @@
             this.db = db;
         }
 
+        public override void OnSetupIgnore()
+        {
+            this.Ignore(x => new { 
+                x.Password
+            });
+        }
+
         public override IQueryContext<Account> Filter(IQueryContext<Account> q)
         {
             return q.Where(x => x.AccountID == db.UserID && !x.Banned);

@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NeuroSpeech.EntityAccessControl.Tests.Model;
 using System;
@@ -29,6 +30,39 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
 
             await SelectMethodAsync(scope);
         }
+
+        [TestMethod]
+        public async Task IgnoreAsync()
+        {
+            using var scope = CreateScope();
+
+            var db = scope.GetRequiredService<AppDbContext>();
+            db.UserID = 2;
+
+            var sdb = db;
+
+            var controller = new TestEntityController(sdb);
+            var name = "NeuroSpeech.EntityAccessControl.Tests.Model.Post";
+
+            var m = System.Text.Json.JsonSerializer.Serialize(new object[] {
+                new object[] {"where", "x => x.PostID > @0", 0 },
+                new object[] {"include", "Tags" },
+            });
+
+            var r = await controller.Methods(name,
+                methods: m
+                ) as ContentResult;
+
+            var json = System.Text.Json.JsonDocument.Parse(r.Content).RootElement;
+            var items = json.GetProperty("items");
+            var item = items[0];
+            if(item.TryGetPropertyCaseInsensitive("AdminComments", out var v))
+            {
+                Assert.Fail("AdminNotes should not be serialized");
+            }
+            
+        }
+
 
         [TestMethod]
         public async Task SelectEnumAsync()
@@ -113,7 +147,7 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
             Assert.IsNotNull(r);
         }
 
-        private static async Task SelectMethodAsync(IScopeServices services)
+        private static async Task<ContentResult> SelectMethodAsync(IScopeServices services)
         {
             var db = services.GetRequiredService<AppDbContext>();
             db.UserID = 2;
@@ -134,6 +168,7 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
                 );
 
             Assert.IsNotNull(r);
+            return r as ContentResult;
         }
 
         private static async Task SelectAsync(IScopeServices services)

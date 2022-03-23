@@ -54,6 +54,8 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Model
         public bool Banned { get; set; }
 
         public bool IsAdmin { get; set; }
+
+        public string Password { get; set; }
     }
 
     [Table("Posts")]
