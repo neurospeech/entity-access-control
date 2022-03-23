@@ -12,7 +12,7 @@ namespace NeuroSpeech.EntityAccessControl
         where T: BaseDbContext<T>
     {
 
-        private Dictionary<Type, Type> registrations = new Dictionary<Type, Type>();
+        private readonly Dictionary<Type, Type> registrations = new();
 
         internal abstract class EntityHandler
         {

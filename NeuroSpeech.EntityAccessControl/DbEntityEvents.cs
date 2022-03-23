@@ -18,7 +18,7 @@ namespace NeuroSpeech.EntityAccessControl
             return new EntityAccessException(new ErrorModel { Title = title });
         }
 
-        private static object lockObject = new object();
+        private static readonly object lockObject = new();
         private static ConcurrentDictionary<PropertyInfo, JsonIgnoreCondition>? ignoreConditions
             = null;
 

@@ -5,14 +5,14 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace NeuroSpeech.EntityAccessControl
+namespace NeuroSpeech
 {
-    internal static class ServiceBuilder
+    public static class ServiceBuilder
     {
-        private static ConcurrentDictionary<Type, Func<IServiceProvider, object>> builders
-            = new ConcurrentDictionary<Type, Func<IServiceProvider, object>>();
+        private static readonly ConcurrentDictionary<Type, Func<IServiceProvider, object>> builders
+            = new();
 
-        private static MethodInfo getRequiredService =
+        private static readonly MethodInfo getRequiredService =
             typeof(Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions)
             .GetMethod(nameof(Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions.GetRequiredService),
                 new Type[] { typeof(IServiceProvider) })!;

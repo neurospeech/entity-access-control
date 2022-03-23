@@ -113,7 +113,7 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
             Assert.IsNotNull(r);
         }
 
-        private async Task SelectMethodAsync(IScopeServices services)
+        private static async Task SelectMethodAsync(IScopeServices services)
         {
             var db = services.GetRequiredService<AppDbContext>();
             db.UserID = 2;
@@ -136,13 +136,13 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
             Assert.IsNotNull(r);
         }
 
-        private async Task SelectAsync(IScopeServices services)
+        private static async Task SelectAsync(IScopeServices services)
         {
             var db = services.GetRequiredService<AppDbContext>();
             db.UserID = 2;
             var sdb = db;
 
-            var userId = 2;
+            // var userId = 2;
 
             //Expression<Func<Post, object>> s =
             //    (x) => new { 
@@ -158,6 +158,7 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
                 parameters: "[1]",
                 select: "x => new { x.PostID, Tags = x.Tags }"
                 );
+            Assert.IsNotNull(r);
         }
     }
 }
