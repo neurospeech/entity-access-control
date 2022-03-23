@@ -31,7 +31,7 @@ namespace NeuroSpeech.EntityAccessControl
 
     public class ReferenceEqualityComparer : IEqualityComparer<object>
     {
-        public static ReferenceEqualityComparer Instance = new ReferenceEqualityComparer();
+        public static ReferenceEqualityComparer Instance = new();
 
         public new bool Equals([AllowNull] object x, [AllowNull] object y)
         {
@@ -48,9 +48,9 @@ namespace NeuroSpeech.EntityAccessControl
     {
         static readonly string DateFormat = "yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'FFFFFFFZ";
 
-        private Dictionary<object, int> added = new Dictionary<object, int>(ReferenceEqualityComparer.Instance);
-        private EntitySerializationSettings settings;
-        private Queue<Action> pending = new Queue<Action>();
+        private readonly Dictionary<object, int> added = new(ReferenceEqualityComparer.Instance);
+        private readonly EntitySerializationSettings settings;
+        private readonly Queue<Action> pending = new();
 
         public EntityJsonSerializer(EntitySerializationSettings? settings)
         {
@@ -212,6 +212,11 @@ namespace NeuroSpeech.EntityAccessControl
                 if (propertyType == typeof(DateTimeOffset))
                 {
                     r[name] = ((DateTimeOffset)v).UtcDateTime.ToString(DateFormat);
+                    continue;
+                }
+                if (propertyType == typeof(Guid))
+                {
+                    r[name] = ((Guid)v).ToString();
                     continue;
                 }
                 if (v is JsonNode jn)
