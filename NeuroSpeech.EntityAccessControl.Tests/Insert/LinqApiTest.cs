@@ -51,9 +51,11 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
 
             var r = await controller.Methods(name,
                 methods: m
-                ) as ContentResult;
+                ) as JsonResult;
 
-            var json = System.Text.Json.JsonDocument.Parse(r.Content).RootElement;
+            var content = System.Text.Json.JsonSerializer.Serialize(r.Value, r.SerializerSettings as System.Text.Json.JsonSerializerOptions);
+
+            var json = System.Text.Json.JsonDocument.Parse(content).RootElement;
             var items = json.GetProperty("items");
             var item = items[0];
             if(item.TryGetPropertyCaseInsensitive("AdminComments", out var v))
@@ -188,11 +190,13 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
             var controller = new TestEntityController(sdb);
             var name = "NeuroSpeech.EntityAccessControl.Tests.Model.Post";
 
-            var r = await controller.Query(name,
-                filter: "x => x.PostID > @0",
-                parameters: "[1]",
-                select: "x => new { x.PostID, Tags = x.Tags }"
-                );
+            var r = await controller.PostMethod(name,
+                new BaseEntityController.MethodOptions {
+                    Methods = System.Text.Json.JsonSerializer.Serialize(new object[] { 
+                        new object[] { "where", "x => x.PostID > @0", 1 },
+                        new object[] { "select", "x => new { x.PostID, Tags = x.Tags }" }
+                    })
+                });
             Assert.IsNotNull(r);
         }
     }

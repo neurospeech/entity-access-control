@@ -213,35 +213,35 @@ namespace NeuroSpeech.EntityAccessControl
         }
 
 
-        protected virtual JsonNode? Serialize(object? e)
+        protected virtual IActionResult Serialize(object? e)
         {
             if (e == null)
             {
-                return null;
+                return Json(null);
             }
-            var serializer = new EntityJsonSerializer(new EntitySerializationSettings {
+            var options = new EntitySerializationSettings {
                 GetTypeName = (x) => db.Model.FindEntityType(x)?.Name ?? ( x.IsAnonymous() ? x.Name : x.FullName!),
                 NamingPolicy = JsonNamingPolicy.CamelCase,
                 GetIgnoreCondition = db.GetIgnoreCondition
-            });
-            return serializer.Serialize(e);
+            }.Options;
+            return Json(e, options);
         }
 
-        protected virtual JsonArray? SerializeList<T>(List<T> items)
-        {
-            var serializer = new EntityJsonSerializer(new EntitySerializationSettings
-            {
-                GetTypeName = (x) => db.Model.FindEntityType(x)?.Name ?? (x.IsAnonymous() ? x.Name : x.FullName!),
-                NamingPolicy = JsonNamingPolicy.CamelCase,
-                GetIgnoreCondition = db.GetIgnoreCondition
-            });
-            var result = new JsonArray();
-            foreach(var item in items)
-            {
-                result.Add(serializer.Serialize(item));
-            }
-            return result;
-        }
+        //protected virtual JsonArray? SerializeList<T>(List<T> items)
+        //{
+        //    var serializer = new EntityJsonSerializer(new EntitySerializationSettings
+        //    {
+        //        GetTypeName = (x) => db.Model.FindEntityType(x)?.Name ?? (x.IsAnonymous() ? x.Name : x.FullName!),
+        //        NamingPolicy = JsonNamingPolicy.CamelCase,
+        //        GetIgnoreCondition = db.GetIgnoreCondition
+        //    });
+        //    var result = new JsonArray();
+        //    foreach(var item in items)
+        //    {
+        //        result.Add(serializer.Serialize(item));
+        //    }
+        //    return result;
+        //}
 
         protected static readonly object[] Empty = new object[0];
 

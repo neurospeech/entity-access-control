@@ -14,6 +14,7 @@ using System.Text.Json.Serialization;
 
 namespace NeuroSpeech.EntityAccessControl
 {
+
     public class EntitySerializationSettings
     {
         public JsonNamingPolicy? NamingPolicy;
@@ -27,6 +28,13 @@ namespace NeuroSpeech.EntityAccessControl
             return property.GetCustomAttribute<JsonIgnoreAttribute>()?.Condition
                 ?? System.Text.Json.Serialization.JsonIgnoreCondition.Never;
         }
+
+        public JsonSerializerOptions Options => new JsonSerializerOptions { 
+            Converters =
+            {
+                new EntityJsonConverterFactory(this)
+            }
+        };
     }
 
     public class ReferenceEqualityComparer : IEqualityComparer<object>

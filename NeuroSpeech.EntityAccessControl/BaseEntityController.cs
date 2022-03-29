@@ -174,7 +174,7 @@ export class Model<T extends IClrEntity> {
                     results.Add(result);
                 }
                 await db.SaveChangesAsync();
-                return Json(SerializeList(results));
+                return Serialize(results);
             }catch (EntityAccessException ex)
             {
                 if (ex.StackTrace != null)
@@ -481,201 +481,196 @@ export class Model<T extends IClrEntity> {
         {
             var q = new QueryContext<T>(db, db.Query<T>()!, new ErrorModel());
             var result = await MethodParser.Instance.Parse<T>(q, options);
-            var json = SerializeList(result.Items.ToList());
-            var response = new JsonObject() {
-                { "items", json },
-                { "total", result.Total }
-            };
-            return Content(response.ToJsonString(), "application/json", System.Text.Encoding.UTF8);
+            return Serialize(result);
         }
 
-        [HttpGet("query/{entity}")]
-        public async Task<IActionResult> Query(
-            [FromRoute] string entity,
-            [FromQuery] string? select = null,
-            [FromQuery] string? selectParameters = null,
-            [FromQuery] string? filter = null,
-            [FromQuery] string? parameters = null,
-            [FromQuery] string? keys = null,
-            [FromQuery] string? include = null,
-            [FromQuery] string? orderBy = null,
-            [FromQuery] bool splitInclude = true,
-            [FromQuery] int start = 0,
-            [FromQuery] int size = 200
-            )
-        {
+        //[HttpGet("query/{entity}")]
+        //public async Task<IActionResult> Query(
+        //    [FromRoute] string entity,
+        //    [FromQuery] string? select = null,
+        //    [FromQuery] string? selectParameters = null,
+        //    [FromQuery] string? filter = null,
+        //    [FromQuery] string? parameters = null,
+        //    [FromQuery] string? keys = null,
+        //    [FromQuery] string? include = null,
+        //    [FromQuery] string? orderBy = null,
+        //    [FromQuery] bool splitInclude = true,
+        //    [FromQuery] int start = 0,
+        //    [FromQuery] int size = 200
+        //    )
+        //{
 
-            var t = FindEntityType(entity);
+        //    var t = FindEntityType(entity);
 
-            //this.GetInstanceGenericMethod(nameof(ListAsync), t.ClrType)
-            //    .As<Task<IActionResult>>().Invoke()
+        //    //this.GetInstanceGenericMethod(nameof(ListAsync), t.ClrType)
+        //    //    .As<Task<IActionResult>>().Invoke()
 
-            var r = this.GetType()
-                .GetMethod(nameof(ListAsync))!
-                .MakeGenericMethod(t.ClrType)
-                .Invoke(this, new object?[] {
-                    t,
-                    select,
-                    selectParameters,
-                    filter,
-                    parameters,
-                    keys,
-                    include,
-                    orderBy,
-                    splitInclude,
-                    start,
-                    size }) as Task<IActionResult>;
-            return await r!;
-        }
+        //    var r = this.GetType()
+        //        .GetMethod(nameof(ListAsync))!
+        //        .MakeGenericMethod(t.ClrType)
+        //        .Invoke(this, new object?[] {
+        //            t,
+        //            select,
+        //            selectParameters,
+        //            filter,
+        //            parameters,
+        //            keys,
+        //            include,
+        //            orderBy,
+        //            splitInclude,
+        //            start,
+        //            size }) as Task<IActionResult>;
+        //    return await r!;
+        //}
 
-        private static readonly ParsingConfig config = new()
-        {
-            ResolveTypesBySimpleName = true
-        };
+        //private static readonly ParsingConfig config = new()
+        //{
+        //    ResolveTypesBySimpleName = true
+        //};
 
 
-        public async Task<IActionResult> ListAsync<T>(
-            IEntityType entityType,
-            string? select,
-            string? selectParameters,
-            string? filter, 
-            string? parameters, 
-            string? keys,
-            string? include,
-            string? orderBy, 
-            bool splitInclude,
-            int start, int size)
-            where T : class
-        {
-            var q = db.Query<T>();
+        //public async Task<IActionResult> ListAsync<T>(
+        //    IEntityType entityType,
+        //    string? select,
+        //    string? selectParameters,
+        //    string? filter, 
+        //    string? parameters, 
+        //    string? keys,
+        //    string? include,
+        //    string? orderBy, 
+        //    bool splitInclude,
+        //    int start, int size)
+        //    where T : class
+        //{
+        //    var q = db.Query<T>();
 
-            var includeList = ParseInclude(include);
-            List<string>? ParseInclude(string? tx)
-            {
-                tx = tx?.Trim('[', ' ', '\t', '\r', '\n', ']');
-                if (string.IsNullOrWhiteSpace(tx))
-                    return null;
-                var includeKeys = new List<string>();
-                foreach (var token in tx.Split(',', ';'))
-                {
-                    var x = token.Trim('"',' ', '\r', '\t' , '\n');
-                    var key = "";
-                    var scope = entityType;
-                    while (x.Length > 0)
-                    {
-                        int index = x.IndexOf('.');
-                        if (index == -1)
-                        {
-                            if (!scope.GetNavigations().TryGetFirst(n => n.Name.EqualsIgnoreCase(x), out var np))
-                                throw new KeyNotFoundException($"No navigation property {x} found in {scope.Name}");
-                            key += np.Name;
-                            includeKeys.Add(key);
-                            break;
-                        }
-                        var left = x[..index];
-                        x = x[(index + 1)..];
-                        if (!scope.GetNavigations().TryGetFirst(n => n.Name.EqualsIgnoreCase(left), out var leftProperty))
-                            throw new KeyNotFoundException($"No navigation property {x} found in {scope.Name}");
-                        scope = leftProperty.TargetEntityType;
-                        key += leftProperty.Name + ".";
-                    }
-                }
-                return includeKeys;
-            }
+        //    var includeList = ParseInclude(include);
+        //    List<string>? ParseInclude(string? tx)
+        //    {
+        //        tx = tx?.Trim('[', ' ', '\t', '\r', '\n', ']');
+        //        if (string.IsNullOrWhiteSpace(tx))
+        //            return null;
+        //        var includeKeys = new List<string>();
+        //        foreach (var token in tx.Split(',', ';'))
+        //        {
+        //            var x = token.Trim('"',' ', '\r', '\t' , '\n');
+        //            var key = "";
+        //            var scope = entityType;
+        //            while (x.Length > 0)
+        //            {
+        //                int index = x.IndexOf('.');
+        //                if (index == -1)
+        //                {
+        //                    if (!scope.GetNavigations().TryGetFirst(n => n.Name.EqualsIgnoreCase(x), out var np))
+        //                        throw new KeyNotFoundException($"No navigation property {x} found in {scope.Name}");
+        //                    key += np.Name;
+        //                    includeKeys.Add(key);
+        //                    break;
+        //                }
+        //                var left = x[..index];
+        //                x = x[(index + 1)..];
+        //                if (!scope.GetNavigations().TryGetFirst(n => n.Name.EqualsIgnoreCase(left), out var leftProperty))
+        //                    throw new KeyNotFoundException($"No navigation property {x} found in {scope.Name}");
+        //                scope = leftProperty.TargetEntityType;
+        //                key += leftProperty.Name + ".";
+        //            }
+        //        }
+        //        return includeKeys;
+        //    }
 
-            if (keys != null)
-            {
-                var type = typeof(T);
-                var pe = Expression.Parameter(type);
-                Expression? body = null;
-                foreach (var key in JsonSerializer.Deserialize<JsonElement>(keys).EnumerateObject())
-                {
-                    if(!type.GetProperties().TryGetFirst(x => x.Name.EqualsIgnoreCase(key.Name), out var property))
-                        throw new KeyNotFoundException($"No navigation property {key.Name} found in {type.Name}");
-                    var compare = Expression.Equal(
-                            Expression.Property(pe, property),
-                            Expression.Constant(key.Value.DeserializeJsonElement(property.PropertyType)));
-                    body = body == null ? compare : Expression.AndAlso(body, compare);
-                }
-                q = q.Where(Expression.Lambda(body, pe));
-            }
-            if (!string.IsNullOrWhiteSpace(filter))
-            {
-                if (filter.StartsWith("["))
-                {
-                    var filters = JsonSerializer.Deserialize<string[]>(filter);
-                    var parameterArray = JsonDocument.Parse(parameters ?? "[]").RootElement;
-                    for (int i = 0; i < filters.Length; i++)
-                    {
-                        filter = filters[i];
-                        q = await q.WhereLinqAsync(filter, parameterArray[i]);
-                    }
-                }
-                else
-                {
-                    q = await q.WhereLinqAsync(filter, JsonDocument.Parse(parameters ?? "[]").RootElement);
-                }
-            }
-            if (!string.IsNullOrWhiteSpace(orderBy))
-            {
-                q = q.OrderBy(orderBy);
-            }
-            var original = q;
-            bool pageResult = false;
-            if (start > 0)
-            {
-                q = q.Skip(start);
-                pageResult = true;
-            }
-            if (size > 0)
-            {
-                q = q.Take(size);
-                pageResult = true;
-            }
+        //    if (keys != null)
+        //    {
+        //        var type = typeof(T);
+        //        var pe = Expression.Parameter(type);
+        //        Expression? body = null;
+        //        foreach (var key in JsonSerializer.Deserialize<JsonElement>(keys).EnumerateObject())
+        //        {
+        //            if(!type.GetProperties().TryGetFirst(x => x.Name.EqualsIgnoreCase(key.Name), out var property))
+        //                throw new KeyNotFoundException($"No navigation property {key.Name} found in {type.Name}");
+        //            var compare = Expression.Equal(
+        //                    Expression.Property(pe, property),
+        //                    Expression.Constant(key.Value.DeserializeJsonElement(property.PropertyType)));
+        //            body = body == null ? compare : Expression.AndAlso(body, compare);
+        //        }
+        //        q = q.Where(Expression.Lambda(body, pe));
+        //    }
+        //    if (!string.IsNullOrWhiteSpace(filter))
+        //    {
+        //        if (filter.StartsWith("["))
+        //        {
+        //            var filters = JsonSerializer.Deserialize<string[]>(filter);
+        //            var parameterArray = JsonDocument.Parse(parameters ?? "[]").RootElement;
+        //            for (int i = 0; i < filters.Length; i++)
+        //            {
+        //                filter = filters[i];
+        //                q = await q.WhereLinqAsync(filter, parameterArray[i]);
+        //            }
+        //        }
+        //        else
+        //        {
+        //            q = await q.WhereLinqAsync(filter, JsonDocument.Parse(parameters ?? "[]").RootElement);
+        //        }
+        //    }
+        //    if (!string.IsNullOrWhiteSpace(orderBy))
+        //    {
+        //        q = q.OrderBy(orderBy);
+        //    }
+        //    var original = q;
+        //    bool pageResult = false;
+        //    if (start > 0)
+        //    {
+        //        q = q.Skip(start);
+        //        pageResult = true;
+        //    }
+        //    if (size > 0)
+        //    {
+        //        q = q.Take(size);
+        //        pageResult = true;
+        //    }
 
-            var total = 0;
+        //    var total = 0;
 
-            if (pageResult)
-            {
-                total = await original.CountAsync();
+        //    if (pageResult)
+        //    {
+        //        total = await original.CountAsync();
 
-            }
+        //    }
 
-            if (includeList != null)
-            {
-                foreach(var i in includeList)
-                {
-                    q = q.Include(i);
-                }
+        //    if (includeList != null)
+        //    {
+        //        foreach(var i in includeList)
+        //        {
+        //            q = q.Include(i);
+        //        }
 
-                if (splitInclude)
-                {
-                    q = q.AsSplitQuery();
-                }
-            }
+        //        if (splitInclude)
+        //        {
+        //            q = q.AsSplitQuery();
+        //        }
+        //    }
 
-            var json = new JsonArray();
-            if (!string.IsNullOrWhiteSpace(select))
-            {
-                var qc = new QueryContext<T>(db, q);
-                var dl = await qc.SelectLinqAsync(select, JsonDocument.Parse(selectParameters ?? "[]").RootElement);
-                foreach(var item in dl)
-                {
-                    json.Add(item);
-                }
-            }
-            else
-            {
-                var list = await q.ToListAsync(this.HttpContext?.RequestAborted ?? default);
-                json = SerializeList(list);
-            }
+        //    var json = new JsonArray();
+        //    if (!string.IsNullOrWhiteSpace(select))
+        //    {
+        //        var qc = new QueryContext<T>(db, q);
+        //        var dl = await qc.SelectLinqAsync(select, JsonDocument.Parse(selectParameters ?? "[]").RootElement);
+        //        foreach(var item in dl)
+        //        {
+        //            json.Add(item);
+        //        }
+        //    }
+        //    else
+        //    {
+        //        var list = await q.ToListAsync(this.HttpContext?.RequestAborted ?? default);
+        //        json = SerializeList(list);
+        //    }
 
-            return Json(new
-            {
-                items = json,
-                total
-            });
-        }
+        //    return Json(new
+        //    {
+        //        items = json,
+        //        total
+        //    });
+        //}
     }
 }
 
