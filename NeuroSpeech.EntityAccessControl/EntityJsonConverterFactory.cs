@@ -167,7 +167,7 @@ namespace NeuroSpeech.EntityAccessControl
                                 writer.WriteString(name, propertyType.GetEnumName(v));
                                 continue;
                             }
-                            writer.WriteNumber(name, (UInt32)v);
+                            writer.WriteNumber(name, (Int32)v);
                             continue;
                         case TypeCode.UInt32:
                             writer.WriteNumber(name, (UInt32)v);
