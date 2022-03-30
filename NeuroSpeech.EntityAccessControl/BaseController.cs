@@ -219,10 +219,7 @@ namespace NeuroSpeech.EntityAccessControl
             {
                 return Json(null);
             }
-            var options = new EntitySerializationSettings {
-                GetTypeName = (x) => db.Model.FindEntityType(x)?.Name ?? ( x.IsAnonymous() ? x.Name : x.FullName!),
-                GetIgnoreCondition = db.GetIgnoreCondition
-            }.Options;
+            var options = new EntitySerializationSettings(db).Options;
             return Json(e, options);
         }
 

@@ -372,9 +372,9 @@ namespace NeuroSpeech.EntityAccessControl
 
         JsonIgnoreCondition ISecureQueryProvider.GetIgnoreCondition(PropertyInfo property)
         {
-            var eh = cached.GetOrCreate( property, (k) => events.GetEvents(services, property.DeclaringType));
+            var eh =  events.GetEvents(services, property.DeclaringType);
             if (eh == null)
-                return JsonIgnoreCondition.Never;
+                return property.GetCustomAttribute<JsonIgnoreAttribute>()?.Condition ?? JsonIgnoreCondition.Never;
             return eh.GetIgnoreCondition(property);
         }
 

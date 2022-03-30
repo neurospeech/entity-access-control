@@ -89,7 +89,7 @@ namespace NeuroSpeech.EntityAccessControl
 
                 foreach (var p in typeInfo.Properties)
                 {
-                    var ignoreCondition = settings.GetIgnoreCondition(p.PropertyInfo);
+                    var ignoreCondition = p.IgnoreCondition;
 
                     if (ignoreCondition == JsonIgnoreCondition.Always)
                         continue;
