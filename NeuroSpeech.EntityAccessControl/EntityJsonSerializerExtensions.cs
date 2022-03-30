@@ -33,6 +33,17 @@ namespace NeuroSpeech.EntityAccessControl
 
         public Func<Type, List<JsonIgnoreProperty>> GetIgnoreConditions = GetDefaultIgnoreAttribute;
 
+        private readonly Dictionary<object, int> added = new(ReferenceEqualityComparer.Instance);
+
+        public bool TryGetReferenceIdOrAdd(object key, out int id)
+        {
+            if (added.TryGetValue(key, out id))
+                return true;
+            id = added.Count;
+            added[key] = id;
+            return false;
+        }
+
         private static List<JsonIgnoreProperty> GetDefaultIgnoreAttribute(Type type)
         {
             return type.GetProperties()
