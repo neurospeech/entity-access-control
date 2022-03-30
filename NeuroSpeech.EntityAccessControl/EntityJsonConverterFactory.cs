@@ -40,8 +40,6 @@ namespace NeuroSpeech.EntityAccessControl
             static readonly string DateFormat = "yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'FFFFFFFZ";
 
             private EntitySerializationSettings settings;
-            private readonly Dictionary<Type, EntityJsonTypeInfo> typeCache
-                = new Dictionary<Type, EntityJsonTypeInfo>();
             
 
             public EntityJsonConverter(EntitySerializationSettings settings)
@@ -78,7 +76,7 @@ namespace NeuroSpeech.EntityAccessControl
 
                 var et = value.GetType();
 
-                var typeInfo = typeCache.GetOrCreate(et, (x) => new EntityJsonTypeInfo(settings, x, options?.PropertyNamingPolicy));
+                var typeInfo = settings.GetTypeInfo(et, options.PropertyNamingPolicy);
 
                 writer.WriteString("$type", typeInfo.Name);
 

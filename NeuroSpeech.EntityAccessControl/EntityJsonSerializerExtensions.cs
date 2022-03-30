@@ -35,6 +35,10 @@ namespace NeuroSpeech.EntityAccessControl
 
         private readonly Dictionary<object, int> added = new(ReferenceEqualityComparer.Instance);
 
+        private readonly Dictionary<Type, EntityJsonTypeInfo> typeCache
+            = new Dictionary<Type, EntityJsonTypeInfo>();
+
+
         public bool TryGetReferenceIdOrAdd(object key, out int id)
         {
             if (added.TryGetValue(key, out id))
@@ -75,6 +79,11 @@ namespace NeuroSpeech.EntityAccessControl
         public EntitySerializationSettings(DbContext db)
         {
             GetTypeName = (x) => db.Model.FindEntityType(x)?.Name ?? (x.IsAnonymous() ? x.Name : x.FullName!);
+        }
+
+        internal EntityJsonTypeInfo GetTypeInfo(Type et, JsonNamingPolicy? policy)
+        {
+            return typeCache.GetOrCreate(et, (x) => new EntityJsonTypeInfo(this, x, policy));
         }
     }
 
