@@ -221,7 +221,6 @@ namespace NeuroSpeech.EntityAccessControl
             }
             var options = new EntitySerializationSettings {
                 GetTypeName = (x) => db.Model.FindEntityType(x)?.Name ?? ( x.IsAnonymous() ? x.Name : x.FullName!),
-                NamingPolicy = JsonNamingPolicy.CamelCase,
                 GetIgnoreCondition = db.GetIgnoreCondition
             }.Options;
             return Json(e, options);

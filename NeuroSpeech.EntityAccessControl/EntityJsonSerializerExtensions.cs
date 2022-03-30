@@ -17,8 +17,6 @@ namespace NeuroSpeech.EntityAccessControl
 
     public class EntitySerializationSettings
     {
-        public JsonNamingPolicy? NamingPolicy;
-
         public Func<Type, string>? GetTypeName;
 
         public Func<PropertyInfo, JsonIgnoreCondition> GetIgnoreCondition = GetDefaultIgnoreAttribute;
@@ -44,7 +42,6 @@ namespace NeuroSpeech.EntityAccessControl
         public EntitySerializationSettings(DbContext db)
         {
             GetTypeName = (x) => db.Model.FindEntityType(x)?.Name ?? x.FullName!;
-            NamingPolicy = JsonNamingPolicy.CamelCase;
         }
     }
 

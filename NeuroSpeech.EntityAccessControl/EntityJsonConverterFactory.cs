@@ -1,4 +1,5 @@
 ﻿using NetTopologySuite.Geometries;
+using NeuroSpeech.EntityAccessControl.Internal;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -40,6 +41,9 @@ namespace NeuroSpeech.EntityAccessControl
 
             private EntitySerializationSettings settings;
             private readonly Dictionary<object, string> added = new(ReferenceEqualityComparer.Instance);
+            private readonly Dictionary<Type, EntityJsonTypeInfo> typeCache
+                = new Dictionary<Type, EntityJsonTypeInfo>();
+            
 
             public EntityJsonConverter(EntitySerializationSettings settings)
             {
@@ -59,28 +63,6 @@ namespace NeuroSpeech.EntityAccessControl
                     return;
                 }
 
-                if (value is string sv)
-                {
-                    writer.WriteStringValue(sv);
-                    return;
-                }
-
-                if (value is System.Collections.IEnumerable enumerable)
-                {
-                    writer.WriteStartArray();
-                    foreach (var item in enumerable)
-                    {
-                        if (item == null)
-                        {
-                            writer.WriteNullValue();
-                            continue;
-                        }
-                        Write(writer, item, options);
-                    }
-                    writer.WriteEndArray();
-                    return;
-                }
-
                 if (added.TryGetValue(value, out var existingIndex))
                 {
                     writer.WriteStartObject();
@@ -96,39 +78,24 @@ namespace NeuroSpeech.EntityAccessControl
                 // write id
                 writer.WriteString("$id", existingIndex);
 
+                
+
                 var et = value.GetType();
-                var d = et.StaticCacheGetOrCreate((et) => settings.GetTypeName?.Invoke(et) ?? et.FullName);
-                var namingPolicy = settings.NamingPolicy ?? JsonNamingPolicy.CamelCase;
 
-                writer.WriteString("$type", d);
+                var typeInfo = typeCache.GetOrCreate(et, (x) => new EntityJsonTypeInfo(settings, x, options?.PropertyNamingPolicy));
 
-                var properties = et.StaticCacheGetOrCreate((et) =>
-                    et.GetProperties()
-                    .Where(p =>
-                        !(p.GetIndexParameters()?.Length > 0))
-                    .Select(p =>
-                    {
-                        var propertyType = Nullable.GetUnderlyingType(p.PropertyType) ?? p.PropertyType;
-                        return new
-                        {
-                            PropertyType = propertyType,
-                            p.Name,
-                            GetValue = (Func<object, object>)p.GetValue!,
-                            PropertyInfo = p,
-                            TypeCode = Type.GetTypeCode(propertyType)
-                        };
-                    })
-                    .ToList());
+                writer.WriteString("$type", typeInfo.Name);
 
-                foreach (var p in properties)
+
+                foreach (var p in typeInfo.Properties)
                 {
                     var ignoreCondition = settings.GetIgnoreCondition(p.PropertyInfo);
 
                     if (ignoreCondition == JsonIgnoreCondition.Always)
                         continue;
-                    var name = namingPolicy.ConvertName(p.Name);
+                    var name = p.Name;
                     var propertyType = p.PropertyType;
-                    var v = p.GetValue(value);
+                    var v = p.PropertyInfo.GetValue(value);
                     if (v == null)
                     {
                         if (ignoreCondition == JsonIgnoreCondition.WhenWritingNull)
@@ -226,11 +193,16 @@ namespace NeuroSpeech.EntityAccessControl
                         writer.WritePropertyName(name);
                         writer.WriteStartObject();
                         var ve = vd.GetEnumerator();
+                        var dictionaryNamingPolicy = options.DictionaryKeyPolicy;
                         while (ve.MoveNext())
                         {
                             if (ve.Key == null)
                                 continue;
-                            var keyName = namingPolicy.ConvertName(ve.Key.ToString()!);
+                            var keyName = ve.Key.ToString()!;
+                            if (dictionaryNamingPolicy != null)
+                            {
+                                keyName = dictionaryNamingPolicy.ConvertName(keyName);
+                            }
                             if (ve.Value == null)
                             {
                                 writer.WriteNull(keyName);
