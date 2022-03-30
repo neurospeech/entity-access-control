@@ -40,7 +40,7 @@ namespace NeuroSpeech.EntityAccessControl
             static readonly string DateFormat = "yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'FFFFFFFZ";
 
             private EntitySerializationSettings settings;
-            private readonly Dictionary<object, string> added = new(ReferenceEqualityComparer.Instance);
+            private readonly Dictionary<object, int> added = new(ReferenceEqualityComparer.Instance);
             private readonly Dictionary<Type, EntityJsonTypeInfo> typeCache
                 = new Dictionary<Type, EntityJsonTypeInfo>();
             
@@ -66,17 +66,17 @@ namespace NeuroSpeech.EntityAccessControl
                 if (added.TryGetValue(value, out var existingIndex))
                 {
                     writer.WriteStartObject();
-                    writer.WriteString("$ref", existingIndex);
+                    writer.WriteNumber("$ref", existingIndex);
                     writer.WriteEndObject();
                     return;
                 }
                 var index = added.Count;
-                existingIndex = index.ToString();
+                existingIndex = index;
                 added[value] = existingIndex;
                 writer.WriteStartObject();
 
                 // write id
-                writer.WriteString("$id", existingIndex);
+                writer.WriteNumber("$id", existingIndex);
 
                 
 
