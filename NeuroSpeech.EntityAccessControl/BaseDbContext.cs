@@ -370,12 +370,14 @@ namespace NeuroSpeech.EntityAccessControl
         private readonly Dictionary<PropertyInfo, IEntityEvents> cached
             = new();
 
-        JsonIgnoreCondition ISecureQueryProvider.GetIgnoreCondition(PropertyInfo property)
+        private static List<JsonIgnoreProperty> Empty = new List<JsonIgnoreProperty>();
+
+        List<JsonIgnoreProperty> ISecureQueryProvider.GetIgnoreConditions(Type type)
         {
-            var eh =  events.GetEvents(services, property.DeclaringType);
+            var eh = events.GetEvents(services, type);
             if (eh == null)
-                return property.GetCustomAttribute<JsonIgnoreAttribute>()?.Condition ?? JsonIgnoreCondition.Never;
-            return eh.GetIgnoreCondition(property);
+                return Empty;
+            return eh.GetIgnoreConditions();
         }
 
         public IQueryContext<T> Apply<T>(IQueryContext<T> qec)

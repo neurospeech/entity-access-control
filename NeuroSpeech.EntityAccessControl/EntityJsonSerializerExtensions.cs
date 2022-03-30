@@ -15,16 +15,31 @@ using System.Text.Json.Serialization;
 namespace NeuroSpeech.EntityAccessControl
 {
 
+    public class JsonIgnoreProperty
+    {
+        public readonly PropertyInfo Property;
+        public readonly JsonIgnoreCondition Condition;
+
+        public JsonIgnoreProperty(PropertyInfo property, JsonIgnoreCondition condition)
+        {
+            this.Property = property;
+            this.Condition = condition;
+        }
+    }
+
     public class EntitySerializationSettings
     {
         public Func<Type, string> GetTypeName;
 
-        public Func<PropertyInfo, JsonIgnoreCondition> GetIgnoreCondition = GetDefaultIgnoreAttribute;
+        public Func<Type, List<JsonIgnoreProperty>> GetIgnoreConditions = GetDefaultIgnoreAttribute;
 
-        private static JsonIgnoreCondition GetDefaultIgnoreAttribute(PropertyInfo property)
+        private static List<JsonIgnoreProperty> GetDefaultIgnoreAttribute(Type type)
         {
-            return property.GetCustomAttribute<JsonIgnoreAttribute>()?.Condition
-                ?? System.Text.Json.Serialization.JsonIgnoreCondition.Never;
+            return type.GetProperties()
+                .Select(x => (x, x.GetCustomAttribute<JsonIgnoreAttribute>()))
+                .Where(x => x.Item2 != null)
+                .Select(x => new JsonIgnoreProperty(x.x, x.Item2!.Condition))
+                .ToList();
         }
 
         public JsonSerializerOptions Options => new JsonSerializerOptions { 
@@ -42,7 +57,7 @@ namespace NeuroSpeech.EntityAccessControl
         public EntitySerializationSettings(ISecureQueryProvider db)
         {
             GetTypeName = (x) => db.Model.FindEntityType(x)?.Name ?? (x.IsAnonymous() ? x.Name : x.FullName!);
-            GetIgnoreCondition = db.GetIgnoreCondition;
+            GetIgnoreConditions = db.GetIgnoreConditions;
         }
 
 

@@ -9,7 +9,7 @@
             this.db = db;
         }
 
-        public override void OnSetupIgnore()
+        protected override void OnSetupIgnore()
         {
             this.Ignore(x => new { 
                 x.Password

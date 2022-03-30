@@ -1,6 +1,8 @@
 ﻿using NeuroSpeech.EntityAccessControl.Internal;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.Json.Serialization;
@@ -8,6 +10,9 @@ using System.Threading.Tasks;
 
 namespace NeuroSpeech.EntityAccessControl
 {
+
+    public delegate void IgnoreDelegate<T>(Expression<Func<T, object>> expression,
+            JsonIgnoreCondition condition = JsonIgnoreCondition.Always);
 
     public class DbEntityEvents<T> : IEntityEvents
     {
@@ -18,25 +23,27 @@ namespace NeuroSpeech.EntityAccessControl
             return new EntityAccessException(new ErrorModel { Title = title });
         }
 
-        private static readonly object lockObject = new();
-        private static ConcurrentDictionary<PropertyInfo, JsonIgnoreCondition>? ignoreConditions
-            = null;
+        private static object lockObject = new object();
+        private static List<JsonIgnoreProperty>? ignoreList;
+        private static Dictionary<PropertyInfo, JsonIgnoreCondition>? ignoreConditions;
 
-        JsonIgnoreCondition IEntityEvents.GetIgnoreCondition(PropertyInfo property)
+        public List<JsonIgnoreProperty> GetIgnoreConditions()
         {
-            lock (lockObject)
+            lock(lockObject)
             {
-                if (ignoreConditions == null)
+                if (ignoreList == null)
                 {
-                    ignoreConditions = new ConcurrentDictionary<PropertyInfo, JsonIgnoreCondition>();
+                    ignoreConditions = new Dictionary<PropertyInfo, JsonIgnoreCondition>();
                     OnSetupIgnore();
+                    ignoreList = ignoreConditions
+                        .Select((x) => new JsonIgnoreProperty(x.Key, x.Value)).ToList();
+                    ignoreConditions = null;
                 }
             }
-            return ignoreConditions.GetOrCreate(property,
-                (k) => property.GetCustomAttribute<JsonIgnoreAttribute>()?.Condition ?? JsonIgnoreCondition.Never);
+            return ignoreList;
         }
 
-        public virtual void OnSetupIgnore()
+        protected virtual void OnSetupIgnore()
         {
 
         }
@@ -47,6 +54,8 @@ namespace NeuroSpeech.EntityAccessControl
         protected void Ignore(Expression<Func<T, object>> expression,
             JsonIgnoreCondition condition = JsonIgnoreCondition.Always)
         {
+            if (ignoreConditions == null)
+                throw new InvalidOperationException($"Ignore must only be called within OnSetupIgnore method");
             if (expression.Body is NewExpression nme)
             {
                 foreach (var m in nme.Arguments)

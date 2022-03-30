@@ -18,6 +18,7 @@ namespace NeuroSpeech.EntityAccessControl
         {
             this.Name = settings.GetTypeName(type);
             var namingPolicy = policy ?? JsonNamingPolicy.CamelCase;
+            var ignoreProperties = settings.GetIgnoreConditions(type);
             Properties = type.GetProperties()
                     .Where(p =>
                         p.CanRead
@@ -30,7 +31,7 @@ namespace NeuroSpeech.EntityAccessControl
                             Name: namingPolicy.ConvertName(p.Name),
                             PropertyInfo: p,
                             TypeCode: Type.GetTypeCode(propertyType),
-                            jsonIgnoreCondition: settings.GetIgnoreCondition(p)
+                            jsonIgnoreCondition: ignoreProperties.FirstOrDefault(x => x.Property == p)?.Condition ?? JsonIgnoreCondition.Never
                         );
                     })
                     .ToList();
