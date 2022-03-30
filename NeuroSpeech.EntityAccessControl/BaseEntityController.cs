@@ -145,7 +145,7 @@ export class Model<T extends IClrEntity> {
                 var t = FindEntityType(typeName);
                 var e = await LoadOrCreateAsync(t.ClrType, body);
                 await db.SaveChangesAsync();
-                return Json(Serialize(e));
+                return Serialize(e);
             }catch (EntityAccessException eae)
             {
                 if (eae.StackTrace!= null)
