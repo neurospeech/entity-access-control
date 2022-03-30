@@ -66,7 +66,7 @@ namespace NeuroSpeech.EntityAccessControl
                 if (added.TryGetValue(value, out var existingIndex))
                 {
                     writer.WriteStartObject();
-                    writer.WriteString("$id", existingIndex);
+                    writer.WriteString("$ref", existingIndex);
                     writer.WriteEndObject();
                     return;
                 }
