@@ -17,7 +17,7 @@ namespace NeuroSpeech.EntityAccessControl
 
         IQueryable<T> Query<T>() where T : class;
         List<JsonIgnoreProperty> GetIgnoreConditions(Type type);
-        IQueryContext<T> Apply<T>(IQueryContext<T> qec) where T : class;
+        IQueryContext<T> Apply<T>(IQueryContext<T> qec, bool asInclude = false) where T : class;
         Task SaveChangesAsync(CancellationToken cancellationToken = default);
         Task<object?> FindByKeysAsync(IEntityType t, JsonElement item, CancellationToken cancellation = default);
         void Remove(object entity);

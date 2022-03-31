@@ -13,6 +13,8 @@ namespace NeuroSpeech.EntityAccessControl
 
         IQueryContext Filter(IQueryContext q);
 
+        IQueryContext IncludeFilter(IQueryContext q);
+
         List<JsonIgnoreProperty> GetIgnoreConditions();
 
         Task InsertingAsync(object entity);

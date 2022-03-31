@@ -135,7 +135,7 @@ namespace NeuroSpeech.EntityAccessControl
             where T1: class
         {
             var qec = new QueryExpressionContext<T1>(new QueryContext<T1>(db, db.Query<T1>()!, errorModel), expression);
-            var r = db.Apply<T1>(qec);
+            var r = db.Apply<T1>(qec, true);
             qec = (QueryExpressionContext<T1>)r;
             var fe = qec.Expression;
             if (!returnType.IsAssignableFrom(fe.Type))

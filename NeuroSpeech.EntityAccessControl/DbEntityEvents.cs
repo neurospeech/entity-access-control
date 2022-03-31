@@ -90,9 +90,19 @@ namespace NeuroSpeech.EntityAccessControl
             return q;
         }
 
+        public virtual IQueryContext<T> IncludeFilter(IQueryContext<T> q)
+        {
+            return Filter(q);
+        }
+
         IQueryContext IEntityEvents.Filter(IQueryContext q)
         {
             return Filter((IQueryContext<T>)q);
+        }
+
+        IQueryContext IEntityEvents.IncludeFilter(IQueryContext q)
+        {
+            return IncludeFilter((IQueryContext<T>)q);
         }
 
         public virtual Task DeletedAsync(T entity)

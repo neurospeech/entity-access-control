@@ -380,7 +380,7 @@ namespace NeuroSpeech.EntityAccessControl
             return eh.GetIgnoreConditions();
         }
 
-        public IQueryContext<T> Apply<T>(IQueryContext<T> qec)
+        public IQueryContext<T> Apply<T>(IQueryContext<T> qec, bool asInclude = false)
             where T: class
         {
             var type = typeof(T);
@@ -389,22 +389,24 @@ namespace NeuroSpeech.EntityAccessControl
             {
                 qec = this.GetInstanceGenericMethod(
                     nameof(ApplyInternal), type, baseType).As<IQueryContext<T>>()
-                    .Invoke(qec);
+                    .Invoke(qec, asInclude);
             }
             var eh = events.GetEvents(services, type);
             if (eh == null)
             {
                 throw new EntityAccessException($"Access denied to {type.FullName}");
             }
+            if (asInclude)
+                return (IQueryContext<T>)eh.IncludeFilter(qec);
             return (IQueryContext<T>)eh.Filter(qec);
         }
 
         [EditorBrowsable(EditorBrowsableState.Never)]
-        public IQueryContext<RT> ApplyInternal<RT,BT>(IQueryContext<RT> q)
+        public IQueryContext<RT> ApplyInternal<RT,BT>(IQueryContext<RT> q, bool asInclude = false)
             where RT: class, BT
             where BT: class
         {
-            return Apply(q.OfType<BT>()).OfType<RT>();
+            return Apply(q.OfType<BT>(), asInclude).OfType<RT>();
         }
 
         Task ISecureQueryProvider.SaveChangesAsync(CancellationToken cancellationToken)
