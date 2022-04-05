@@ -104,7 +104,7 @@ namespace NeuroSpeech.EntityAccessControl
                         case TypeCode.Double:
                             return double.Parse(stringValue);
                         case TypeCode.DateTime:
-                            return new DateTime(target.GetInt64());
+                            return DateTime.Parse(target.GetString()!, null, System.Globalization.DateTimeStyles.AssumeUniversal);
                     }
                     if (type == typeof(DateTimeOffset))
                     {
