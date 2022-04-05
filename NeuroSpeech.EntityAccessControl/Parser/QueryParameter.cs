@@ -95,6 +95,17 @@ namespace NeuroSpeech.EntityAccessControl
             return q.element.ValueKind == JsonValueKind.Null ? null : q.element.GetString();
         }
 
+        public static implicit operator DateTime(QueryParameter q)
+        {
+            return DateTime.Parse(q.element.GetString()!, null, System.Globalization.DateTimeStyles.AssumeUniversal);
+        }
+
+        public static implicit operator DateTimeOffset(QueryParameter q)
+        {
+            return DateTimeOffset.Parse(q.element.GetString()!, null, System.Globalization.DateTimeStyles.AssumeUniversal);
+        }
+
+
         public static implicit operator DateTime?(QueryParameter q)
         {
             return q.element.ValueKind == JsonValueKind.Null ? null : DateTime.Parse(q.element.GetString()!, null, System.Globalization.DateTimeStyles.AssumeUniversal);
