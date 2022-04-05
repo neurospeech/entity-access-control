@@ -97,23 +97,23 @@ namespace NeuroSpeech.EntityAccessControl
 
         public static implicit operator DateTime(QueryParameter q)
         {
-            return DateTime.Parse(q.element.GetString()!, null, System.Globalization.DateTimeStyles.AssumeUniversal);
+            return DateTime.Parse(q.element.GetString()!, null, System.Globalization.DateTimeStyles.AdjustToUniversal);
         }
 
         public static implicit operator DateTimeOffset(QueryParameter q)
         {
-            return DateTimeOffset.Parse(q.element.GetString()!, null, System.Globalization.DateTimeStyles.AssumeUniversal);
+            return DateTimeOffset.Parse(q.element.GetString()!, null, System.Globalization.DateTimeStyles.AdjustToUniversal);
         }
 
 
         public static implicit operator DateTime?(QueryParameter q)
         {
-            return q.element.ValueKind == JsonValueKind.Null ? null : DateTime.Parse(q.element.GetString()!, null, System.Globalization.DateTimeStyles.AssumeUniversal);
+            return q.element.ValueKind == JsonValueKind.Null ? null : DateTime.Parse(q.element.GetString()!, null, System.Globalization.DateTimeStyles.AdjustToUniversal);
         }
 
         public static implicit operator DateTimeOffset?(QueryParameter q)
         {
-            return q.element.ValueKind == JsonValueKind.Null ? null : DateTimeOffset.Parse(q.element.GetString()!);
+            return q.element.ValueKind == JsonValueKind.Null ? null : DateTimeOffset.Parse(q.element.GetString()!, null, System.Globalization.DateTimeStyles.AdjustToUniversal);
         }
 
     }
