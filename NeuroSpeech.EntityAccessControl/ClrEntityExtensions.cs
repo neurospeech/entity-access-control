@@ -104,11 +104,11 @@ namespace NeuroSpeech.EntityAccessControl
                         case TypeCode.Double:
                             return double.Parse(stringValue);
                         case TypeCode.DateTime:
-                            return DateTime.Parse(target.GetString()!, null, System.Globalization.DateTimeStyles.AssumeUniversal);
+                            return DateTime.Parse(target.GetString()!, null, System.Globalization.DateTimeStyles.AdjustToUniversal);
                     }
                     if (type == typeof(DateTimeOffset))
                     {
-                        return DateTimeOffset.Parse(target.GetString()!);
+                        return DateTimeOffset.Parse(target.GetString()!, null, System.Globalization.DateTimeStyles.AdjustToUniversal);
                     }
                     break;
                 case JsonValueKind.Number:
