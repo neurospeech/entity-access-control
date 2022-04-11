@@ -16,6 +16,7 @@ using System.Threading;
 using System.Text.Json.Nodes;
 using NeuroSpeech.EntityAccessControl.Parser;
 using Microsoft.AspNetCore.Http;
+using System.Reflection;
 
 namespace NeuroSpeech.EntityAccessControl
 {
@@ -100,6 +101,31 @@ export class Model<T extends IClrEntity> {
                     }
                     i.WriteLine($"{naming.ConvertName(p.Name)}?: {type};");
                 }
+
+                foreach(var p in e.ClrType.GetProperties().Where(x => x.GetCustomAttribute<ModelPropertyAttribute>() != null))
+                {
+                    var clrType = Nullable.GetUnderlyingType(p.PropertyType) ?? p.PropertyType;
+                    var isNullable = clrType != p.PropertyType;
+                    if (clrType.IsEnum)
+                    {
+                        if (!enumTypes.Contains(clrType))
+                            enumTypes.Add(clrType);
+                        var typeName = $"IEnum{clrType.Name}";
+                        if (isNullable)
+                        {
+                            typeName += " | null";
+                        }
+                        i.WriteLine($"{naming.ConvertName(p.Name)}?: {typeName};");
+                        continue;
+                    }
+                    var type = p.PropertyType.ToTypeScript();
+                    if (isNullable)
+                    {
+                        type += " | null";
+                    }
+                    i.WriteLine($"{naming.ConvertName(p.Name)}?: {type};");
+                }
+
                 foreach (var np in e.GetDeclaredNavigations())
                 {
                     var npName = $"I{ModelName(np.TargetEntityType.Name)}";
