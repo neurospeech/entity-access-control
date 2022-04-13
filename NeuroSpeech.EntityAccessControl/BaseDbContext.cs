@@ -134,7 +134,7 @@ namespace NeuroSpeech.EntityAccessControl
                 }
                 q = q.Where(Expression.Lambda<Func<T,bool>>(body, pe));
             }
-            q = Apply<T>(new QueryContext<T>(this, q)).ToQuery();
+            q = ApplyFilter<T>(e.State, new QueryContext<T>(this, q)).ToQuery();
             if (await q.AnyAsync())
                 return;
             if (insert)
@@ -383,13 +383,20 @@ namespace NeuroSpeech.EntityAccessControl
         public IQueryContext<T> Apply<T>(IQueryContext<T> qec, bool asInclude = false)
             where T: class
         {
+            return ApplyFilter<T>(EntityState.Unchanged, qec, asInclude);
+        }
+
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public IQueryContext<T> ApplyFilter<T>(EntityState state, IQueryContext<T> qec, bool asInclude = false)
+            where T: class
+        {
             var type = typeof(T);
             var baseType = type.BaseType;
             if (baseType != null && baseType != typeof(object))
             {
                 qec = this.GetInstanceGenericMethod(
                     nameof(ApplyInternal), type, baseType).As<IQueryContext<T>>()
-                    .Invoke(qec, asInclude);
+                    .Invoke(state, qec, asInclude);
             }
             var eh = events.GetEvents(services, type);
             if (eh == null)
@@ -398,15 +405,22 @@ namespace NeuroSpeech.EntityAccessControl
             }
             if (asInclude)
                 return (IQueryContext<T>)eh.IncludeFilter(qec);
+            switch(state)
+            {
+                case EntityState.Modified:
+                    return (IQueryContext<T>)eh.ModifyFilter(qec);
+                case EntityState.Deleted:
+                    return (IQueryContext<T>)eh.DeleteFilter(qec);
+            }
             return (IQueryContext<T>)eh.Filter(qec);
         }
 
         [EditorBrowsable(EditorBrowsableState.Never)]
-        public IQueryContext<RT> ApplyInternal<RT,BT>(IQueryContext<RT> q, bool asInclude = false)
+        public IQueryContext<RT> ApplyInternal<RT,BT>(EntityState state, IQueryContext<RT> q, bool asInclude = false)
             where RT: class, BT
             where BT: class
         {
-            return Apply(q.OfType<BT>(), asInclude).OfType<RT>();
+            return ApplyFilter(state, q.OfType<BT>(), asInclude).OfType<RT>();
         }
 
         Task ISecureQueryProvider.SaveChangesAsync(CancellationToken cancellationToken)

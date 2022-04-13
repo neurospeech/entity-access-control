@@ -90,6 +90,16 @@ namespace NeuroSpeech.EntityAccessControl
             return q;
         }
 
+        public virtual IQueryContext<T> ModifyFilter(IQueryContext<T> q)
+        {
+            return Filter(q);
+        }
+
+        public virtual IQueryContext<T> DeleteFilter(IQueryContext<T> q)
+        {
+            return ModifyFilter(q);
+        }
+
         public virtual IQueryContext<T> IncludeFilter(IQueryContext<T> q)
         {
             return Filter(q);
@@ -103,6 +113,17 @@ namespace NeuroSpeech.EntityAccessControl
         IQueryContext IEntityEvents.IncludeFilter(IQueryContext q)
         {
             return IncludeFilter((IQueryContext<T>)q);
+        }
+
+
+        IQueryContext IEntityEvents.ModifyFilter(IQueryContext q)
+        {
+            return ModifyFilter((IQueryContext<T>)q);
+        }
+
+        IQueryContext IEntityEvents.DeleteFilter(IQueryContext q)
+        {
+            return DeleteFilter((IQueryContext<T>)q);
         }
 
         public virtual Task DeletedAsync(T entity)
@@ -170,5 +191,6 @@ namespace NeuroSpeech.EntityAccessControl
         {
             return UpdatingAsync((T)entity);
         }
+
     }
 }

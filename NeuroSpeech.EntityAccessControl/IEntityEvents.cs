@@ -13,6 +13,9 @@ namespace NeuroSpeech.EntityAccessControl
 
         IQueryContext Filter(IQueryContext q);
 
+        IQueryContext ModifyFilter(IQueryContext q);
+        IQueryContext DeleteFilter(IQueryContext q);
+
         IQueryContext IncludeFilter(IQueryContext q);
 
         List<JsonIgnoreProperty> GetIgnoreConditions();
