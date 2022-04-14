@@ -1,4 +1,6 @@
-﻿using System;
+﻿using NetTopologySuite.Geometries;
+using NetTopologySuite.IO;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
@@ -116,5 +118,19 @@ namespace NeuroSpeech.EntityAccessControl
             return q.element.ValueKind == JsonValueKind.Null ? null : DateTimeOffset.Parse(q.element.GetString()!, null, System.Globalization.DateTimeStyles.AdjustToUniversal);
         }
 
+        private static WKTReader? wktReader;
+
+        public static implicit operator Geometry?(QueryParameter q)
+        {
+            wktReader ??= new WKTReader(GeometryFactory.Default);
+            switch (q.element.ValueKind)
+            {
+                case JsonValueKind.String:
+                    return wktReader.Read(q.element.GetString());
+                case JsonValueKind.Array:
+                    return new Point(q.element[0].GetDouble(), q.element[1].GetDouble()) { SRID = 4326 };
+            }
+            return null;
+        }
     }
 }
