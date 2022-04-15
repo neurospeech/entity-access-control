@@ -32,23 +32,35 @@ namespace NeuroSpeech.EntityAccessControl
         public IActionResult Entities()
         {
             var naming = JsonNamingPolicy.CamelCase;
-            return Ok(db.Model.GetEntityTypes().Select(x => new {
-                x.Name,
-                Keys = x.GetProperties().Where(x => x.IsKey()).Select(p => new {
-                    Name = naming.ConvertName(p.Name),
-                    Type = (Nullable.GetUnderlyingType(p.ClrType) ?? p.ClrType).FullName,
-                    Identity = p.GetValueGenerationStrategy() == SqlServerValueGenerationStrategy.IdentityColumn
-                }),
-                Properties = x.GetProperties().Where(x => !x.IsKey()).Select(p => new {
-                    Name = naming.ConvertName(p.Name),
-                    Type = (Nullable.GetUnderlyingType(p.ClrType) ?? p.ClrType).FullName,
-                    p.IsNullable
-                }),
-                NavigationProperties = x.GetNavigations().Select(np => new {
-                    Name = naming.ConvertName(np.Name),
-                    np.IsCollection,
-                    Type = np.TargetEntityType.ClrType.FullName
-                })
+            return Ok(db.Model.GetEntityTypes().Select(x =>
+            {
+                var ignoreConditions = db.GetIgnoreConditions(x.ClrType);
+                bool IsIgnored(IProperty property)
+                {
+                    return ignoreConditions.Any(x => x.Property == property.PropertyInfo && x.Condition == System.Text.Json.Serialization.JsonIgnoreCondition.Always);
+                }
+                return new
+                {
+                    x.Name,
+                    Keys = x.GetProperties().Where(x => x.IsKey()).Select(p => new
+                    {
+                        Name = naming.ConvertName(p.Name),
+                        Type = (Nullable.GetUnderlyingType(p.ClrType) ?? p.ClrType).FullName,
+                        Identity = p.GetValueGenerationStrategy() == SqlServerValueGenerationStrategy.IdentityColumn
+                    }),
+                    Properties = x.GetProperties().Where(x => !x.IsKey() && !IsIgnored(x)).Select(p => new
+                    {
+                        Name = naming.ConvertName(p.Name),
+                        Type = (Nullable.GetUnderlyingType(p.ClrType) ?? p.ClrType).FullName,
+                        p.IsNullable
+                    }),
+                    NavigationProperties = x.GetNavigations().Select(np => new
+                    {
+                        Name = naming.ConvertName(np.Name),
+                        np.IsCollection,
+                        Type = np.TargetEntityType.ClrType.FullName
+                    })
+                };
             }));
         }
 
@@ -80,8 +92,18 @@ export class Model<T extends IClrEntity> {
                 var b = e.BaseType == null ? "ClrEntity" : ModelName(e.BaseType.Name);
                 i.WriteLine($"export interface I{name} extends I{b} {{");
                 i.Indent++;
+
+                var ignoreConditions = db.GetIgnoreConditions(e.ClrType);
+
                 foreach (var p in e.GetDeclaredProperties())
                 {
+
+                    var ignoreCondition = ignoreConditions.FirstOrDefault(x => x.Property == p.PropertyInfo);
+                    if (ignoreCondition?.Condition == System.Text.Json.Serialization.JsonIgnoreCondition.Always)
+                    {
+                        continue;
+                    }
+
                     var clrType = Nullable.GetUnderlyingType(p.ClrType) ?? p.ClrType;
                     if (clrType.IsEnum) {
                         if (!enumTypes.Contains(clrType))
