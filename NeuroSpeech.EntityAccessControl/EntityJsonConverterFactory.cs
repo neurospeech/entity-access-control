@@ -187,6 +187,7 @@ namespace NeuroSpeech.EntityAccessControl
                             writer.WriteNumber("latitude", point.X);
                             writer.WriteNumber("longitude", point.Y);
                             writer.WriteString("wktString", point.AsText());
+                            writer.WriteNumber("srid", point.SRID);
                             writer.WriteEndObject();
                             continue;
                         }
@@ -195,6 +196,7 @@ namespace NeuroSpeech.EntityAccessControl
                         writer.WriteNumber("latitude", point.X);
                         writer.WriteNumber("longitude", point.Y);
                         writer.WriteString("wktString", g.AsText());
+                        writer.WriteNumber("srid", point.SRID);
                         writer.WriteEndObject();
                         continue;
                     }

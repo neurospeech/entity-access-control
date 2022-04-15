@@ -133,12 +133,22 @@ namespace NeuroSpeech.EntityAccessControl
                 case JsonValueKind.Array:
                     return new Point(element[0].GetDouble(), element[1].GetDouble()) { SRID = 4326 };
                 case JsonValueKind.Object:
+                    int srid = 4326;
+                    if(element.TryGetProperty("srid", out var sridValue)) {
+                        if(!sridValue.TryGetInt32(out srid))
+                        {
+                            srid = 4326;
+                        }
+                    }
                     if (element.TryGetProperty("x", out var x))
                     {
                         var y = element.GetProperty("y");
-                        return new Point(x.GetDouble(), y.GetDouble());
+                        return new Point(x.GetDouble(), y.GetDouble()) { SRID = srid };
                     }
-                    return new Point(element.GetProperty("latitude").GetDouble(), element.GetProperty("longitude").GetDouble());
+                    return new Point(element.GetProperty("latitude").GetDouble(), element.GetProperty("longitude").GetDouble())
+                    {
+                        SRID = srid
+                    };
             }
             return null;
         }
