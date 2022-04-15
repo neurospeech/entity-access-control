@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
+using NetTopologySuite.Geometries;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -182,6 +183,10 @@ namespace NeuroSpeech.EntityAccessControl.Internal
 
             if (type == typeof(DateTimeOffset))
                 return "DateTime";
+            if (typeof(Geometry).IsAssignableFrom(type))
+            {
+                return "IGeometry";
+            }
             return $"any /*{type.FullName}*/";
         }
 

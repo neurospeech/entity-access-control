@@ -66,7 +66,7 @@ namespace NeuroSpeech.EntityAccessControl
 
             i.WriteLine(@"import DateTime from ""@web-atoms/date-time/dist/DateTime"";
 import type IClrEntity from ""@web-atoms/entity/dist/models/IClrEntity"";
-import type { ICollection, IModel } from ""@web-atoms/entity/dist/services/BaseEntityService"";
+import type { ICollection, IGeometry, IModel } from ""@web-atoms/entity/dist/services/BaseEntityService"";
 export class Model<T extends IClrEntity> {
     constructor(public name: string) {}
 }");
