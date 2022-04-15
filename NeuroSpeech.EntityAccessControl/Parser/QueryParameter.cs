@@ -110,12 +110,14 @@ namespace NeuroSpeech.EntityAccessControl
 
         public static implicit operator DateTime?(QueryParameter q)
         {
-            return q.element.ValueKind == JsonValueKind.Null ? null : DateTime.Parse(q.element.GetString()!, null, System.Globalization.DateTimeStyles.AdjustToUniversal);
+            JsonElement element = q.element;
+            return element.ValueKind == JsonValueKind.Null ? null : global::System.DateTime.Parse(element.GetString()!, null, global::System.Globalization.DateTimeStyles.AdjustToUniversal);
         }
 
         public static implicit operator DateTimeOffset?(QueryParameter q)
         {
-            return q.element.ValueKind == JsonValueKind.Null ? null : DateTimeOffset.Parse(q.element.GetString()!, null, System.Globalization.DateTimeStyles.AdjustToUniversal);
+            JsonElement element = q.element;
+            return element.ValueKind == JsonValueKind.Null ? null : global::System.DateTimeOffset.Parse(element.GetString()!, null, global::System.Globalization.DateTimeStyles.AdjustToUniversal);
         }
 
         private static WKTReader? wktReader;
@@ -123,12 +125,20 @@ namespace NeuroSpeech.EntityAccessControl
         public static implicit operator Geometry?(QueryParameter q)
         {
             wktReader ??= new WKTReader(GeometryFactory.Default);
-            switch (q.element.ValueKind)
+            JsonElement element = q.element;
+            switch (element.ValueKind)
             {
                 case JsonValueKind.String:
-                    return wktReader.Read(q.element.GetString());
+                    return wktReader.Read(element.GetString());
                 case JsonValueKind.Array:
-                    return new Point(q.element[0].GetDouble(), q.element[1].GetDouble()) { SRID = 4326 };
+                    return new Point(element[0].GetDouble(), element[1].GetDouble()) { SRID = 4326 };
+                case JsonValueKind.Object:
+                    if (element.TryGetProperty("x", out var x))
+                    {
+                        var y = element.GetProperty("y");
+                        return new Point(x.GetDouble(), y.GetDouble());
+                    }
+                    return new Point(element.GetProperty("latitude").GetDouble(), element.GetProperty("longitude").GetDouble());
             }
             return null;
         }

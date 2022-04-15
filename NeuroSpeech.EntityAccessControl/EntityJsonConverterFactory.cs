@@ -179,7 +179,22 @@ namespace NeuroSpeech.EntityAccessControl
                     if (v is Geometry g)
                     {
                         // r[name] = g.ToString();
-                        writer.WriteString(name, g.ToString());
+                        // writer.WriteString(name, g.ToString());
+                        if (g is Point point)
+                        {
+                            writer.WriteStartObject();
+                            writer.WriteNumber("latitude", point.X);
+                            writer.WriteNumber("longitude", point.Y);
+                            writer.WriteString("wktString", point.AsText());
+                            writer.WriteEndObject();
+                            continue;
+                        }
+                        writer.WriteStartObject();
+                        point = g.Centroid;
+                        writer.WriteNumber("latitude", point.X);
+                        writer.WriteNumber("longitude", point.Y);
+                        writer.WriteString("wktString", g.AsText());
+                        writer.WriteEndObject();
                         continue;
                     }
                     if (v is System.Collections.IDictionary vd)
