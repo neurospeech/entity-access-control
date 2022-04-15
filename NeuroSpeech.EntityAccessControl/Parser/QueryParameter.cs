@@ -145,7 +145,7 @@ namespace NeuroSpeech.EntityAccessControl
                         var y = element.GetProperty("y");
                         return new Point(x.GetDouble(), y.GetDouble()) { SRID = srid };
                     }
-                    return new Point(element.GetProperty("latitude").GetDouble(), element.GetProperty("longitude").GetDouble())
+                    return new Point(element.GetProperty("longitude").GetDouble(), element.GetProperty("latitude").GetDouble())
                     {
                         SRID = srid
                     };
