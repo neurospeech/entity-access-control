@@ -180,6 +180,7 @@ namespace NeuroSpeech.EntityAccessControl
                     {
                         // r[name] = g.ToString();
                         // writer.WriteString(name, g.ToString());
+                        writer.WritePropertyName(name);
                         if (g is Point point)
                         {
                             writer.WriteStartObject();
