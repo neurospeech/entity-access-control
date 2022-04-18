@@ -94,6 +94,31 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
         }
 
         [TestMethod]
+        public async Task SelectFirstOrDefault()
+        {
+            using var scope = CreateScope();
+
+            var db = scope.GetRequiredService<AppDbContext>();
+
+            db.UserID = 2;
+            var sdb = db;
+
+            var controller = new TestEntityController(sdb);
+            var name = "NeuroSpeech.EntityAccessControl.Tests.Model.Post";
+
+            var m = System.Text.Json.JsonSerializer.Serialize(new object[] {
+                new object[] { "orderByDescending", "x => x.PostID"},
+                new object[] { "select", "x => x.Tags.OrderBy(t => t.Name).FirstOrDefault()" }
+            });
+
+            var r = await controller.Methods(name,
+                methods: m
+                );
+
+            Assert.IsNotNull(r);
+        }
+
+        [TestMethod]
         public async Task IncludeTest()
         {
             using var scope = CreateScope();

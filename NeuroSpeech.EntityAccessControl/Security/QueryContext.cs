@@ -58,15 +58,25 @@ namespace NeuroSpeech.EntityAccessControl
         public IQueryContext<T2> Select<T2>(Expression<Func<T, T2>> expression)
             where T2: class
         {
-            var ne = expression.Body as NewExpression;
-            var list = new List<Expression>();
-            foreach(var p in ne.Arguments)
+            if (expression.Body.NodeType == ExpressionType.New && expression.Body is NewExpression ne)
             {
-                list.Add(Replace(p, true));
+                var list = new List<Expression>();
+                foreach (var p in ne.Arguments)
+                {
+                    list.Add(Replace(p, true));
+                }
+                ne = ne.Update(list);
+                expression = Expression.Lambda<Func<T, T2>>(ne, expression.Parameters);
+                return new QueryContext<T2>(db, queryable.Select(expression), errorModel);
             }
-            ne = ne.Update(list);
-            expression = Expression.Lambda<Func<T, T2>>(ne, expression.Parameters);
-            return new QueryContext<T2>(db, queryable.Select(expression), errorModel);
+            
+            if (expression.Body.NodeType == ExpressionType.Call && expression.Body is MethodCallExpression call)
+            {
+                var replaced = Replace(call, false);
+                var updated = Expression.Lambda<Func<T, T2>>(replaced, expression.Parameters);
+                return new QueryContext<T2>(db, queryable.Select(updated), errorModel);
+            }
+            throw new NotImplementedException($"Cannot convert from {expression.Body.NodeType}");
         }
 
         protected Expression<Func<TInput,TOutput>> Replace<TInput,TOutput>(Expression<Func<TInput,TOutput>> exp)
@@ -90,6 +100,23 @@ namespace NeuroSpeech.EntityAccessControl
             if (returnType == null)
             {
                 returnType = original.Type;
+            }
+            if (original is MethodCallExpression call)
+            {
+                var target = call.Object ?? call.Arguments.First();
+                var arg = Replace(target, toList, typeof(object));
+                if  (arg != target)
+                {
+                    if (call.Method.IsStatic)
+                    {
+                        // replace first parameter...
+                        var list = new List<Expression>() { arg };
+                        list.AddRange(call.Arguments.Skip(1));
+                        return call.Update(null, list );
+                    }
+                    return call.Update(arg, call.Arguments);
+                }
+                return call;
             }
             if (original is MemberExpression memberExpressiion)
             {
