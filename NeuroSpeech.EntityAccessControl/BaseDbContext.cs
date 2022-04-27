@@ -73,41 +73,49 @@ namespace NeuroSpeech.EntityAccessControl
 
         private async Task VerifyAccessAsync(Type type, EntityEntry e, object item, bool insert = false)
         {
-            if (insert)
+            // verify access to this entity first...
+            if (e.State != EntityState.Added)
             {
-                var metdata = e.Metadata;
-                var properties = metdata.GetDeclaredProperties();
-                foreach(var re in e.References)
-                {
-                    if (re.Metadata.IsCollection)
-                        continue;
-                    if(re.Metadata is not INavigation nav)
-                        continue;
-                    bool isModified = false;
-                    foreach(var p in nav.ForeignKey.Properties)
-                    {
-                        if (!properties.Contains(p))
-                            continue;
-                        var px = e.Property(p.Name);
-                        if (px.IsTemporary)
-                            continue;
-                        if (px.OriginalValue != px.CurrentValue)
-                        {
-                            isModified = true;
-                            break;
-                        }
-                    }
-                    if (!isModified)
-                        continue;
-                    await this.GetInstanceGenericMethod(nameof(VerifyFilterAsync), re.Metadata.TargetEntityType.ClrType)
-                        .As<Task>()
-                        .Invoke(re.Query(), e, item, true);
-                }
+                await this.GetInstanceGenericMethod(nameof(VerifyFilterAsync), type)
+                    .As<Task>()
+                    .Invoke((IQueryable?)null, e, item, false);
+
+            }
+            if (e.State == EntityState.Deleted)
+            {
                 return;
             }
-            await this.GetInstanceGenericMethod(nameof(VerifyFilterAsync), type)
-                .As<Task>()
-                .Invoke((IQueryable?)null, e, item, false);
+
+            // verify access to each foreign key
+            // in case of insert and update
+            var metdata = e.Metadata;
+            var properties = metdata.GetDeclaredProperties();
+            foreach(var re in e.References)
+            {
+                if (re.Metadata.IsCollection)
+                    continue;
+                if(re.Metadata is not INavigation nav)
+                    continue;
+                bool isModified = false;
+                foreach(var p in nav.ForeignKey.Properties)
+                {
+                    if (!properties.Contains(p))
+                        continue;
+                    var px = e.Property(p.Name);
+                    if (px.IsTemporary)
+                        continue;
+                    if (px.OriginalValue != px.CurrentValue)
+                    {
+                        isModified = true;
+                        break;
+                    }
+                }
+                if (!isModified)
+                    continue;
+                await this.GetInstanceGenericMethod(nameof(VerifyFilterAsync), re.Metadata.TargetEntityType.ClrType)
+                    .As<Task>()
+                    .Invoke(re.Query(), e, item, true);
+            }
         }
 
         public async Task VerifyFilterAsync<T>(IQueryable? query, EntityEntry e, object? item, bool insert)
