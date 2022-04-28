@@ -104,6 +104,8 @@ namespace NeuroSpeech.EntityAccessControl
                             return double.Parse(stringValue);
                         case TypeCode.DateTime:
                             return DateTime.Parse(target.GetString()!, null, System.Globalization.DateTimeStyles.AdjustToUniversal);
+                        case TypeCode.Decimal:
+                            return decimal.Parse(stringValue);
                     }
                     if (type == typeof(DateTimeOffset))
                     {
@@ -145,11 +147,13 @@ namespace NeuroSpeech.EntityAccessControl
                             return target.GetDouble();
                         case TypeCode.DateTime:
                             return new DateTime(target.GetInt64());
+                        case TypeCode.Decimal:
+                            return target.GetDecimal();
                     }
                     break;
             }
 
-            throw new ArgumentException($"Cannot convert {target} to {type.FullName}");
+            throw new ArgumentException($"Cannot convert {target.ValueKind} {target} to {type.FullName}");
             //if (type.IsEnum)
             //{
             //    if (target.ValueKind == JsonValueKind.Number)
