@@ -18,7 +18,7 @@ namespace NeuroSpeech.EntityAccessControl
         {
             this.Name = settings.GetTypeName(type);
             var namingPolicy = policy ?? JsonNamingPolicy.CamelCase;
-            var ignoreProperties = settings.GetIgnoreConditions(type);
+            var ignoreProperties = settings.GetIgnoredProperties(type);
             var properties = type.GetProperties();
             Properties = new List<EntityJsonPropertyInfo>(properties.Length);
             foreach(var p in properties)
@@ -32,8 +32,7 @@ namespace NeuroSpeech.EntityAccessControl
                     PropertyInfo: p,
                     TypeCode: Type.GetTypeCode(propertyType),
                     jsonIgnoreCondition: ignoreProperties
-                        .FirstOrDefault(x => x.Property == p)?.Condition
-                        ?? JsonIgnoreCondition.Never));
+                        .Contains(p) ? JsonIgnoreCondition.Always : JsonIgnoreCondition.Never));
             }
         }
     }

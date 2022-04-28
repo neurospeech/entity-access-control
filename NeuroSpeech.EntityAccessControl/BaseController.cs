@@ -145,10 +145,13 @@ namespace NeuroSpeech.EntityAccessControl
         protected virtual async Task LoadPropertiesAsync(object entity, IEntityType entityType, JsonElement model)
         {
             var clrType = entityType.ClrType;
+            var readOnlyProperties = db.GetReadonlyProperties(clrType);
             foreach (var p in model.EnumerateObject())
             {
                 var property = clrType.StaticCacheGetOrCreate(p.Name,
                     () => clrType.GetProperties().FirstOrDefault(x => x.Name.EqualsIgnoreCase(p.Name)));
+                if (readOnlyProperties.Contains(property))
+                    continue;
                 if (property == null)
                 {
                     continue;

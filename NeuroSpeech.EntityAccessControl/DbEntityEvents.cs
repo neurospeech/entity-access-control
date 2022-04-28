@@ -23,29 +23,68 @@ namespace NeuroSpeech.EntityAccessControl
             return new EntityAccessException(new ErrorModel { Title = title });
         }
 
-        private static object lockObject = new object();
-        private static List<JsonIgnoreProperty>? ignoreList;
-        private static Dictionary<PropertyInfo, JsonIgnoreCondition>? ignoreConditions;
+        private Dictionary<PropertyInfo, JsonIgnoreCondition>? ignoreConditions;
+        private List<PropertyInfo>? readOnlyProperties;
 
-        public List<JsonIgnoreProperty> GetIgnoreConditions()
+        public List<PropertyInfo> GetIgnoreConditions(string typeCacheKey)
         {
-            lock(lockObject)
-            {
-                if (ignoreList == null)
-                {
-                    ignoreConditions = new Dictionary<PropertyInfo, JsonIgnoreCondition>();
-                    OnSetupIgnore();
-                    ignoreList = ignoreConditions
-                        .Select((x) => new JsonIgnoreProperty(x.Key, x.Value)).ToList();
-                    ignoreConditions = null;
-                }
-            }
-            return ignoreList;
+            ignoreConditions = new Dictionary<PropertyInfo, JsonIgnoreCondition>();
+            OnSetupIgnore(typeCacheKey);
+            return ignoreConditions
+                .Where(x => x.Value == JsonIgnoreCondition.Always)
+                .Select(x => x.Key).ToList();
         }
 
-        protected virtual void OnSetupIgnore()
+        public List<PropertyInfo> GetReadOnlyProperties(string typeCacheKey)
+        {
+            readOnlyProperties = new List<PropertyInfo>();
+            OnSetupReadOnly(typeCacheKey);
+            var r = readOnlyProperties;
+            readOnlyProperties = null;
+            return r;
+        }
+
+        protected virtual void OnSetupReadOnly(string typeCacheKey)
         {
 
+        }
+
+        protected virtual void OnSetupIgnore(string typeCacheKey)
+        {
+
+        }
+
+        /**
+        * This will setup specified properties as readonly, 
+        */
+        protected void SetReadOnly(Expression<Func<T, object>> expression)
+        {
+            if (readOnlyProperties == null)
+                throw new InvalidOperationException($"SetReadOnly must only be called within OnSetupReadOnly method");
+            if (expression.Body is NewExpression nme)
+            {
+                foreach (var m in nme.Arguments)
+                {
+                    if (m is not MemberExpression member)
+                        throw new ArgumentException($"Invalid expression");
+
+                    while (member.Expression is not ParameterExpression pe)
+                    {
+                        if (member.Expression is not MemberExpression me2)
+                            throw new ArgumentException($"Invalid expression");
+                        member = me2;
+                    }
+                    if (member.Member is not PropertyInfo property1)
+                        throw new ArgumentException($"Should be a property");
+                    readOnlyProperties.Add(property1);
+                }
+                return;
+            }
+            if (expression.Body is not MemberExpression me)
+                throw new ArgumentException($"Expression {expression} is not a valid member expression");
+            if (me.Member is not PropertyInfo property)
+                throw new ArgumentException($"Expression {expression} is not a valid property expression");
+            readOnlyProperties.Add(property);
         }
 
         /**

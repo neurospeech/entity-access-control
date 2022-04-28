@@ -15,8 +15,12 @@ namespace NeuroSpeech.EntityAccessControl
         IModel Model { get; }
         bool EnforceSecurity { get; set; }
 
+        string TypeCacheKey { get; }
+
         IQueryable<T> Query<T>() where T : class;
-        List<JsonIgnoreProperty> GetIgnoreConditions(Type type);
+        List<PropertyInfo> GetIgnoredProperties(Type type);
+
+        List<PropertyInfo> GetReadonlyProperties(Type type);
         IQueryContext<T> Apply<T>(IQueryContext<T> qec, bool asInclude = false) where T : class;
         Task SaveChangesAsync(CancellationToken cancellationToken = default);
         Task<object?> FindByKeysAsync(IEntityType t, JsonElement item, CancellationToken cancellation = default);

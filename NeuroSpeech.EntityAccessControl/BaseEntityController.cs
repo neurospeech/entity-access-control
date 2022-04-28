@@ -34,10 +34,10 @@ namespace NeuroSpeech.EntityAccessControl
             var naming = JsonNamingPolicy.CamelCase;
             return Ok(db.Model.GetEntityTypes().Select(x =>
             {
-                var ignoreConditions = db.GetIgnoreConditions(x.ClrType);
+                var ignoreConditions = db.GetIgnoredProperties(x.ClrType);
                 bool IsIgnored(IProperty property)
                 {
-                    return ignoreConditions.Any(x => x.Property == property.PropertyInfo && x.Condition == System.Text.Json.Serialization.JsonIgnoreCondition.Always);
+                    return ignoreConditions.Contains(property.PropertyInfo);
                 }
                 return new
                 {
@@ -93,13 +93,12 @@ export class Model<T extends IClrEntity> {
                 i.WriteLine($"export interface I{name} extends I{b} {{");
                 i.Indent++;
 
-                var ignoreConditions = db.GetIgnoreConditions(e.ClrType);
+                var ignoreConditions = db.GetIgnoredProperties(e.ClrType);
 
                 foreach (var p in e.GetDeclaredProperties())
                 {
 
-                    var ignoreCondition = ignoreConditions.FirstOrDefault(x => x.Property == p.PropertyInfo);
-                    if (ignoreCondition?.Condition == System.Text.Json.Serialization.JsonIgnoreCondition.Always)
+                    if (ignoreConditions.Contains(p.PropertyInfo))
                     {
                         continue;
                     }

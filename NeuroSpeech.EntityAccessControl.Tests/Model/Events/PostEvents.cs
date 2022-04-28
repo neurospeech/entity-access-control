@@ -22,7 +22,7 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Model.Events
             return Task.CompletedTask;
         }
 
-        protected override void OnSetupIgnore()
+        protected override void OnSetupIgnore(string typeCacheKey)
         {
             Ignore(x => new { 
                 x.AdminComments

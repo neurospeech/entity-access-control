@@ -2,6 +2,7 @@
 using NetTopologySuite.Geometries;
 using NeuroSpeech.EntityAccessControl.Internal;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -29,14 +30,16 @@ namespace NeuroSpeech.EntityAccessControl
 
     public class EntitySerializationSettings
     {
+        public string TypeCacheKey;
+
         public Func<Type, string> GetTypeName;
 
-        public Func<Type, List<JsonIgnoreProperty>> GetIgnoreConditions = GetDefaultIgnoreAttribute;
+        public Func<Type, List<PropertyInfo>> GetIgnoredProperties = GetDefaultIgnoreAttribute;
 
         private readonly Dictionary<object, int> added = new(ReferenceEqualityComparer.Instance);
 
-        private readonly Dictionary<Type, EntityJsonTypeInfo> typeCache
-            = new Dictionary<Type, EntityJsonTypeInfo>();
+        private readonly ConcurrentDictionary<(string key,Type type), EntityJsonTypeInfo> typeCache
+            = new ();
 
 
         public bool TryGetReferenceIdOrAdd(object key, out int id)
@@ -48,12 +51,12 @@ namespace NeuroSpeech.EntityAccessControl
             return false;
         }
 
-        private static List<JsonIgnoreProperty> GetDefaultIgnoreAttribute(Type type)
+        private static List<PropertyInfo> GetDefaultIgnoreAttribute(Type type)
         {
             return type.GetProperties()
-                .Select(x => (x, x.GetCustomAttribute<JsonIgnoreAttribute>()))
-                .Where(x => x.Item2 != null)
-                .Select(x => new JsonIgnoreProperty(x.x, x.Item2!.Condition))
+                .Select(x => (property: x, condition: x.GetCustomAttribute<JsonIgnoreAttribute>()))
+                .Where(x => x.condition?.Condition == JsonIgnoreCondition.Always)
+                .Select(x => x.property)
                 .ToList();
         }
 
@@ -67,23 +70,27 @@ namespace NeuroSpeech.EntityAccessControl
         public EntitySerializationSettings()
         {
             GetTypeName = (x) => (x.IsAnonymous() ? x.Name : x.FullName)!;
+            TypeCacheKey = "Global";
         }
 
         public EntitySerializationSettings(ISecureQueryProvider db)
         {
             GetTypeName = (x) => db.Model.FindEntityType(x)?.Name ?? (x.IsAnonymous() ? x.Name : x.FullName!);
-            GetIgnoreConditions = db.GetIgnoreConditions;
+            GetIgnoredProperties = db.GetIgnoredProperties;
+            TypeCacheKey = db.TypeCacheKey;
         }
 
 
         public EntitySerializationSettings(DbContext db)
         {
             GetTypeName = (x) => db.Model.FindEntityType(x)?.Name ?? (x.IsAnonymous() ? x.Name : x.FullName!);
+            TypeCacheKey = "Global";
         }
 
         internal EntityJsonTypeInfo GetTypeInfo(Type et, JsonNamingPolicy? policy)
         {
-            return typeCache.GetOrCreate(et, (x) => new EntityJsonTypeInfo(this, x, policy));
+            var key = (TypeCacheKey, type: et);
+            return typeCache.GetOrCreate(key, (x) => new EntityJsonTypeInfo(this, x.type, policy));
         }
     }
 

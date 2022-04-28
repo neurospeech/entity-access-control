@@ -9,7 +9,7 @@
             this.db = db;
         }
 
-        protected override void OnSetupIgnore()
+        protected override void OnSetupIgnore(string typeCacheKey)
         {
             this.Ignore(x => new { 
                 x.Password

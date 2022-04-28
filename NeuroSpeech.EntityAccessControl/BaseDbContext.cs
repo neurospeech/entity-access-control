@@ -58,6 +58,8 @@ namespace NeuroSpeech.EntityAccessControl
 
         public bool EnforceSecurity { get; set; }
 
+        public virtual string TypeCacheKey => "Global";
+
         public IQueryable<T> FilteredQuery<T>()
             where T: class
         {
@@ -378,14 +380,28 @@ namespace NeuroSpeech.EntityAccessControl
         private readonly Dictionary<PropertyInfo, IEntityEvents> cached
             = new();
 
-        private static List<JsonIgnoreProperty> Empty = new List<JsonIgnoreProperty>();
+        private static List<PropertyInfo> Empty = new ();
 
-        List<JsonIgnoreProperty> ISecureQueryProvider.GetIgnoreConditions(Type type)
+        List<PropertyInfo> ISecureQueryProvider.GetIgnoredProperties(Type type)
         {
             var eh = events.GetEvents(services, type);
             if (eh == null)
                 return Empty;
-            return eh.GetIgnoreConditions();
+            return eh.GetIgnoreConditions(TypeCacheKey);
+        }
+
+        private static ConcurrentDictionary<(string key,Type type), List<PropertyInfo>> readOnlyProperties = new();
+
+        List<PropertyInfo> ISecureQueryProvider.GetReadonlyProperties(Type type)
+        {
+            var key = (TypeCacheKey, type);
+            return readOnlyProperties.GetOrAdd(key, (x) =>
+            {
+                var eh = events.GetEvents(services, x.type);
+                if (eh == null)
+                    return Empty;
+                return eh.GetReadOnlyProperties(TypeCacheKey);
+            });
         }
 
         public IQueryContext<T> Apply<T>(IQueryContext<T> qec, bool asInclude = false)

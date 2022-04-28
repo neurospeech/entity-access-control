@@ -136,8 +136,8 @@ namespace NeuroSpeech.EntityAccessControl
                 }
 
                 var property = (memberExpressiion.Member as PropertyInfo)!;
-                var igc = db.GetIgnoreConditions(property.DeclaringType!);
-                if (igc.FirstOrDefault(x => x.Property == property)?.Condition == JsonIgnoreCondition.Always)
+                var igc = db.GetIgnoredProperties(property.DeclaringType!);
+                if (igc.Contains(property))
                 {
                     return Expression.Constant(null, original.Type);
                 }
