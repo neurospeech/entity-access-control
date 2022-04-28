@@ -112,6 +112,14 @@ namespace NeuroSpeech.EntityAccessControl.Tests
                 // banned user
                 AccountID = 3,
                 Banned = true
+            }, new Account
+            {
+                // banned user
+                AccountID = 4
+            },new Account
+            {
+                // banned user
+                AccountID = 5
             });
 
             Seed(db, new Post { 

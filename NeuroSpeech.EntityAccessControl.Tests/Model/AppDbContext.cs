@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq;
 
 namespace NeuroSpeech.EntityAccessControl.Tests.Model
 {
@@ -28,6 +29,14 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Model
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+
+            var cascadeFKs = modelBuilder.Model.GetEntityTypes()
+                .SelectMany(t => t.GetForeignKeys())
+                .Where(fk => !fk.IsOwnership && fk.DeleteBehavior == DeleteBehavior.Cascade);
+
+            foreach (var fk in cascadeFKs)
+                fk.DeleteBehavior = DeleteBehavior.Restrict;
 
             modelBuilder.Entity<PostContentTag>().HasKey(x => new
             {
@@ -81,6 +90,27 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Model
         public ICollection<PostContent> Contents { get; set; }
 
         public string AdminComments { get; set; }
+
+        public ICollection<PostAuthor> Authors { get; set; }
+
+    }
+
+    [Table("PostAuthors")]
+    public class PostAuthor
+    {
+        [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public long PostAuthorID { get; set; }
+
+        public long PostID { get; set; }
+
+        public long AccountID { get; set; }
+
+        [ForeignKey(nameof(PostID))]
+        public Post Post { get; set; }
+
+        [ForeignKey(nameof(AccountID))]
+        public Account Account { get; set; }
+
 
     }
 
