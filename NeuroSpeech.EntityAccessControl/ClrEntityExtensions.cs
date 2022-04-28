@@ -24,14 +24,13 @@ namespace NeuroSpeech.EntityAccessControl
                 case JsonValueKind.Array:
                     throw new ArgumentException($"Cannot convert array to {type.FullName}");
             }
-            var v = value.Deserialize(type);
+            var v = value.DeserializeJsonElement(type);
             property.SetValue(target, v);
             return v;
         }
 
-        public static object? DeserializeJsonElement(this JsonElement target, Type type)
+        private static object? DeserializeJsonElement(this JsonElement target, Type type)
         {
-            type = Nullable.GetUnderlyingType(type) ?? type;
             switch (target.ValueKind)
             {
                 case JsonValueKind.Object:
