@@ -144,7 +144,14 @@ namespace NeuroSpeech.EntityAccessControl
                 }
                 q = q.Where(Expression.Lambda<Func<T,bool>>(body, pe));
             }
-            q = ApplyFilter<T>(e.State, new QueryContext<T>(this, q)).ToQuery();
+            var oq = new QueryContext<T>(this, q);
+            var fq = ApplyFilter<T>(e.State, oq);
+            if (fq == oq) {
+                // filter is empty in case of public
+                // foreignKey such as tags locations etc
+                return;
+            }
+            q = fq.ToQuery();
             if (await q.AnyAsync())
                 return;
             if (insert)
@@ -432,6 +439,7 @@ namespace NeuroSpeech.EntityAccessControl
             switch(state)
             {
                 case EntityState.Modified:
+                case EntityState.Added:
                     return (IQueryContext<T>)eh.ModifyFilter(qec);
                 case EntityState.Deleted:
                     return (IQueryContext<T>)eh.DeleteFilter(qec);
