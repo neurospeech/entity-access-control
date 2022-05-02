@@ -284,6 +284,30 @@ namespace NeuroSpeech.EntityAccessControl
 
         }
 
+        private IEnumerable<EntityEntry> Entries()
+        {
+            var all = this.ChangeTracker.Entries().ToList();
+            var newChanges = new List<EntityEntry>();            
+            EventHandler<EntityTrackedEventArgs> tracker = (s, e) => {
+                if (!all.Contains(e.Entry))
+                    newChanges.Add(e.Entry);
+            };
+            this.ChangeTracker.Tracked += tracker;
+            do
+            {
+                foreach (var item in all)
+                {
+                    yield return item;
+                }
+
+                // check if anything was modified...
+                all.Clear();
+                all.AddRange(newChanges);
+                newChanges.Clear();
+            } while (all.Count > 0);
+            this.ChangeTracker.Tracked -= tracker;
+        }
+
         /// <summary>
         /// Save changes will validate object after executing all relevant events, so event handlers can set default properties before they are validated.
         /// </summary>
@@ -300,7 +324,7 @@ namespace NeuroSpeech.EntityAccessControl
             }
             var pending = new List<(EntityState State, object item, Type type)>();
             var errors = new List<ValidationResult>();
-            foreach(var e in this.ChangeTracker.Entries())
+            foreach(var e in Entries())
             {
                 var item = e.Entity;
                 var type = item.GetType();
