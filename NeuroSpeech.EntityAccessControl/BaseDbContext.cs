@@ -366,7 +366,7 @@ namespace NeuroSpeech.EntityAccessControl
             return r;
         }
 
-        public async Task SaveChangesWithoutEvents(CancellationToken cancellationToken = default)
+        public async Task SaveChangesWithoutEventsAsync(CancellationToken cancellationToken = default)
         {
             try
             {
