@@ -524,7 +524,11 @@ export class Model<T extends IClrEntity> {
         protected virtual void SetupCacheHeaders(int cacheSeconds)
         {
             var headers = Response.GetTypedHeaders();
-            headers.Expires = DateTimeOffset.UtcNow.AddSeconds(cacheSeconds);
+            headers.CacheControl = new Microsoft.Net.Http.Headers.CacheControlHeaderValue
+            {
+                MaxAge = TimeSpan.FromSeconds(cacheSeconds),
+                Public = true,
+            };
         }
 
         public async Task<IActionResult> InvokeAsync<T>(
