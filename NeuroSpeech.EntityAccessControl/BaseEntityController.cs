@@ -513,13 +513,18 @@ export class Model<T extends IClrEntity> {
             var result = await this.GetInstanceGenericMethod(nameof(InvokeAsync), t.ClrType)
                 .As<Task<IActionResult>>()
                 .Invoke(options);
-            if (model.CacheSeconds > 0) {
-                Response.GetTypedHeaders().CacheControl = new Microsoft.Net.Http.Headers.CacheControlHeaderValue { 
-                    Public = true,
-                    MaxAge = TimeSpan.FromSeconds(model.CacheSeconds)
-                };
+            var cacheSeconds = model.CacheSeconds;
+            if (cacheSeconds > 0)
+            {
+                SetupCacheHeaders(cacheSeconds);
             }
             return result;
+        }
+
+        protected virtual void SetupCacheHeaders(int cacheSeconds)
+        {
+            var headers = Response.GetTypedHeaders();
+            headers.Expires = DateTimeOffset.UtcNow.AddSeconds(cacheSeconds);
         }
 
         public async Task<IActionResult> InvokeAsync<T>(
