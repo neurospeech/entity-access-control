@@ -355,6 +355,7 @@ export class Model<T extends IClrEntity> {
             [FromQuery] int size = 200,
             [FromQuery] bool splitInclude = true,
             [FromQuery] bool trace = false,
+            [FromQuery] int cacheSeconds = 0,
             CancellationToken cancellationToken = default
             )
         {
@@ -364,6 +365,7 @@ export class Model<T extends IClrEntity> {
                 Size = size,
                 SplitInclude = splitInclude,
                 Trace = trace,
+                CacheSeconds = cacheSeconds
             }, cancellationToken);
         }
 
