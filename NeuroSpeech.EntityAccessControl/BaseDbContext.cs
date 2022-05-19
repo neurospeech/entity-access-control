@@ -447,7 +447,8 @@ namespace NeuroSpeech.EntityAccessControl
         {
             var type = typeof(T);
             var baseType = type.BaseType;
-            if (baseType != null && baseType != typeof(object))
+            bool hasBaseType = baseType != null && baseType != typeof(object);
+            if (hasBaseType)
             {
                 qec = this.GetInstanceGenericMethod(
                     nameof(ApplyInternal), type, baseType).As<IQueryContext<T>>()
@@ -456,6 +457,11 @@ namespace NeuroSpeech.EntityAccessControl
             var eh = events.GetEvents(services, type);
             if (eh == null)
             {
+                if (hasBaseType)
+                {
+                    // base type filter is applied                    
+                    return qec;
+                }
                 throw new EntityAccessException($"Access denied to {type.FullName}");
             }
             if (asInclude)
