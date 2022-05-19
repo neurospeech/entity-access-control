@@ -161,101 +161,71 @@ namespace NeuroSpeech.EntityAccessControl
             throw new EntityAccessException($"Update/Delete denied for {type.FullName}");
         }
 
-        private async Task OnInsertingAsync(Type type, object entity)
+        private Task OnInsertingAsync(Type type, object entity)
         {
-            // call base class events first...
-            var bt = type.BaseType;
-            if (bt != null && bt != typeof(object))
-            {
-                await OnInsertingAsync(bt, entity);
-            }
             var eh = events.GetEvents(services, type);
             if (eh != null)
             {
                 eh.EnforceSecurity = EnforceSecurity;
-                await eh.InsertingAsync(entity);
+                return eh.InsertingAsync(entity);
             }
+            return Task.CompletedTask;
         }
 
-        private async Task OnInsertedAsync(Type type, object entity)
+        private Task OnInsertedAsync(Type type, object entity)
         {
-            // call base class events first...
-            var bt = type.BaseType;
-            if (bt != null && bt != typeof(object))
-            {
-                await OnInsertedAsync(bt, entity);
-            }
             var eh = events.GetEvents(services, type);
             if (eh != null)
             {
                 eh.EnforceSecurity = EnforceSecurity;
-                await eh.InsertedAsync(entity);
+                return eh.InsertedAsync(entity);
             }
+            return Task.CompletedTask;
         }
 
-        private async Task OnUpdatingAsync(Type type, object entity)
+        private Task OnUpdatingAsync(Type type, object entity)
         {
-            // call base class events first...
-            var bt = type.BaseType;
-            if (bt != null && bt != typeof(object))
-            {
-                await OnUpdatingAsync(bt, entity);
-            }
             var eh = events.GetEvents(services, type);
             if (eh != null)
             {
                 eh.EnforceSecurity = EnforceSecurity;
-                await eh.UpdatingAsync(entity);
+                return eh.UpdatingAsync(entity);
             }
+            return Task.CompletedTask;
         }
 
-        private async Task OnUpdatedAsync(Type type, object entity)
+        private Task OnUpdatedAsync(Type type, object entity)
         {
-            // call base class events first...
-            var bt = type.BaseType;
-            if (bt != null && bt != typeof(object))
-            {
-                await OnUpdatedAsync(bt, entity);
-            }
             var eh = events.GetEvents(services, type);
             if (eh != null)
             {
                 eh.EnforceSecurity = EnforceSecurity;
-                await eh.UpdatedAsync(entity);
+                return eh.UpdatedAsync(entity);
             }
+            return Task.CompletedTask;
         }
 
 
-        private async Task OnDeletingAsync(Type type, object entity)
+        private Task OnDeletingAsync(Type type, object entity)
         {
-            // call base class events first...
-            var bt = type.BaseType;
-            if (bt != null && bt != typeof(object))
-            {
-                await OnDeletingAsync(bt, entity);
-            }
             var eh = events.GetEvents(services, type);
             if (eh != null)
             {
                 eh.EnforceSecurity = EnforceSecurity;
-                await eh.DeletingAsync(entity);
+                return eh.DeletingAsync(entity);
             }
+            return Task.CompletedTask;
         }
 
-        private async Task OnDeletedAsync(Type type, object entity)
+        private Task OnDeletedAsync(Type type, object entity)
         {
-            // call base class events first...
-            var bt = type.BaseType;
-            if (bt != null && bt != typeof(object))
-            {
-                await OnDeletedAsync(bt, entity);
-            }
             var eh = events.GetEvents(services, type);
             if (eh != null)
             {
                 eh.EnforceSecurity = EnforceSecurity;
-                await eh.DeletedAsync(entity);
+                return eh.DeletedAsync(entity);
             }
+            return Task.CompletedTask;
         }
 
         protected virtual void Validate()
@@ -444,26 +414,16 @@ namespace NeuroSpeech.EntityAccessControl
         }
 
         [EditorBrowsable(EditorBrowsableState.Never)]
-        public IQueryContext<T> ApplyFilter<T>(EntityState state, IQueryContext<T> qec, bool asInclude = false)
+        public IQueryContext<T> ApplyFilter<T>(
+            EntityState state,
+            IQueryContext<T> qec,
+            bool asInclude = false)
             where T: class
         {
             var type = typeof(T);
-            var baseType = type.BaseType;
-            bool hasBaseType = baseType != null && baseType != typeof(object);
-            if (hasBaseType)
-            {
-                qec = this.GetInstanceGenericMethod(
-                    nameof(ApplyInternal), type, baseType).As<IQueryContext<T>>()
-                    .Invoke(state, qec, asInclude);
-            }
             var eh = events.GetEvents(services, type);
             if (eh == null)
             {
-                if (hasBaseType)
-                {
-                    // base type filter is applied                    
-                    return qec;
-                }
                 throw new EntityAccessException($"Access denied to {type.FullName}");
             }
             if (asInclude)
@@ -477,14 +437,6 @@ namespace NeuroSpeech.EntityAccessControl
                     return (IQueryContext<T>)eh.DeleteFilter(qec);
             }
             return (IQueryContext<T>)eh.Filter(qec);
-        }
-
-        [EditorBrowsable(EditorBrowsableState.Never)]
-        public IQueryContext<RT> ApplyInternal<RT,BT>(EntityState state, IQueryContext<RT> q, bool asInclude = false)
-            where RT: class, BT
-            where BT: class
-        {
-            return ApplyFilter(state, q.OfType<BT>(), asInclude).OfType<RT>();
         }
 
         Task ISecureQueryProvider.SaveChangesAsync(CancellationToken cancellationToken)
