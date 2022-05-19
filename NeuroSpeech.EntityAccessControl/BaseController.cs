@@ -27,16 +27,16 @@ namespace NeuroSpeech.EntityAccessControl
             this.db = db;
         }
 
-        public virtual IQueryable<T?> GetQuery<T>() 
-            where T: class
-            => db.Query<T>();
+        //public virtual IQueryable<T?> GetQuery<T>() 
+        //    where T: class
+        //    => db.Query<T>();
 
-        protected IQueryable? GetQueryFor(IEntityType type)
-        {
-            return typeof(BaseEntityController)
-                .GetMethod(nameof(GetQuery))!
-                .MakeGenericMethod(type.ClrType)!.Invoke(this, null) as IQueryable;
-        }
+        //protected IQueryable? GetQueryFor(IEntityType type)
+        //{
+        //    return typeof(BaseEntityController)
+        //        .GetMethod(nameof(GetQuery))!
+        //        .MakeGenericMethod(type.ClrType)!.Invoke(this, null) as IQueryable;
+        //}
 
         protected virtual async Task<object> LoadOrCreateAsync(Type type,
             JsonElement body, 

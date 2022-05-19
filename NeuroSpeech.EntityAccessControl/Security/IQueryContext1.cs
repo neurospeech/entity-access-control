@@ -15,7 +15,7 @@ namespace NeuroSpeech.EntityAccessControl
 
         // IQueryContext<T> Requires(Expression<Func<T, bool>> filter, string errorMessage);
 
-        IQueryContext<T1> Set<T1>() where T1: class;
+        // IQueryContext<T1> Set<T1>() where T1: class;
 
         IQueryable<T> ToQuery();
 

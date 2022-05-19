@@ -17,7 +17,10 @@ namespace NeuroSpeech.EntityAccessControl
 
         string TypeCacheKey { get; }
 
-        IQueryable<T> Query<T>() where T : class;
+        IQueryable<T> FilteredQuery<T>() where T : class;
+
+        internal IQueryable<T> Set<T>() where T : class;
+
         List<PropertyInfo> GetIgnoredProperties(Type type);
 
         List<PropertyInfo> GetReadonlyProperties(Type type);

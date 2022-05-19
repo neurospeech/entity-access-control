@@ -56,10 +56,10 @@ namespace NeuroSpeech.EntityAccessControl
             return parent.Select(expression);
         }
 
-        public IQueryContext<T1> Set<T1>() where T1 : class
-        {
-            return parent.Set<T1>();
-        }
+        //public IQueryContext<T1> Set<T1>() where T1 : class
+        //{
+        //    return parent.Set<T1>();
+        //}
 
         public IQueryable<T> ToQuery()
         {

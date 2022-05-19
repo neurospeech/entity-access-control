@@ -537,7 +537,7 @@ export class Model<T extends IClrEntity> {
             LinqMethodOptions options)
             where T : class
         {
-            var q = new QueryContext<T>(db, db.Query<T>()!, new ErrorModel());
+            var q = new QueryContext<T>(db, db.FilteredQuery<T>()!, new ErrorModel());
             var result = await MethodParser.Instance.Parse<T>(q, options);
             return Serialize(result);
         }

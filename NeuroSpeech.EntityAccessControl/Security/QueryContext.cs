@@ -30,7 +30,7 @@ namespace NeuroSpeech.EntityAccessControl
         public IQueryContext<T1> Set<T1>()
             where T1: class
         {
-            return new QueryContext<T1>(db, db.Query<T1>(), errorModel);
+            return new QueryContext<T1>(db, db.FilteredQuery<T1>(), errorModel);
         }
 
         public IQueryContext<T> Where(Expression<Func<T, bool>> filter)
@@ -161,7 +161,7 @@ namespace NeuroSpeech.EntityAccessControl
         public Expression Apply<T1>(Expression expression, bool toList, Type returnType)
             where T1: class
         {
-            var qec = new QueryExpressionContext<T1>(new QueryContext<T1>(db, db.Query<T1>()!, errorModel), expression);
+            var qec = new QueryExpressionContext<T1>(new QueryContext<T1>(db, db.Set<T1>()!, errorModel), expression);
             var r = db.Apply<T1>(qec, true);
             qec = (QueryExpressionContext<T1>)r;
             var fe = qec.Expression;

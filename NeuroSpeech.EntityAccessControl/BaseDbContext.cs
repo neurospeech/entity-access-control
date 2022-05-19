@@ -60,6 +60,8 @@ namespace NeuroSpeech.EntityAccessControl
 
         public virtual string TypeCacheKey => "Global";
 
+        IQueryable<T> ISecureQueryProvider.Set<T>() => this.Set<T>();
+
         public IQueryable<T> FilteredQuery<T>()
             where T: class
         {
@@ -403,10 +405,10 @@ namespace NeuroSpeech.EntityAccessControl
             }
         }
 
-        IQueryable<T> ISecureQueryProvider.Query<T>()
-        {
-            return FilteredQuery<T>();
-        }
+        // IQueryable<T> ISecureQueryProvider.Query<T>()
+        //{
+        //    return FilteredQuery<T>();
+        //}
 
         private readonly Dictionary<PropertyInfo, IEntityEvents> cached
             = new();
