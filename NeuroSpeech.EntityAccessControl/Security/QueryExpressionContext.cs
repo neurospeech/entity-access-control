@@ -46,7 +46,7 @@ namespace NeuroSpeech.EntityAccessControl
         public IQueryContext<T1> OfType<T1>()
             where T1: class
         {
-            var e = Expression.Call(null, MethodOfType, expression);
+            var e = Expression.Call(null, MethodOfType.MakeGenericMethod(typeof(T1)), expression);
             return new QueryExpressionContext<T1>(parent.OfType<T1>(), e);
         }
 
