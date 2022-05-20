@@ -73,7 +73,7 @@ namespace NeuroSpeech.EntityAccessControl
             {
                 e = Activator.CreateInstance(type)!;
                 insert = true;
-            }
+            }            
 
             if (insert && !isChild)
             {
@@ -81,6 +81,14 @@ namespace NeuroSpeech.EntityAccessControl
             }
             
             await LoadPropertiesAsync(e, t, body);
+
+            if (!insert && body.TryGetPropertyCaseInsensitive("$delete", out var v1))
+            {
+                if (v1.ValueKind == JsonValueKind.True)
+                {
+                    db.Remove(e);
+                }
+            }
 
             if (!body.TryGetProperty("$navigations", out var nav))
                 return e!;
