@@ -18,6 +18,11 @@ namespace NeuroSpeech.EntityAccessControl
     public abstract class BaseController: Controller
     {
 
+        public static bool IsDeleted(in JsonElement v)
+        {
+            return v.TryGetPropertyCaseInsensitive("$deleted", out var v1) && v1.ValueKind == JsonValueKind.True;
+        }
+
         protected static readonly string DateFormat = "yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'FFFFFFFZ";
 
         protected readonly ISecureQueryProvider db;
@@ -82,12 +87,9 @@ namespace NeuroSpeech.EntityAccessControl
             
             await LoadPropertiesAsync(e, t, body);
 
-            if (!insert && body.TryGetPropertyCaseInsensitive("$deleted", out var v1))
+            if (!insert && IsDeleted(body))
             {
-                if (v1.ValueKind == JsonValueKind.True)
-                {
-                    db.Remove(e);
-                }
+                db.Remove(e);
             }
 
             if (!body.TryGetProperty("$navigations", out var nav))
@@ -197,8 +199,14 @@ namespace NeuroSpeech.EntityAccessControl
                 foreach (var item in p.Value.EnumerateArray())
                 {
                     var child = await LoadOrCreateAsync(pt, item, true);
-                    if(coll.IndexOf(child) == -1)
-                        coll.Add(child);
+                    if (coll.IndexOf(child) == -1)
+                    {
+                        if (!IsDeleted(item))
+                        {
+                            coll.Add(child);
+                        }
+                    }
+
                 }
             }
         }
