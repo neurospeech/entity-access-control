@@ -82,7 +82,7 @@ namespace NeuroSpeech.EntityAccessControl
             
             await LoadPropertiesAsync(e, t, body);
 
-            if (!insert && body.TryGetPropertyCaseInsensitive("$delete", out var v1))
+            if (!insert && body.TryGetPropertyCaseInsensitive("$deleted", out var v1))
             {
                 if (v1.ValueKind == JsonValueKind.True)
                 {
