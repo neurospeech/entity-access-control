@@ -22,6 +22,8 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Model
 
         public DbSet<Post> Posts { get; set; }
 
+        public DbSet<Campaign> Campaigns { get; set; }
+
         public DbSet<Account> Accounts { get; set; }
 
         public DbSet<Tag> Tags { get; set; }
@@ -67,6 +69,38 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Model
         public string Password { get; set; }
     }
 
+    [Table("Campaign")]
+    public class Campaign
+    {
+        [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public long CampaignID { get; set; }
+
+        public long AuthorID { get; set; }
+
+        public DateTime DateCreated { get; set; }
+
+        public DateTime DateToSend { get; set; }
+
+        public ICollection<CampaignPost> CampaignPosts { get; set; }
+    }
+
+    [Table("CampaignPost")]
+    public class CampaignPost
+    {
+        [Key, DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public long ID { get; set; }
+
+        public long CampaignID { get; set; }
+
+        public long PostID { get; set; }
+
+        [ForeignKey(nameof(PostID))]
+        public Post Post { get; set; }
+
+        [ForeignKey(nameof(CampaignID))]
+        public Campaign Campaign { get; set; }
+    }
+
     [Table("Posts")]
     public class Post
     {
@@ -92,6 +126,8 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Model
         public string AdminComments { get; set; }
 
         public ICollection<PostAuthor> Authors { get; set; }
+
+        public ICollection<Campaign> Campaigns { get; set; }
 
     }
 

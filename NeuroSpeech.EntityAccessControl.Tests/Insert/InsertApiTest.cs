@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using NeuroSpeech.EntityAccessControl.Tests.Model;
 using System;
@@ -51,7 +52,75 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
             ;
         }
 
+        [TestMethod]
+        public async Task SchedulePosts()
+        {
+            var (p, c) = await CreatePostCampaigns(2);
 
+            var (p1, c1) = await CreatePostCampaigns(1);
+
+            using var scope2 = CreateScope();
+
+            var db = scope2.GetRequiredService<AppDbContext>();
+            db.UserID = 2;
+            db.EnforceSecurity = true;
+            p = await db.Posts.FirstOrDefaultAsync(x => x.PostID == p.PostID);
+            c = await db.Campaigns.FirstOrDefaultAsync(x => x.CampaignID == c.CampaignID);
+            c.DateToSend = DateTime.UtcNow;
+            var cp = new CampaignPost
+            {
+                Post = p,
+                CampaignID = c.CampaignID
+            };
+            c.CampaignPosts = new List<CampaignPost> {  
+               cp  
+            };
+
+            await db.SaveChangesAsync();
+
+            cp.CampaignID = c1.CampaignID;
+            await db.SaveChangesAsync();
+        }
+
+        async Task<(Post, Campaign)> CreatePostCampaigns(long userID)
+        {
+            using var scope = CreateScope();
+            var db = scope.GetRequiredService<AppDbContext>();
+            db.UserID = userID;
+            db.EnforceSecurity = true;
+            var p = new Post
+            {
+                AuthorID = 2,
+                Name = "a",
+                Tags = new PostTag[] {
+                            new PostTag {
+                                Name = "funny",
+                            },
+                            new PostTag
+                            {
+                                Name = "public",
+                            }
+                        }
+            };
+            db.Add(p);
+            var c = new Campaign
+            {
+                AuthorID = 2,
+                DateCreated = DateTime.UtcNow,
+                DateToSend = DateTime.UtcNow,
+            };
+            db.Add(c);
+            await db.SaveChangesAsync();
+            return (p, c);
+        }
+
+
+        /// <summary>
+        /// This method reinserts tags
+        /// </summary>
+        /// <param name="services"></param>
+        /// <param name="userId"></param>
+        /// <returns></returns>
         private async Task ReInsertPostAsync(IServiceProvider services, int userId = 2)
         {
             var db = services.GetRequiredService<AppDbContext>();

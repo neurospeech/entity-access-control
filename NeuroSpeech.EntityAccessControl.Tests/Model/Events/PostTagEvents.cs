@@ -1,12 +1,11 @@
 ﻿namespace NeuroSpeech.EntityAccessControl.Tests.Model.Events
 {
-    internal class PostTagEvents: DbEntityEvents<PostTag>
+    internal class PostTagEvents: AppEntityEvents<PostTag>
     {
-        private readonly AppDbContext db;
 
-        public PostTagEvents(AppDbContext db)
+        public PostTagEvents(AppDbContext db): base(db)
         {
-            this.db = db;
+            
         }
 
         public override IQueryContext<PostTag> Filter(IQueryContext<PostTag> q)

@@ -94,6 +94,7 @@ namespace NeuroSpeech.EntityAccessControl
             // in case of insert and update
             var metdata = e.Metadata;
             var properties = metdata.GetDeclaredProperties();
+
             foreach(var re in e.References)
             {
                 if (re.Metadata.IsCollection)
@@ -108,7 +109,21 @@ namespace NeuroSpeech.EntityAccessControl
                     var px = e.Property(p.Name);
                     if (px.IsTemporary)
                         continue;
-                    if (px.OriginalValue != px.CurrentValue)
+                    if (px.OriginalValue == null)
+                    {
+                        if (px.CurrentValue == null)
+                        {
+                            continue;
+                        }
+                        isModified = true;
+                        break;
+                    }
+                    if (px.CurrentValue == null)
+                    {
+                        isModified = true;
+                        break;
+                    }
+                    if (!px.OriginalValue.Equals(px.CurrentValue))
                     {
                         isModified = true;
                         break;
