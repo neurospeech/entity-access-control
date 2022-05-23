@@ -118,7 +118,7 @@ namespace NeuroSpeech.EntityAccessControl
                     continue;
                 await this.GetInstanceGenericMethod(nameof(VerifyFilterAsync), re.Metadata.TargetEntityType.ClrType)
                     .As<Task>()
-                    .Invoke(re.Query(), e, item, true);
+                    .Invoke(re.Query(), e, item, insert);
             }
         }
 
