@@ -133,7 +133,7 @@ namespace NeuroSpeech.EntityAccessControl
                     continue;
                 await this.GetInstanceGenericMethod(nameof(VerifyFilterAsync), re.Metadata.TargetEntityType.ClrType)
                     .As<Task>()
-                    .Invoke(re.Query(), e, item, insert);
+                    .Invoke(re.Query(), e, item, true);
             }
         }
 
@@ -309,6 +309,9 @@ namespace NeuroSpeech.EntityAccessControl
                 Validate();
                 return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
             }
+
+            var vc = new VerificationContext<TContext>(this, events, services);
+
             var pending = new List<(EntityState State, object item, Type type)>();
             var errors = new List<ValidationResult>();
             foreach(var e in Entries())
@@ -321,28 +324,31 @@ namespace NeuroSpeech.EntityAccessControl
                         pending.Add((e.State, item, type));
                         await OnInsertingAsync(type, item);
                         Validator.TryValidateObject(item, new ValidationContext(item), errors);
-                        if (EnforceSecurity)
-                        {
-                            await VerifyAccessAsync(type, e, item, true);
-                        }
+                        //if (EnforceSecurity)
+                        //{
+                        //    await VerifyAccessAsync(type, e, item, true);
+                        //}
+                        vc.QueueVerification(e);
                         break;
                     case EntityState.Modified:
                         pending.Add((e.State, item, type));
                         await OnUpdatingAsync(type, item);
                         Validator.TryValidateObject(item, new ValidationContext(item), errors);
-                        if (EnforceSecurity)
-                        {
-                            await VerifyAccessAsync(type, e, item);
-                        }
+                        //if (EnforceSecurity)
+                        //{
+                        //    await VerifyAccessAsync(type, e, item);
+                        //}
+                        vc.QueueVerification(e);
                         break;
                     case EntityState.Deleted:
                         pending.Add((e.State, item, type));
                         await OnDeletingAsync(type, item);
                         Validator.TryValidateObject(item, new ValidationContext(item), errors);
-                        if (EnforceSecurity)
-                        {
-                            await VerifyAccessAsync(type, e, item);
-                        }
+                        //if (EnforceSecurity)
+                        //{
+                        //    await VerifyAccessAsync(type, e, item);
+                        //}
+                        vc.QueueVerification(e);
                         break;
                 }
             }
@@ -358,6 +364,7 @@ namespace NeuroSpeech.EntityAccessControl
                     })
                 });
             }
+            await vc.VerifyAsync();
             var r = await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
             foreach (var (state, item, type) in pending)
             {
