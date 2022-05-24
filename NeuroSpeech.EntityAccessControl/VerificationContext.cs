@@ -204,12 +204,6 @@ namespace NeuroSpeech.EntityAccessControl
             where T: class
         {
             Type type = typeof(T);
-
-            if (firstSet == null)
-            {
-                firstSet = type;
-            }
-
             var typeName = type.Name;
             Expression? body = null;
             var pe = Expression.Parameter(type, "x");
@@ -275,6 +269,10 @@ namespace NeuroSpeech.EntityAccessControl
 
         private void AddErrorExpression<T>(Expression expression, string error)
         {
+            if (firstSet == null)
+            {
+                firstSet = typeof(T);
+            }
             Expression<Func<string>> errorExp = () => error;
             selectExpressions.Add(Expression.Condition(
                 Expression.Call(null, anyMethod.MakeGenericMethod(typeof(T)), expression),
