@@ -20,8 +20,8 @@ namespace NeuroSpeech.EntityAccessControl
         private readonly DbContextEvents<TContext> events;
         private readonly IServiceProvider services;
         private List<Expression> selectExpressions = new List<Expression>();
-        private List<(Expression query, string error)> errors = new List<(Expression query, string error)>();
 
+        private Dictionary<(Type, PropertyInfo, object), bool> queryCache = new Dictionary<(Type, PropertyInfo, object), bool>();
 
         private static Expression emptyString = Expression.Constant("");
 
@@ -73,11 +73,13 @@ namespace NeuroSpeech.EntityAccessControl
             var lambda = Expression.Lambda<Func<T, string>>(start, pt);
             var query = q.Select(lambda);
             var text = query.ToQueryString();
+#if DEBUG                
             System.Diagnostics.Debug.WriteLine("--------------------------------------------------------------------");
             System.Diagnostics.Debug.WriteLine(text);
             System.Diagnostics.Debug.WriteLine("--------------------------------------------------------------------");
             System.Diagnostics.Debug.WriteLine("");
             System.Diagnostics.Debug.WriteLine("");
+#endif
             var result = await query.FirstOrDefaultAsync();
             if (String.IsNullOrWhiteSpace(result))
                 return;
@@ -201,37 +203,54 @@ namespace NeuroSpeech.EntityAccessControl
         public int QueueEntityKey<T>(EntityEntry e, List<(PropertyInfo,object)> keys)
             where T: class
         {
+            Type type = typeof(T);
+
             if (firstSet == null)
             {
-                firstSet = typeof(T);
+                firstSet = type;
             }
 
-            var qc = new QueryContext<T>(db, db.Set<T>());
-            var qc1 = ApplyFilter<T>(e.State, qc);
-            if (qc == qc1)
-            {
-                System.Diagnostics.Debug.WriteLine($"No active rule for {typeof(T).Name}");
-                System.Diagnostics.Debug.WriteLine("");
-                return 0;
-            }
-            var q = qc1.ToQuery();
-            var typeName = typeof(T).Name;
+            var typeName = type.Name;
             Expression? body = null;
-            var pe = Expression.Parameter(typeof(T), "x");
-            foreach(var (property,value) in keys)
+            var pe = Expression.Parameter(type, "x");
+            bool cached = true;
+            foreach (var (property, value) in keys)
             {
+                var cacheKey = (type, property, value);
+                if (!queryCache.ContainsKey(cacheKey))
+                {
+                    cached = false;
+                    queryCache[cacheKey] = true;
+                }
                 Expression<Func<object>> closure = () => value;
                 var exp = Expression.Equal(Expression.Property(pe, property), Expression.Convert(closure.Body, property.PropertyType));
-                if(body==null)
+                if (body == null)
                 {
                     body = exp;
                     continue;
                 }
                 body = Expression.AndAlso(body, exp);
             }
+
+            if (cached)
+            {
+                return 0;
+            }
+
+            var qc = new QueryContext<T>(db, db.Set<T>());
+            var qc1 = ApplyFilter<T>(e.State, qc);
+            if (qc == qc1)
+            {
+#if DEBUG                
+                System.Diagnostics.Debug.WriteLine($"No active rule for {type.Name}");
+                System.Diagnostics.Debug.WriteLine("");
+#endif
+                return 0;
+            }
+            var q = qc1.ToQuery();
             Expression<Func<T, bool>> filter = Expression.Lambda<Func<T,bool>>(body, pe);
             q = q.Where(filter);
-            var isSameType = e.Entity.GetType() == typeof(T);
+            var isSameType = e.Entity.GetType() == type;
             var state = ToState(e.State);
             var error = isSameType
                 ? $"Cannot {state} type {typeName}"
