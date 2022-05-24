@@ -19,12 +19,12 @@ namespace NeuroSpeech.EntityAccessControl
         private readonly ISecureQueryProvider db;
         private readonly DbContextEvents<TContext> events;
         private readonly IServiceProvider services;
-        private List<Expression> selectExpressions;
-        
+        private List<Expression> selectExpressions = new List<Expression>();
+        private List<(Expression query, string error)> errors = new List<(Expression query, string error)>();
+
 
         private static Expression emptyString = Expression.Constant("");
 
-        private Task<string>? validationError = null;
         private Type? firstSet = null;
 
         private static MethodInfo concatMethod = 
@@ -43,7 +43,6 @@ namespace NeuroSpeech.EntityAccessControl
             this.db = db;
             this.events = events;
             this.services = services;
-            selectExpressions = new List<Expression>();
         }
 
         public Task VerifyAsync()
@@ -63,12 +62,6 @@ namespace NeuroSpeech.EntityAccessControl
             Expression? start = null;
             foreach (var newExp in selectExpressions)
             {
-                //var newExp =
-                //    Expression.Condition(
-                //        Expression.Call(null, anyMethod.MakeGenericMethod(type), qt)
-                //        , emptyString,
-                //        error);
-                // var newExp = error;
                 if (start == null)
                 {
                     start = newExp;
@@ -76,20 +69,15 @@ namespace NeuroSpeech.EntityAccessControl
                 }
                 start = Expression.Call(null, concatMethod, start, newExp);
             }
-            //foreach (var newExp in expressionList)
-            //{
-            //    if (start == null)
-            //    {
-            //        start = newExp;
-            //        continue;
-            //    }
-            //    start = Expression.Call(null, concatMethod, start, newExp);
-            //}
             var pt = Expression.Parameter(typeof(T), "x");
             var lambda = Expression.Lambda<Func<T, string>>(start, pt);
             var query = q.Select(lambda);
             var text = query.ToQueryString();
+            System.Diagnostics.Debug.WriteLine("--------------------------------------------------------------------");
             System.Diagnostics.Debug.WriteLine(text);
+            System.Diagnostics.Debug.WriteLine("--------------------------------------------------------------------");
+            System.Diagnostics.Debug.WriteLine("");
+            System.Diagnostics.Debug.WriteLine("");
             var result = await query.FirstOrDefaultAsync();
             if (String.IsNullOrWhiteSpace(result))
                 return;
@@ -132,24 +120,26 @@ namespace NeuroSpeech.EntityAccessControl
         public int QueueEntry<T>(EntityEntry e)
             where T: class
         {
+            var pType = typeof(T);
             // verify access to this entity first...
             if (e.State != EntityState.Added)
             {
-                if (firstSet == null)
+                var keys = new List<(PropertyInfo, object)>();
+                foreach(var property in e.Properties)
                 {
-                    firstSet = typeof(T);
+                    if (property.Metadata.IsKey())
+                    {
+                        if(property.IsTemporary)
+                        {
+                            continue;
+                        }
+                        keys.Add((property.Metadata.PropertyInfo, property.CurrentValue));
+                    }
                 }
-                var qc = new QueryContext<T>(db, db.Set<T>());
-                var qc1 = ApplyFilter<T>(e.State, qc);
-                if (qc == qc1)
+                if (keys.Count > 0)
                 {
-                    return 0;
+                    this.QueueEntityKey<T>(e, keys);
                 }
-                var q = qc1.ToQuery();
-                var typeName = typeof(T).Name;
-                var error = "Cannot access type " + typeName;
-                Expression<Func<string>> errorExp = () => q.Any() ? "" : error;
-                this.selectExpressions.Add(errorExp.Body);
             }
 
             if (e.State == EntityState.Deleted)
@@ -186,9 +176,12 @@ namespace NeuroSpeech.EntityAccessControl
                     {
                         continue;
                     }
-                    if (px.OriginalValue != null && !px.OriginalValue.Equals(px.CurrentValue))
+                    if (px.OriginalValue != null && px.OriginalValue.Equals(px.CurrentValue))
                     {
-                        continue;
+                        if (e.State != EntityState.Added)
+                        {
+                            continue;
+                        }
                     }
                     var pKey = principalKey.Properties[0];
                     keys.Add((pKey.PropertyInfo, px.CurrentValue));
@@ -208,10 +201,17 @@ namespace NeuroSpeech.EntityAccessControl
         public int QueueEntityKey<T>(EntityEntry e, List<(PropertyInfo,object)> keys)
             where T: class
         {
+            if (firstSet == null)
+            {
+                firstSet = typeof(T);
+            }
+
             var qc = new QueryContext<T>(db, db.Set<T>());
             var qc1 = ApplyFilter<T>(e.State, qc);
             if (qc == qc1)
             {
+                System.Diagnostics.Debug.WriteLine($"No active rule for {typeof(T).Name}");
+                System.Diagnostics.Debug.WriteLine("");
                 return 0;
             }
             var q = qc1.ToQuery();
@@ -231,10 +231,38 @@ namespace NeuroSpeech.EntityAccessControl
             }
             Expression<Func<T, bool>> filter = Expression.Lambda<Func<T,bool>>(body, pe);
             q = q.Where(filter);
-            var error = "Cannot access type " + typeName;
-            Expression<Func<string>> select = () => q.Any() ? "" : error;
-            selectExpressions.Add(select.Body);
+            var isSameType = e.Entity.GetType() == typeof(T);
+            var state = ToState(e.State);
+            var error = isSameType
+                ? $"Cannot {state} type {typeName}"
+                : $"Cannot {state} type {e.Entity.GetType().Name} without access to type {typeName}";
+            this.AddErrorExpression<T>(q.Expression, error);
             return 0;
+        }
+
+        private string ToState(EntityState state)
+        {
+            switch(state)
+            {
+                case EntityState.Added:
+                    return "add";
+                case EntityState.Modified:
+                    return "update";
+                case EntityState.Deleted:
+                    return "delete";
+            }
+            return "";
+        }
+
+        private void AddErrorExpression<T>(Expression expression, string error)
+        {
+            Expression<Func<string>> errorExp = () => error;
+            selectExpressions.Add(Expression.Condition(
+                Expression.Call(null, anyMethod.MakeGenericMethod(typeof(T)), expression),
+                emptyString,
+                errorExp.Body
+                ));
+
         }
     }
 }

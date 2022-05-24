@@ -75,107 +75,6 @@ namespace NeuroSpeech.EntityAccessControl
             return ((IQueryContext<T>)eh.Filter(q)).ToQuery();
         }
 
-        private async Task VerifyAccessAsync(Type type, EntityEntry e, object item, bool insert = false)
-        {
-            // verify access to this entity first...
-            if (e.State != EntityState.Added)
-            {
-                await this.GetInstanceGenericMethod(nameof(VerifyFilterAsync), type)
-                    .As<Task>()
-                    .Invoke((IQueryable?)null, e, item, false);
-
-            }
-            if (e.State == EntityState.Deleted)
-            {
-                return;
-            }
-
-            // verify access to each foreign key
-            // in case of insert and update
-            var metdata = e.Metadata;
-            var properties = metdata.GetDeclaredProperties();
-
-            foreach(var re in e.References)
-            {
-                if (re.Metadata.IsCollection)
-                    continue;
-                if(re.Metadata is not INavigation nav)
-                    continue;
-                bool isModified = false;
-                foreach(var p in nav.ForeignKey.Properties)
-                {
-                    if (!properties.Contains(p))
-                        continue;
-                    var px = e.Property(p.Name);
-                    if (px.IsTemporary)
-                        continue;
-                    if (px.OriginalValue == null)
-                    {
-                        if (px.CurrentValue == null)
-                        {
-                            continue;
-                        }
-                        isModified = true;
-                        break;
-                    }
-                    if (px.CurrentValue == null)
-                    {
-                        isModified = true;
-                        break;
-                    }
-                    if (!px.OriginalValue.Equals(px.CurrentValue))
-                    {
-                        isModified = true;
-                        break;
-                    }
-                }
-                if (!isModified)
-                    continue;
-                await this.GetInstanceGenericMethod(nameof(VerifyFilterAsync), re.Metadata.TargetEntityType.ClrType)
-                    .As<Task>()
-                    .Invoke(re.Query(), e, item, true);
-            }
-        }
-
-        public async Task VerifyFilterAsync<T>(IQueryable? query, EntityEntry e, object? item, bool insert)
-            where T: class
-        {
-            var type = typeof(T);
-            var q = query == null ? Set<T>() : (IQueryable<T>)query;
-            if (!insert) {
-                var pe = Expression.Parameter(type);
-                var ce = Expression.Constant(item, type);
-                var pKey = e.Metadata.FindPrimaryKey();
-                Expression? body = null;
-                foreach(var p in pKey.Properties)
-                {
-                    var equal = Expression.Equal(
-                        Expression.Property(pe, p.PropertyInfo),
-                        Expression.Property(ce, p.PropertyInfo));
-                    if (body == null)
-                    {
-                        body = equal;
-                        continue;
-                    }
-                    body = Expression.AndAlso(body, equal);
-                }
-                q = q.Where(Expression.Lambda<Func<T,bool>>(body, pe));
-            }
-            var oq = new QueryContext<T>(this, q);
-            var fq = ApplyFilter<T>(e.State, oq);
-            if (fq == oq) {
-                // filter is empty in case of public
-                // foreignKey such as tags locations etc
-                return;
-            }
-            q = fq.ToQuery();
-            if (await q.AnyAsync())
-                return;
-            if (insert)
-                throw new EntityAccessException($"Insert denied for {type.FullName}");
-            throw new EntityAccessException($"Update/Delete denied for {type.FullName}");
-        }
-
         private Task OnInsertingAsync(Type type, object entity)
         {
             var eh = events.GetEvents(services, type);
@@ -324,30 +223,18 @@ namespace NeuroSpeech.EntityAccessControl
                         pending.Add((e.State, item, type));
                         await OnInsertingAsync(type, item);
                         Validator.TryValidateObject(item, new ValidationContext(item), errors);
-                        //if (EnforceSecurity)
-                        //{
-                        //    await VerifyAccessAsync(type, e, item, true);
-                        //}
                         vc.QueueVerification(e);
                         break;
                     case EntityState.Modified:
                         pending.Add((e.State, item, type));
                         await OnUpdatingAsync(type, item);
                         Validator.TryValidateObject(item, new ValidationContext(item), errors);
-                        //if (EnforceSecurity)
-                        //{
-                        //    await VerifyAccessAsync(type, e, item);
-                        //}
                         vc.QueueVerification(e);
                         break;
                     case EntityState.Deleted:
                         pending.Add((e.State, item, type));
                         await OnDeletingAsync(type, item);
                         Validator.TryValidateObject(item, new ValidationContext(item), errors);
-                        //if (EnforceSecurity)
-                        //{
-                        //    await VerifyAccessAsync(type, e, item);
-                        //}
                         vc.QueueVerification(e);
                         break;
                 }

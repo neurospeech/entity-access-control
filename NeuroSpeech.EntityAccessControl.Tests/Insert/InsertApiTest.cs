@@ -78,8 +78,11 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
 
             await db.SaveChangesAsync();
 
-            cp.CampaignID = c1.CampaignID;
-            await db.SaveChangesAsync();
+            await Assert.ThrowsExceptionAsync<EntityAccessException>(async () =>
+            {
+                cp.CampaignID = c1.CampaignID;
+                await db.SaveChangesAsync();
+            });
         }
 
         async Task<(Post, Campaign)> CreatePostCampaigns(long userID)
@@ -90,7 +93,7 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
             db.EnforceSecurity = true;
             var p = new Post
             {
-                AuthorID = 2,
+                AuthorID = userID,
                 Name = "a",
                 Tags = new PostTag[] {
                             new PostTag {
@@ -105,7 +108,7 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
             db.Add(p);
             var c = new Campaign
             {
-                AuthorID = 2,
+                AuthorID = userID,
                 DateCreated = DateTime.UtcNow,
                 DateToSend = DateTime.UtcNow,
             };
