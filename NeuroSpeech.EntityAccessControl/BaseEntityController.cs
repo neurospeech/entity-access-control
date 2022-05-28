@@ -177,18 +177,16 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
         [HttpPut]
         [HttpPost]
         public async Task<IActionResult> Save(
-            [FromBody] JsonElement body
+            [FromBody] JsonElement body,
+            CancellationToken cancellationToken = default
             )
         {
             try
             {
                 db.EnforceSecurity = true;
                 if (body.ValueKind == JsonValueKind.Array)
-                    return await SaveMultiple(body);
-                if (!body.TryGetStringProperty("$type", out var typeName))
-                    throw new KeyNotFoundException($"$type not found");
-                var t = FindEntityType(typeName);
-                var e = await LoadOrCreateAsync(t.ClrType, body);
+                    return await SaveMultiple(body, cancellationToken);
+                var e = await LoadOrCreateAsync(null, body, cancellationToken: cancellationToken);
                 await db.SaveChangesAsync();
                 return Serialize(e);
             }catch (EntityAccessException eae)
@@ -203,7 +201,8 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
         [HttpPut("multiple")]
         [HttpPost("multiple")]
         public async Task<IActionResult> SaveMultiple(
-            [FromBody] JsonElement model
+            [FromBody] JsonElement model,
+            CancellationToken cancellationToken
             )
         {
             try
@@ -212,10 +211,7 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
                 List<object> results = new();
                 foreach (var body in model.EnumerateArray())
                 {
-                    if (!body.TryGetStringProperty("$type", out var typeName))
-                        throw new KeyNotFoundException($"$type not found");
-                    var t = FindEntityType(typeName);
-                    var result = await LoadOrCreateAsync(t.ClrType, body);
+                    var result = await LoadOrCreateAsync(null, body, cancellationToken: cancellationToken);
                     results.Add(result);
                 }
                 await db.SaveChangesAsync();

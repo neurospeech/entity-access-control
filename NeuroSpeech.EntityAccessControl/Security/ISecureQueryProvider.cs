@@ -27,6 +27,9 @@ namespace NeuroSpeech.EntityAccessControl
         IQueryContext<T> Apply<T>(IQueryContext<T> qec, bool asInclude = false) where T : class;
         Task SaveChangesAsync(CancellationToken cancellationToken = default);
         Task<object?> FindByKeysAsync(IEntityType t, JsonElement item, CancellationToken cancellation = default);
+
+        Task<(object entity, bool exists)> BuildOrLoadAsync(IEntityType entityType, JsonElement item, CancellationToken cancellation = default);
+
         void Remove(object entity);
 
         void Add(object entity);

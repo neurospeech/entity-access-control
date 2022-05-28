@@ -353,6 +353,71 @@ namespace NeuroSpeech.EntityAccessControl
             return SaveChangesAsync(cancellationToken);
         }
 
+        Task<(object entity, bool exists)> ISecureQueryProvider.BuildOrLoadAsync(
+            IEntityType entityType,
+            JsonElement item,
+            CancellationToken cancellation)
+        {
+            return this.GetInstanceGenericMethod(nameof(InternalBuildOrLoadAsync), entityType.ClrType)
+                .As<Task<(object, bool)>>()
+                .Invoke(entityType, item, cancellation);
+        }
+
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public async Task<(object, bool)> InternalBuildOrLoadAsync<T>(
+            Microsoft.EntityFrameworkCore.Metadata.IEntityType t,
+            JsonElement keys, CancellationToken token)
+            where T : class
+        {
+            var type = typeof(T);
+            ParameterExpression? tx = null;// = Expression.Parameter(type, "x");
+            Expression? start = null;
+            var k = t.FindPrimaryKey();
+            var copy = Activator.CreateInstance<T>();
+            var copyConst = Expression.Constant(copy);
+            bool hasAllKeys = true;
+            foreach (var p in k.Properties)
+            {
+                if (!keys.TryGetPropertyCaseInsensitive(p.Name, out var v))
+                {
+                    hasAllKeys = false;
+                    continue;
+                }
+
+                PropertyInfo property = p.PropertyInfo;
+                Type propertyType = property.PropertyType;
+                var value = property.SaveJsonOrValue(copy, v);
+                // var value = v.DeserializeJsonElement(propertyType);
+                // check if it is default...
+                if (value == null || value.Equals(propertyType.GetDefaultForType()))
+                {
+                    hasAllKeys = false;
+                    continue;
+                }
+
+                property.SetValue(copy, value);
+
+                tx ??= Expression.Parameter(type, "x");
+                var equals = Expression.Equal(
+                    Expression.Property(tx, property),
+                    Expression.Property(copyConst, property));
+                if (start == null)
+                {
+                    start = equals;
+                    continue;
+                }
+                start = Expression.AndAlso(start, equals);
+            }
+            if (!hasAllKeys)
+            {
+                return (copy, false);
+            }
+            var lambda = Expression.Lambda<Func<T?, bool>>(start, tx);
+            var q = FilteredQuery<T>().Where(lambda);
+            var result = await q.FirstOrDefaultAsync(token);
+            return (result ?? copy, result != null);
+        }
+
         private static readonly Task<object?> nullResult = Task.FromResult<object?>(null);
 
         Task<object?> ISecureQueryProvider.FindByKeysAsync(
