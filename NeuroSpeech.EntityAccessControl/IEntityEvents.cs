@@ -23,6 +23,7 @@ namespace NeuroSpeech.EntityAccessControl
         List<PropertyInfo> GetReadOnlyProperties(string typeCacheKey);
 
         Task InsertingAsync(object entity);
+
         Task InsertedAsync(object entity);
 
         Task UpdatingAsync(object entity);
@@ -30,6 +31,7 @@ namespace NeuroSpeech.EntityAccessControl
         Task UpdatedAsync(object entity);
 
         Task DeletingAsync(object entity);
+
         Task DeletedAsync(object entity);
     }
 }
