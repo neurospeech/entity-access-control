@@ -25,12 +25,9 @@ jobs:
       run: dotnet build --no-restore
     # - name: Test
     #   run: dotnet test --no-build --verbosity normal
+
     - name: Pack
       run: dotnet pack --no-restore
-    - name: Publish NuGet
-      run: dotnet nuget push **/*.nupkg -k ${NUGET_TOKEN} -s https://api.nuget.org/v3/index.json --no-symbols
-      env:
-         NUGET_TOKEN: ${{secrets.PUBLIC_NUGET_TOKEN}}
 
     - name: Publish Proget
       run: dotnet nuget push **/*.nupkg -k ${NUGET_KEY} -s ${NUGET_SOURCE} --no-symbols
@@ -49,3 +46,8 @@ jobs:
             ref: `refs/tags/v${NBGV_SemVer2}`,
             sha: context.sha
           })
+
+    - name: Publish NuGet
+      run: dotnet nuget push **/*.nupkg -k ${NUGET_TOKEN} -s https://api.nuget.org/v3/index.json --no-symbols
+      env:
+         NUGET_TOKEN: ${{secrets.PUBLIC_NUGET_TOKEN}}
