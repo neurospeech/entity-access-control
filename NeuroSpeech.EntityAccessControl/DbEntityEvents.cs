@@ -144,6 +144,17 @@ namespace NeuroSpeech.EntityAccessControl
             return Filter(q);
         }
 
+        public virtual IQueryContext<T> ReferenceFilter(IQueryContext<T> q, FilterContext fc)
+        {
+            return ModifyFilter(q);
+        }
+
+        IQueryContext IEntityEvents.ReferenceFilter(IQueryContext q, FilterContext fc)
+        {
+            return ReferenceFilter((IQueryContext<T>)q, fc);
+        }
+
+
         IQueryContext IEntityEvents.Filter(IQueryContext q)
         {
             return Filter((IQueryContext<T>)q);

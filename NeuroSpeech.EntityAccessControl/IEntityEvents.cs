@@ -33,5 +33,7 @@ namespace NeuroSpeech.EntityAccessControl
         Task DeletingAsync(object entity);
 
         Task DeletedAsync(object entity);
+
+        IQueryContext ReferenceFilter(IQueryContext qec, FilterContext fc);
     }
 }

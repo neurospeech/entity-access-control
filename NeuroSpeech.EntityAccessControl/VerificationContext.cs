@@ -98,7 +98,8 @@ namespace NeuroSpeech.EntityAccessControl
 
         private IQueryContext<T> ApplyFilter<T>(
            EntityState state,
-           IQueryContext<T> qec)
+           IQueryContext<T> qec,
+           FilterContext? fc = null)
            where T : class
         {
             var type = typeof(T);
@@ -106,6 +107,10 @@ namespace NeuroSpeech.EntityAccessControl
             if (eh == null)
             {
                 throw new EntityAccessException($"Access denied to {type.FullName}");
+            }
+            if (fc != null)
+            {
+                return (IQueryContext<T>)eh.ReferenceFilter(qec, fc);
             }
             switch (state)
             {
@@ -140,7 +145,7 @@ namespace NeuroSpeech.EntityAccessControl
                 }
                 if (keys.Count > 0)
                 {
-                    this.QueueEntityKey<T>(e, keys);
+                    this.QueueEntityKeyForeignKey<T>(e, keys);
                 }
             }
 
@@ -191,16 +196,21 @@ namespace NeuroSpeech.EntityAccessControl
 
                 if (keys.Count > 0)
                 {
-                    this.GetInstanceGenericMethod(nameof(QueueEntityKey), principalType)
+                    var fc = new FilterContext(e, nav);
+
+                    this.GetInstanceGenericMethod(nameof(QueueEntityKeyForeignKey), principalType)
                         .As<int>()
-                        .Invoke(e, keys);
+                        .Invoke(e, keys, fc);
                 }
             }
             return 0;
         }
 
         [EditorBrowsable(EditorBrowsableState.Never)]
-        public int QueueEntityKey<T>(EntityEntry e, List<(PropertyInfo,object)> keys)
+        public int QueueEntityKeyForeignKey<T>(
+            EntityEntry e,
+            List<(PropertyInfo,object)> keys,
+            FilterContext? fc = null)
             where T: class
         {
             Type type = typeof(T);
@@ -232,7 +242,7 @@ namespace NeuroSpeech.EntityAccessControl
             }
 
             var qc = new QueryContext<T>(db, db.Set<T>());
-            var qc1 = ApplyFilter<T>(e.State, qc);
+            var qc1 = ApplyFilter<T>(e.State, qc, fc);
             if (qc == qc1)
             {
 #if DEBUG                
