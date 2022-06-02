@@ -15,10 +15,27 @@ using System.Text.Json.Nodes;
 using NeuroSpeech.EntityAccessControl.Parser;
 using Microsoft.AspNetCore.Http;
 using System.Reflection;
+using Microsoft.AspNetCore.Mvc.Filters;
 
 namespace NeuroSpeech.EntityAccessControl
 {
 
+    public class IgnoreAuthorizationFilter : IAsyncAuthorizationFilter
+    {
+        public Task OnAuthorizationAsync(AuthorizationFilterContext context)
+        {
+            return Task.CompletedTask;
+        }
+    }
+
+    public class IgnoreAuthorization : TypeFilterAttribute
+    {
+        public IgnoreAuthorization() : base(typeof(IgnoreAuthorizationFilter))
+        {
+        }
+    }
+
+    [IgnoreAuthorization]
     public abstract class BaseEntityController : BaseController
     {
 
