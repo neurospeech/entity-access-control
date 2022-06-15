@@ -20,6 +20,7 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Model.Events
             Register<PostEvents>();
             Register<PostTagEvents>();
             Register<PostContentEvents>();
+            Register<PostAuthorEvents>();
             Register<PostContentTagEvents>();
             Register<TagKeywordEvents>();
             Register<PostCampaignEvents>();
