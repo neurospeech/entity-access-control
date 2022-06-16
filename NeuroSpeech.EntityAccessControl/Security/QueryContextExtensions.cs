@@ -61,6 +61,19 @@ namespace NeuroSpeech.EntityAccessControl
             return ((QueryContext<T>)@this).OrderByDescending(expression);
         }
 
+        public static IQueryContext<T> ThenBy<T, T2>(this IQueryContext<T> @this, Expression<Func<T, T2>> expression)
+            where T : class
+        {
+            return ((QueryContext<T>)@this).ThenBy(expression);
+        }
+
+        public static IQueryContext<T> ThenByDescending<T, T2>(this IQueryContext<T> @this, Expression<Func<T, T2>> expression)
+            where T : class
+        {
+            return ((QueryContext<T>)@this).ThenByDescending(expression);
+        }
+
+
         public static Task<List<T>> ToListAsync<T>(this IQueryContext<T> @this, CancellationToken token = default)
             where T : class
         {
