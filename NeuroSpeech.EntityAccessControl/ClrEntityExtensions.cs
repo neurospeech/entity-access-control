@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using NeuroSpeech;
+using NeuroSpeech.EntityAccessControl.Parser;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,6 +18,7 @@ namespace NeuroSpeech.EntityAccessControl
         {
             var type = property.PropertyType;
             type = Nullable.GetUnderlyingType(type) ?? type;
+            var isNullable = type != property.PropertyType;
             switch (value.ValueKind)
             {
                 case JsonValueKind.Object:
@@ -24,12 +26,36 @@ namespace NeuroSpeech.EntityAccessControl
                 case JsonValueKind.Array:
                     throw new ArgumentException($"Cannot convert array to {type.FullName}");
             }
-            var v = value.DeserializeJsonElement(type);
+            var v = value.DeserializeJsonElement(type, isNullable);
             property.SetValue(target, v);
             return v;
         }
 
-        private static object? DeserializeJsonElement(this JsonElement target, Type type)
+        private static int ParseAsSByte(this string? value) => string.IsNullOrEmpty(value) ? (sbyte)0 : sbyte.Parse(value);
+
+        private static short ParseAsByte(this string? value) => string.IsNullOrEmpty(value) ? (byte)0 : byte.Parse(value);
+
+        private static int ParseAsInt16(this string? value) => string.IsNullOrEmpty(value) ? (short)0 : short.Parse(value);
+
+        private static int ParseAsInt32(this string? value) => string.IsNullOrEmpty(value) ? (int)0 : int.Parse(value);
+
+        private static long ParseAsInt64(this string? value) => string.IsNullOrEmpty(value) ? (long)0 : long.Parse(value);
+
+        private static ushort ParseAsUInt16(this string? value) => string.IsNullOrEmpty(value) ? (ushort)0 : ushort.Parse(value);
+
+        private static uint ParseAsUInt32(this string? value) => string.IsNullOrEmpty(value) ? (uint)0 : uint.Parse(value);
+
+        private static ulong ParseAsUInt64(this string? value) => string.IsNullOrEmpty(value) ? (ulong)0 : ulong.Parse(value);
+
+        private static decimal ParseAsDecimal(this string? value) => string.IsNullOrEmpty(value) ? (decimal)0 : decimal.Parse(value);
+
+        private static double ParseAsDouble(this string? value) => string.IsNullOrEmpty(value) ? (double)0 : double.Parse(value);
+
+        private static float ParseAsFloat(this string? value) => string.IsNullOrEmpty(value) ? (float)0 : float.Parse(value);
+
+
+
+        private static object? DeserializeJsonElement(this JsonElement target, Type type, bool isNullable)
         {
             switch (target.ValueKind)
             {
@@ -79,36 +105,47 @@ namespace NeuroSpeech.EntityAccessControl
                         case TypeCode.Boolean:
                             return Convert.ToBoolean(target.GetString());
                         case TypeCode.Int16:
-                            return short.Parse(stringValue);
+                            return stringValue.ParseAsInt16();
                         case TypeCode.Int32:
-                            return int.Parse(stringValue);
+                            return stringValue.ParseAsInt32();
                         case TypeCode.Int64:
-                            return long.Parse(stringValue);
+                            return stringValue.ParseAsInt64();
                         case TypeCode.UInt16:
-                            return ushort.Parse(stringValue);
+                            return stringValue.ParseAsUInt16();
                         case TypeCode.UInt32:
-                            return uint.Parse(stringValue);
+                            return stringValue.ParseAsUInt32();
                         case TypeCode.UInt64:
-                            return ulong.Parse(stringValue);
+                            return stringValue.ParseAsUInt64();
                         case TypeCode.SByte:
-                            return sbyte.Parse(stringValue);
+                            return stringValue.ParseAsSByte();
                         case TypeCode.Byte:
-                            return byte.Parse(stringValue);
+                            return stringValue.ParseAsByte();
                         case TypeCode.Char:
                             return stringValue.Length > 0 ? stringValue[0] : (char)0;
                         case TypeCode.String:
                             return stringValue;
                         case TypeCode.Single:
-                            return float.Parse(stringValue);
+                            return stringValue.ParseAsFloat();
                         case TypeCode.Double:
-                            return double.Parse(stringValue);
+                            return stringValue.ParseAsDouble();
                         case TypeCode.DateTime:
+                            if (String.IsNullOrEmpty(stringValue)) {
+                                if (isNullable)
+                                    return null;
+                                return DateTime.MinValue;
+                            }
                             return DateTime.Parse(target.GetString()!, null, System.Globalization.DateTimeStyles.AdjustToUniversal);
                         case TypeCode.Decimal:
-                            return decimal.Parse(stringValue);
+                            return stringValue.ParseAsDecimal();
                     }
                     if (type == typeof(DateTimeOffset))
                     {
+                        if (String.IsNullOrEmpty(stringValue))
+                        {
+                            if (isNullable)
+                                return null;
+                            return DateTime.MinValue;
+                        }
                         return DateTimeOffset.Parse(target.GetString()!, null, System.Globalization.DateTimeStyles.AdjustToUniversal);
                     }
                     break;
