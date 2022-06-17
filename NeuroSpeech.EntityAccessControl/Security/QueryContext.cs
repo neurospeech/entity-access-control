@@ -255,12 +255,12 @@ namespace NeuroSpeech.EntityAccessControl
             return q.ThenInclude(lambda);
         }
 
-        public IOrderedQueryContext<T> ThenBy(Expression<Func<T, object>> expression)
+        public IOrderedQueryContext<T> ThenBy<TP>(Expression<Func<T, TP>> expression)
         {
             return new QueryContext<T>(db, (queryable as IOrderedQueryable<T>).ThenBy(expression), errorModel);
         }
 
-        public IOrderedQueryContext<T> ThenByDescending(Expression<Func<T, object>> expression)
+        public IOrderedQueryContext<T> ThenByDescending<TP>(Expression<Func<T, TP>> expression)
         {
             return new QueryContext<T>(db, (queryable as IOrderedQueryable<T>).ThenByDescending(expression), errorModel);
         }
