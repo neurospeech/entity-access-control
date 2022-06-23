@@ -1,4 +1,4 @@
-[![NuGet](https://img.shields.io/nuget/v/NeuroSpeech.EntityAccessControl.svg?label=NuGet)](https://www.nuget.org/packages/NeuroSpeech.EntityAccessControl)
+[![.NET](https://github.com/neurospeech/entity-access-control/actions/workflows/dotnet.yml/badge.svg)](https://github.com/neurospeech/entity-access-control/actions/workflows/dotnet.yml) [![NuGet](https://img.shields.io/nuget/v/NeuroSpeech.EntityAccessControl.svg?label=NuGet)](https://www.nuget.org/packages/NeuroSpeech.EntityAccessControl)
 
 # Entity Access Control for Entity Framework Core
 Entity Access Control provides secure way to expose IQueryable to REST Clients with simple security rules in the form of lambda expressions. It is better alternative than OData and GraphQL, as you can use lambda expressions (arrow functions) in JavaScript to easily query the database.
