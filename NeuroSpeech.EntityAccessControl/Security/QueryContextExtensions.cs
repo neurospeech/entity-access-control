@@ -49,6 +49,12 @@ namespace NeuroSpeech.EntityAccessControl
             return ((QueryContext<T>)@this).Select(expression);
         }
 
+        public static IQueryContext<IGrouping<TKey,T>> GroupBy<T, TKey>(this IQueryContext<T> @this, Expression<Func<T, TKey>> expression)
+            where T : class
+        {
+            return ((QueryContext<T>)@this).GroupBy(expression);
+        }
+
         public static IQueryContext<T> OrderBy<T, T2>(this IQueryContext<T> @this, Expression<Func<T, T2>> expression)
             where T : class
         {

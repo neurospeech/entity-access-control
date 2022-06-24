@@ -173,6 +173,34 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
             Assert.IsNotNull(r);
         }
 
+        [TestMethod]
+        public async Task SelectGroupAsync()
+        {
+            using var scope = CreateScope();
+
+            var db = scope.GetRequiredService<AppDbContext>();
+            db.UserID = 2;
+
+            var sdb = db;
+
+            var controller = new TestEntityController(sdb);
+            var name = "NeuroSpeech.EntityAccessControl.Tests.Model.Post";
+
+            var m = System.Text.Json.JsonSerializer.Serialize(new object[] {
+                new object[] { "where", "x => x.PostID > @0 && @1.Contains(x.PostID)", 0 , new long[] {
+                        1,2,3,4
+                    } },
+                new object[] {"groupBy", "x => x.PostID" },
+                new object[] {"select", "x => new { a = x.Key, b = x.Count() }" }
+            });
+
+            var r = await controller.Methods(name,
+                methods: m
+                );
+
+            Assert.IsNotNull(r);
+        }
+
         private static async Task<ContentResult> SelectMethodAsync(IScopeServices services)
         {
             var db = services.GetRequiredService<AppDbContext>();

@@ -461,6 +461,9 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
                         lm.Method = "Select";
                         hasSelect = true;
                         break;
+                    case "groupBy":
+                        lm.Method = "GroupBy";
+                        break;
                     case "where":
                         lm.Method = "Where";
                         break;
