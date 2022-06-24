@@ -118,7 +118,7 @@ namespace NeuroSpeech.EntityAccessControl
                 }
                 return call;
             }
-            if (original is MemberExpression memberExpressiion)
+            if (original is MemberExpression memberExpressiion && memberExpressiion.Expression != null)
             {
                 if (memberExpressiion.Expression is not ParameterExpression)
                 {

@@ -190,8 +190,9 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
                 new object[] { "where", "x => x.PostID > @0 && @1.Contains(x.PostID)", 0 , new long[] {
                         1,2,3,4
                     } },
-                new object[] {"groupBy", "x => x.PostID" },
-                new object[] {"select", "x => new { a = x.Key, b = x.Count() }" }
+                new object[] { "select", "x => new { id = x.PostID, count = x.Tags.Count(), diff = EF.Functions.DateDiffDay(x.DateCreated, DateTime.UtcNow) }" },
+                new object[] {"groupBy", "x => x.id" },
+                new object[] {"select", "x => new { a = x.Key, b = x.Count()  }" }
             });
 
             var r = await controller.Methods(name,

@@ -119,6 +119,8 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Model
         [ForeignKey(nameof(AuthorID))]
         public Account Author { get; set; }
 
+        public DateTime DateCreated { get; set; } = DateTime.UtcNow;
+
         public ICollection<PostTag> Tags { get; set; }
 
         public ICollection<PostContent> Contents { get; set; }
