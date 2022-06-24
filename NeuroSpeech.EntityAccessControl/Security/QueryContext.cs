@@ -6,12 +6,80 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace NeuroSpeech.EntityAccessControl
 {
+    internal struct EmptyContext: ISecureQueryProvider
+    {
+        private readonly ISecureQueryProvider db;
+
+        public EmptyContext(ISecureQueryProvider db)
+        {
+            this.db = db;
+        }
+
+        public Microsoft.EntityFrameworkCore.Metadata.IModel Model => db.Model;
+
+        public bool EnforceSecurity { get => false; set { } }
+
+        public string TypeCacheKey => db.TypeCacheKey;
+
+        public void Add(object entity)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IQueryContext<T> Apply<T>(IQueryContext<T> qec, bool asInclude = false) where T : class
+        {
+            return qec;
+        }
+
+        public Task<(object entity, bool exists)> BuildOrLoadAsync(Microsoft.EntityFrameworkCore.Metadata.IEntityType entityType, JsonElement item, CancellationToken cancellation = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IQueryable<T> FilteredQuery<T>() where T : class
+        {
+            return db.Set<T>();
+        }
+
+        public Task<object?> FindByKeysAsync(Microsoft.EntityFrameworkCore.Metadata.IEntityType t, JsonElement item, CancellationToken cancellation = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        private List<PropertyInfo> empty = new List<PropertyInfo>();
+
+        public List<PropertyInfo> GetIgnoredProperties(Type type)
+        {
+            return empty;
+        }
+
+        public List<PropertyInfo> GetReadonlyProperties(Type type)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Remove(object entity)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        IQueryable<T> ISecureQueryProvider.Set<T>()
+        {
+            return db.Set<T>();
+        }
+    }
 
     public class QueryContext<T>: IOrderedQueryContext<T>
         where T: class
@@ -257,7 +325,7 @@ namespace NeuroSpeech.EntityAccessControl
 
         public IQueryContext<IGrouping<TKey,T>> GroupBy<TKey>(Expression<Func<T, TKey>> expression)
         {
-            return new QueryContext<IGrouping<TKey, T>>(db, queryable.GroupBy(expression), errorModel);
+            return new QueryContext<IGrouping<TKey, T>>(new EmptyContext(db), queryable.GroupBy(expression), errorModel);
         }
         public IOrderedQueryContext<T> ThenBy<TP>(Expression<Func<T, TP>> expression)
         {
