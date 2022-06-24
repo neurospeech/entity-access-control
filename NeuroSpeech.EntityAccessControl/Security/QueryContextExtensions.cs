@@ -36,6 +36,8 @@ namespace NeuroSpeech.EntityAccessControl
             return ((QueryContext<T>)@this).Where(filter);
         }
 
+        // public static IQueryContext<DateRange> DateRange<T>(this IQueryContext<T> @this, )
+
         public static IQueryContext<T> Requires<T>(this IQueryContext<T> @this, Expression<Func<T, bool>> filter)
             where T : class
         {
