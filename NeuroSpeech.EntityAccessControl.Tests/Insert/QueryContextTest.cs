@@ -36,5 +36,32 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
 
         }
 
+        [TestMethod]
+        public async Task TestJoin()
+        {
+            using var scope = CreateScope();
+
+            var db = scope.GetRequiredService<AppDbContext>();
+
+            db.EnforceSecurity = true;
+            db.UserID = 2;
+            var sdb = db;
+
+            var qc = new QueryContext<Account>(db, db.FilteredQuery<Account>()) as IQueryContext<Account>;
+
+            var end = DateTime.UtcNow;
+            var start = end.AddMonths(-1);
+
+            var diff = end - start;
+            var qjoin = qc.WithDateRange(start, end, "Day");
+
+            var text = qjoin.ToQueryString();
+
+            var list = await qjoin.CountAsync();
+
+            Assert.AreEqual(diff.TotalDays, list);
+
+        }
+
     }
 }

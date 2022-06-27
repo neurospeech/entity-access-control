@@ -79,6 +79,11 @@ namespace NeuroSpeech.EntityAccessControl
         {
             return db.Set<T>();
         }
+
+        public IQueryable<DateRange> DateRangeView(DateTime start, DateTime end, string step)
+        {
+            return db.DateRangeView(start, end, step);
+        }
     }
 
     public class QueryContext<T>: IOrderedQueryContext<T>
@@ -327,6 +332,18 @@ namespace NeuroSpeech.EntityAccessControl
         //{
         //    return new QueryContext<IGrouping<TKey, T>>(new EmptyContext(db), queryable.GroupBy(expression), errorModel);
         //}
+
+        public IQueryContext<DateRangeEntity<T>> JoinDateRange(DateTime start, DateTime end, string step)
+        {
+            var join = this.queryable.Join(db.DateRangeView(start, end, step), x => true, y => true, (x, y) => new DateRangeEntity<T> { 
+                Entity = x,
+                Range = y
+            });
+
+            return new QueryContext<DateRangeEntity<T>>(db, (join), errorModel);
+        }
+
+
         public IOrderedQueryContext<T> ThenBy<TP>(Expression<Func<T, TP>> expression)
         {
             return new QueryContext<T>(db, (queryable as IOrderedQueryable<T>).ThenBy(expression), errorModel);

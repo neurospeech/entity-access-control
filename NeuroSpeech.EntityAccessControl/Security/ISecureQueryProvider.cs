@@ -21,6 +21,8 @@ namespace NeuroSpeech.EntityAccessControl
 
         internal IQueryable<T> Set<T>() where T : class;
 
+        IQueryable<DateRange> DateRangeView(DateTime start, DateTime end, string step);
+
         List<PropertyInfo> GetIgnoredProperties(Type type);
 
         List<PropertyInfo> GetReadonlyProperties(Type type);

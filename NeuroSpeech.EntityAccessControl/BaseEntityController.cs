@@ -479,6 +479,10 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
                     case "thenByDescending":
                         lm.Method = "ThenByDescending";
                         break;
+                    case "withDateRange":
+                        lm.Method = "WithDateRange";
+                        lm.Expression = "@0, @1, \"@2\"";
+                        break;
                     case "include":
                         lm.Method = "Include";
                         hasInclude = true;

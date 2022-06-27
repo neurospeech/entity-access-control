@@ -15,4 +15,11 @@ namespace NeuroSpeech.EntityAccessControl
 
     }
 
+    public class DateRangeEntity<T>
+    {
+        public DateRange Range { get; set; }
+
+        public T Entity { get; set; }
+    }
+
 }
