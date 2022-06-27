@@ -481,7 +481,7 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
                         break;
                     case "joinDateRange":
                         lm.Method = "JoinDateRange";
-                        lm.Expression = "@0, @1, \"@2\"";
+                        lm.Expression = "@0, @1, @2";
                         break;
                     case "include":
                         lm.Method = "Include";
