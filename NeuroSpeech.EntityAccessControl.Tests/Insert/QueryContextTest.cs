@@ -57,9 +57,13 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
 
             var text = qjoin.ToQueryString();
 
-            var list = await qjoin.CountAsync();
+            var list = await qjoin.Select((x) => new
+            {
+                count = x.Entity.Posts.Count()
+            }).ToListAsync();
 
-            Assert.AreEqual(diff.TotalDays, list);
+            Assert.AreEqual(diff.TotalDays, list.Count);
+            Assert.AreEqual(2, list[0].count);
 
         }
 

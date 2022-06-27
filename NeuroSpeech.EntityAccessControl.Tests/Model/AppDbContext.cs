@@ -67,6 +67,8 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Model
         public bool IsAdmin { get; set; }
 
         public string Password { get; set; }
+
+        public ICollection<Post> Posts { get; set; }
     }
 
     [Table("Campaign")]
