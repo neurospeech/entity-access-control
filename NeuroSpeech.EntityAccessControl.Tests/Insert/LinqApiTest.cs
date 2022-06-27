@@ -190,7 +190,7 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
             var start = end.AddMonths(-1);
 
             var m = System.Text.Json.JsonSerializer.Serialize(new object[] {
-                new object[] {"withDateRange", "", start, end, "Day"  }
+                new object[] {"joinDateRange", "", start, end, "Day"  }
             });
 
             var r = await controller.Methods(name,

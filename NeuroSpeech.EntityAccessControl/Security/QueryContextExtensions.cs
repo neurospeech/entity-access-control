@@ -57,7 +57,7 @@ namespace NeuroSpeech.EntityAccessControl
         //    return ((QueryContext<T>)@this).GroupBy(expression);
         //}
 
-        public static IQueryContext<DateRangeEntity<T>> WithDateRange<T>(this IQueryContext<T> @this, DateTime start, DateTime end, string step)
+        public static IQueryContext<DateRangeEntity<T>> JoinDateRange<T>(this IQueryContext<T> @this, DateTime start, DateTime end, string step)
             where T:class
         {
             return ((QueryContext<T>)@this).JoinDateRange(start, end, step);

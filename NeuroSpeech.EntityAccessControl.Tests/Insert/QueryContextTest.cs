@@ -53,7 +53,7 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
             var start = end.AddMonths(-1);
 
             var diff = end - start;
-            var qjoin = qc.WithDateRange(start, end, "Day");
+            var qjoin = qc.JoinDateRange(start, end, "Day");
 
             var text = qjoin.ToQueryString();
 
