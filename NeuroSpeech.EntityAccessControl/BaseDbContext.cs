@@ -52,7 +52,18 @@ namespace NeuroSpeech.EntityAccessControl
                             u.Operand, typeof(string), new IntTypeMapping("nvarchar(50)", System.Data.DbType.String));
                     return new SqlUnaryExpression(System.Linq.Expressions.ExpressionType.Convert, p, typeof(string), p.TypeMapping);
                 });
+
+            //modelBuilder.HasDbFunction(this.GetType().GetMethod(nameof(DateRange), new Type[] { 
+            //    typeof(DateTime),
+            //    typeof(DateTime),
+            //    typeof(string)
+            //}));
         }
+
+        //public IQueryable<DateRange> DateRange(DateTime start, DateTime end, string step = "Day")  
+        //{
+        //    return FromExpression(() => DateRange(start, end, step));
+        //}
 
         public bool RaiseEvents { get; set; }
 
