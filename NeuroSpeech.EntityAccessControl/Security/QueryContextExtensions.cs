@@ -51,11 +51,11 @@ namespace NeuroSpeech.EntityAccessControl
             return ((QueryContext<T>)@this).Select(expression);
         }
 
-        public static IQueryContext<IGrouping<TKey,T>> GroupBy<T, TKey>(this IQueryContext<T> @this, Expression<Func<T, TKey>> expression)
-            where T : class
-        {
-            return ((QueryContext<T>)@this).GroupBy(expression);
-        }
+        //public static IQueryContext<IGrouping<TKey,T>> GroupBy<T, TKey>(this IQueryContext<T> @this, Expression<Func<T, TKey>> expression)
+        //    where T : class
+        //{
+        //    return ((QueryContext<T>)@this).GroupBy(expression);
+        //}
 
         public static IQueryContext<T> OrderBy<T, T2>(this IQueryContext<T> @this, Expression<Func<T, T2>> expression)
             where T : class
@@ -125,24 +125,27 @@ namespace NeuroSpeech.EntityAccessControl
             int size = options.Size;
             var cancellationToken = options.CancelToken;
             var q = @this as IQueryContext<T>;
+            bool hasPaging = false;
             if (start > 0)
             {
                 q = q.Skip(start);
+                hasPaging = true;
             }
             if (size > 0)
             {
                 q = q.Take(size);
+                hasPaging = true;
             }
             if (options.SplitInclude)
             {
                 q = q.AsSplitQuery();
             }
-            if (options.Trace != null)
+            // if (options.Trace != null)
             {
                 string text = source + "\r\n" + q.ToQueryString();
-                options.Trace(text);
+                options.Trace?.Invoke(text);
             }
-            if (q != @this)
+            if (hasPaging)
             {
                 return new LinqResult
                 {

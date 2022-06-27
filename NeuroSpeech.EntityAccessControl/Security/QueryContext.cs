@@ -323,10 +323,10 @@ namespace NeuroSpeech.EntityAccessControl
             return q.ThenInclude(lambda);
         }
 
-        public IQueryContext<IGrouping<TKey,T>> GroupBy<TKey>(Expression<Func<T, TKey>> expression)
-        {
-            return new QueryContext<IGrouping<TKey, T>>(new EmptyContext(db), queryable.GroupBy(expression), errorModel);
-        }
+        //public IQueryContext<IGrouping<TKey,T>> GroupBy<TKey>(Expression<Func<T, TKey>> expression)
+        //{
+        //    return new QueryContext<IGrouping<TKey, T>>(new EmptyContext(db), queryable.GroupBy(expression), errorModel);
+        //}
         public IOrderedQueryContext<T> ThenBy<TP>(Expression<Func<T, TP>> expression)
         {
             return new QueryContext<T>(db, (queryable as IOrderedQueryable<T>).ThenBy(expression), errorModel);
