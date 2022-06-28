@@ -318,8 +318,8 @@ namespace NeuroSpeech.EntityAccessControl
                                 continue;
                             }
                             writer.WritePropertyName(keyName);
-                            // Write(writer, ve.Value, options);
-                            JsonSerializer.Serialize(writer, ve.Value, options);
+                            Write(writer, ve.Value, options);
+                            //JsonSerializer.Serialize(writer, ve.Value, options);
                         }
                         writer.WriteEndObject();
                         continue;
@@ -332,8 +332,8 @@ namespace NeuroSpeech.EntityAccessControl
                         {
                             if (c == null)
                                 continue;
-                            // Write(writer, c, options);
-                            JsonSerializer.Serialize(writer, c, options);
+                            Write(writer, c, options);
+                            // JsonSerializer.Serialize(writer, c, options);
                         }
                         writer.WriteEndArray();
                         //var list = new JsonArray();
@@ -353,8 +353,8 @@ namespace NeuroSpeech.EntityAccessControl
                     }
                     //  r[name] = SerializeToJson(v);
                     writer.WritePropertyName(name);
-                    // Write(writer, v, options);
-                    JsonSerializer.Serialize(writer, v, options);
+                    Write(writer, v, options);
+                    // JsonSerializer.Serialize(writer, v, options);
                 }
 
                 writer.WriteEndObject();
