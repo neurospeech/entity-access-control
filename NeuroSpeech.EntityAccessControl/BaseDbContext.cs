@@ -86,6 +86,12 @@ namespace NeuroSpeech.EntityAccessControl
             return ((IQueryContext<T>)eh.Filter(q)).ToQuery();
         }
 
+        public IEntityEvents? GetEntityEvents(Type type)
+        {
+            var eh = events.GetEvents(services, type);
+            return eh;
+        }
+
         private Task OnInsertingAsync(Type type, object entity)
         {
             var eh = events.GetEvents(services, type);

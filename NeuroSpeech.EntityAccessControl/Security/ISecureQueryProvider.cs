@@ -19,6 +19,8 @@ namespace NeuroSpeech.EntityAccessControl
 
         IQueryable<T> FilteredQuery<T>() where T : class;
 
+        IEntityEvents? GetEntityEvents(Type type);
+
         internal IQueryable<T> Set<T>() where T : class;
 
         IQueryable<DateRange> DateRangeView(DateTime start, DateTime end, string step);

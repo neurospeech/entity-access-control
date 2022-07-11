@@ -190,9 +190,9 @@ namespace NeuroSpeech.EntityAccessControl.Internal
             return $"any /*{type.FullName}*/";
         }
 
-        public static bool TryGetEnumerableItem(this Type type, out Type? itemType )
+        public static bool TryGetEnumerableItem(this Type type, out Type itemType )
         {
-            itemType = type.StaticCacheGetOrCreate("EN" + type.FullName, () =>
+            var t = type.StaticCacheGetOrCreate("EN" + type.FullName, () =>
             {
                 if (!(typeof(System.Collections.IEnumerable).IsAssignableFrom(type)))
                     return null;
@@ -213,7 +213,8 @@ namespace NeuroSpeech.EntityAccessControl.Internal
                 } while (type != null);
                 return null;
             });
-            return itemType != null;
+            itemType = t!;
+            return t != null;
         }
 
         public static System.Collections.IList? GetOrCreateCollection(this PropertyInfo property, object target, Type itemType)

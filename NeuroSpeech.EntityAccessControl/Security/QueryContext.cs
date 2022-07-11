@@ -84,6 +84,11 @@ namespace NeuroSpeech.EntityAccessControl
         {
             return db.DateRangeView(start, end, step);
         }
+
+        public IEntityEvents? GetEntityEvents(Type type)
+        {
+            return db.GetEntityEvents(type);
+        }
     }
 
     public class QueryContext<T>: IOrderedQueryContext<T>
@@ -373,7 +378,6 @@ namespace NeuroSpeech.EntityAccessControl
         {
             if (typeof(TProperty).TryGetEnumerableItem(out var itemType))
             {
-
                 var r = this.GetInstanceGenericMethod(nameof(IncludeChildren), itemType, typeof(TProperty))
                     .As<IIncludableQueryContext<T,TProperty>>()
                     .Invoke(path.Body, path.Parameters);
@@ -390,8 +394,26 @@ namespace NeuroSpeech.EntityAccessControl
             where TProperty : class
             where TEnumerableProperty: IEnumerable<TProperty>
         {
-            var path = Expression.Lambda<Func<T, IEnumerable<TProperty>>>(body, parameters);
-            var q = queryable.Include(ReplaceEnumerable<T, TProperty>(path));
+            Expression<Func<T, IEnumerable<TProperty>>> path;
+            IQueryable<T> q;
+            var eh = db.GetEntityEvents(typeof(TProperty));
+            if (eh != null)
+            {
+                var qec = new QueryExpressionContext<TProperty>(null, body) as IQueryContext;
+                var r = eh.IncludeFilter(qec);
+                if (r == qec)
+                {
+                    path = Expression.Lambda<Func<T, IEnumerable<TProperty>>>(body, parameters);
+                    q = queryable.Include(path);
+                    return new IncludableQueryContext<T, TEnumerableProperty>(db, q, errorModel);
+                }
+                var re = (QueryExpressionContext<TProperty>)r;
+                path = Expression.Lambda<Func<T, IEnumerable<TProperty>>>(re.Expression, parameters);
+                q = queryable.Include(path);
+                return new IncludableQueryContext<T, TEnumerableProperty>(db, q, errorModel);
+            }
+            path = Expression.Lambda<Func<T, IEnumerable<TProperty>>>(body, parameters);
+            q = queryable.Include(ReplaceEnumerable<T, TProperty>(path));
             return new IncludableQueryContext<T, TEnumerableProperty>(db, q, errorModel);
         }
 
