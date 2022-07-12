@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 
 namespace NeuroSpeech.EntityAccessControl
@@ -91,6 +92,102 @@ namespace NeuroSpeech.EntityAccessControl
                 }
             }
             return v;
+        }
+
+        public static long AsInt64( in this JsonElement @this)
+        {
+            switch (@this.ValueKind)
+            {
+                case JsonValueKind.Number:
+                    return @this.GetInt64();
+                case JsonValueKind.String:
+                    return long.Parse(@this.GetString()!);
+            }
+            throw new ArgumentException($"Unable to convert {@this} to long");
+        }
+
+        public static int AsInt32(in this JsonElement @this)
+        {
+            switch (@this.ValueKind)
+            {
+                case JsonValueKind.Number:
+                    return @this.GetInt32();
+                case JsonValueKind.String:
+                    return int.Parse(@this.GetString()!);
+            }
+            throw new ArgumentException($"Unable to convert {@this} to int");
+        }
+
+        public static float AsSingle(in this JsonElement @this)
+        {
+            switch (@this.ValueKind)
+            {
+                case JsonValueKind.Number:
+                    return @this.GetSingle();
+                case JsonValueKind.String:
+                    return float.Parse(@this.GetString()!);
+            }
+            throw new ArgumentException($"Unable to convert {@this} to int");
+        }
+
+        public static double AsDouble(in this JsonElement @this)
+        {
+            switch (@this.ValueKind)
+            {
+                case JsonValueKind.Number:
+                    return @this.GetDouble();
+                case JsonValueKind.String:
+                    return double.Parse(@this.GetString()!);
+            }
+            throw new ArgumentException($"Unable to convert {@this} to int");
+        }
+
+        public static decimal AsDecimal(in this JsonElement @this)
+        {
+            switch (@this.ValueKind)
+            {
+                case JsonValueKind.Number:
+                    return @this.GetDecimal();
+                case JsonValueKind.String:
+                    return decimal.Parse(@this.GetString()!);
+            }
+            throw new ArgumentException($"Unable to convert {@this} to int");
+        }
+
+        public static bool AsBoolean(in this JsonElement @this)
+        {
+            switch (@this.ValueKind)
+            {
+                case JsonValueKind.Number:
+                    return @this.GetDouble() > 0;
+                case JsonValueKind.True:
+                    return true;
+                case JsonValueKind.False:
+                    return false;
+                case JsonValueKind.String:
+                    var text = @this.GetString()!;
+                    if (text.EqualsIgnoreCase("true"))
+                        return true;
+                    if (double.TryParse(text, out var n))
+                        return n > 0;
+                    if (text.EqualsIgnoreCase("false"))
+                        return false;
+                    return text.Length > 0;
+            }
+            throw new ArgumentException($"Unable to convert {@this} to bool");
+        }
+
+        public static string? AsString(in this JsonElement @this)
+        {
+            if (@this.ValueKind == JsonValueKind.String)
+            {
+                return @this.GetString()!;
+            }
+            if (@this.ValueKind == JsonValueKind.Null)
+            {
+                return null;
+            }
+            return @this.GetRawText();
         }
 
     }

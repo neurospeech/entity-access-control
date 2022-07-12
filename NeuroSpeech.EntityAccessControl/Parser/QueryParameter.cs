@@ -62,39 +62,72 @@ namespace NeuroSpeech.EntityAccessControl
             return GetEnumerator();
         }
 
+        private bool IsNull => element.ValueKind == JsonValueKind.Null;
+
         public static implicit operator long (QueryParameter q)
         {
-            return q.element.GetInt64();
+            return q.element.AsInt64();;
         }
 
         public static implicit operator long?(QueryParameter q)
         {
-            return q.element.ValueKind == JsonValueKind.Null ? null : q.element.GetInt64();
+            return q.IsNull ? null : q.element.AsInt64();
         }
 
         public static implicit operator int(QueryParameter q)
         {
-            return q.element.GetInt32();
+            return q.element.AsInt32();
         }
 
         public static implicit operator int?(QueryParameter q)
         {
-            return q.element.ValueKind == JsonValueKind.Null ? null : q.element.GetInt32();
+            return q.IsNull ? null : q.element.AsInt32();
         }
+
+        public static implicit operator float(QueryParameter q)
+        {
+            return q.element.AsSingle();
+        }
+
+        public static implicit operator float?(QueryParameter q)
+        {
+            return q.IsNull ? null : q.element.AsSingle();
+        }
+
+        public static implicit operator double(QueryParameter q)
+        {
+            return q.element.AsDouble();
+        }
+
+        public static implicit operator double?(QueryParameter q)
+        {
+            return q.IsNull ? null : q.element.AsDouble();
+        }
+
+        public static implicit operator decimal(QueryParameter q)
+        {
+            return q.element.AsDecimal();
+        }
+
+        public static implicit operator decimal?(QueryParameter q)
+        {
+            return q.IsNull ? null : q.element.AsDecimal();
+        }
+
 
         public static implicit operator bool(QueryParameter q)
         {
-            return q.element.GetBoolean();
+            return q.element.AsBoolean();
         }
 
         public static implicit operator bool?(QueryParameter q)
         {
-            return q.element.ValueKind == JsonValueKind.Null ? null : q.element.GetBoolean();
+            return q.IsNull ? null : q.element.AsBoolean();
         }
 
         public static implicit operator string?(QueryParameter q)
         {
-            return q.element.ValueKind == JsonValueKind.Null ? null : q.element.GetString();
+            return q.element.AsString();
         }
 
         public static implicit operator DateTime(QueryParameter q)
