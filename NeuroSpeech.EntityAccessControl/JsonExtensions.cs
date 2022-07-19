@@ -102,6 +102,8 @@ namespace NeuroSpeech.EntityAccessControl
                     return @this.GetInt64();
                 case JsonValueKind.String:
                     return long.Parse(@this.GetString()!);
+                case JsonValueKind.Null:
+                    return 0;
             }
             throw new ArgumentException($"Unable to convert {@this} to long");
         }
@@ -114,6 +116,8 @@ namespace NeuroSpeech.EntityAccessControl
                     return @this.GetInt32();
                 case JsonValueKind.String:
                     return int.Parse(@this.GetString()!);
+                case JsonValueKind.Null:
+                    return 0;
             }
             throw new ArgumentException($"Unable to convert {@this} to int");
         }
@@ -126,6 +130,8 @@ namespace NeuroSpeech.EntityAccessControl
                     return @this.GetSingle();
                 case JsonValueKind.String:
                     return float.Parse(@this.GetString()!);
+                case JsonValueKind.Null:
+                    return 0;
             }
             throw new ArgumentException($"Unable to convert {@this} to int");
         }
@@ -138,6 +144,8 @@ namespace NeuroSpeech.EntityAccessControl
                     return @this.GetDouble();
                 case JsonValueKind.String:
                     return double.Parse(@this.GetString()!);
+                case JsonValueKind.Null:
+                    return 0;
             }
             throw new ArgumentException($"Unable to convert {@this} to int");
         }
@@ -150,6 +158,8 @@ namespace NeuroSpeech.EntityAccessControl
                     return @this.GetDecimal();
                 case JsonValueKind.String:
                     return decimal.Parse(@this.GetString()!);
+                case JsonValueKind.Null:
+                    return 0;
             }
             throw new ArgumentException($"Unable to convert {@this} to int");
         }
@@ -173,6 +183,8 @@ namespace NeuroSpeech.EntityAccessControl
                     if (text.EqualsIgnoreCase("false"))
                         return false;
                     return text.Length > 0;
+                case JsonValueKind.Null:
+                    return false;
             }
             throw new ArgumentException($"Unable to convert {@this} to bool");
         }
