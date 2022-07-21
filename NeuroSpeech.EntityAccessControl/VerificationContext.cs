@@ -257,8 +257,8 @@ namespace NeuroSpeech.EntityAccessControl
             var isSameType = e.Entity.GetType() == type;
             var state = ToState(e.State);
             var error = isSameType
-                ? $"Cannot {state} type {typeName}"
-                : $"Cannot {state} type {e.Entity.GetType().Name} without access to type {typeName}";
+                ? $"Cannot {state} type {typeName}. "
+                : $"Cannot {state} type {e.Entity.GetType().Name} without access to type {typeName}. ";
             this.AddErrorExpression<T>(q.Expression, error);
             return 0;
         }
