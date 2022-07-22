@@ -40,6 +40,8 @@ namespace NeuroSpeech.EntityAccessControl
             this.RaiseEvents = events != null;
         }
 
+        private List<(int priority,Func<Task> task)>? PostSaveChangesQueue;
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -225,7 +227,6 @@ namespace NeuroSpeech.EntityAccessControl
                 Validate();
                 return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
             }
-
             var vc = new VerificationContext<TContext>(this, events, services);
 
             var pending = new List<(EntityState State, object item, Type type)>();
@@ -285,7 +286,20 @@ namespace NeuroSpeech.EntityAccessControl
                         break;
                 }
             }
+            if (this.PostSaveChangesQueue?.Count > 0)
+            {
+                foreach(var (priority, change) in this.PostSaveChangesQueue.OrderBy((x) => x.priority))
+                {
+                    await change();
+                }
+            }
             return r;
+        }
+
+        public void QueuePostSaveTask(Func<Task> task, int priority = int.MaxValue)
+        {
+            this.PostSaveChangesQueue ??= new List<(int priority, Func<Task> task)>();
+            this.PostSaveChangesQueue.Add((priority, task));
         }
 
         public async Task SaveChangesWithoutEventsAsync(CancellationToken cancellationToken = default)
