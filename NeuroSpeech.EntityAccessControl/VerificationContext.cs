@@ -83,7 +83,10 @@ namespace NeuroSpeech.EntityAccessControl
             var result = await query.FirstOrDefaultAsync();
             if (String.IsNullOrWhiteSpace(result))
                 return;
-            throw new EntityAccessException(result);
+            var error = new ErrorModel();
+            error.Title = result;
+            error.Add("Query", text);
+            throw new EntityAccessException(error);
         }
 
         public void QueueVerification(EntityEntry entry)
