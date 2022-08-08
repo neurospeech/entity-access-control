@@ -18,6 +18,7 @@ using System.ComponentModel;
 using System.Linq.Expressions;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore.Metadata;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace NeuroSpeech.EntityAccessControl
 {
@@ -340,10 +341,25 @@ namespace NeuroSpeech.EntityAccessControl
             var key = (TypeCacheKey, type);
             return readOnlyProperties.GetOrAdd(key, (x) =>
             {
+                List<PropertyInfo>? all = null;
+                var et = this.Model.FindEntityType(type);
+                if (et != null)
+                {
+                    foreach(var p in et.GetProperties()
+                        .Where(x => x.PropertyInfo
+                            .GetCustomAttribute<DatabaseGeneratedAttribute>()?.DatabaseGeneratedOption == DatabaseGeneratedOption.Computed))
+                    {
+                        all ??= new List<PropertyInfo>();
+                        all.Add(p.PropertyInfo);
+                    }
+                }
+
                 var eh = events.GetEvents(services, x.type);
                 if (eh == null)
-                    return Empty;
-                return eh.GetReadOnlyProperties(TypeCacheKey);
+                    return all ?? Empty;
+                all ??= new List<PropertyInfo>();
+                all.AddRange(eh.GetReadOnlyProperties(TypeCacheKey));
+                return all;
             });
         }
 
