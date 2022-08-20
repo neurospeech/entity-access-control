@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace NeuroSpeech.EntityAccessControl.Tests.Insert
@@ -271,12 +272,14 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
             var controller = new TestEntityController(sdb);
             var name = "NeuroSpeech.EntityAccessControl.Tests.Model.Post";
 
-            var r = await controller.PostMethod(name,
-                new BaseEntityController.MethodOptions {
-                    Methods = System.Text.Json.JsonSerializer.Serialize(new object[] { 
+            var node = System.Text.Json.JsonSerializer.Serialize(new object[] {
                         new object[] { "where", "x => x.PostID > @0", 1 },
                         new object[] { "select", "x => new { x.PostID, Tags = x.Tags }" }
-                    })
+                    });
+
+            var r = await controller.PostMethod(name,
+                new BaseEntityController.MethodOptions {
+                    Methods = JsonDocument.Parse(node).RootElement
                 });
             Assert.IsNotNull(r);
         }
