@@ -347,7 +347,8 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
 
         public class MethodOptions
         {
-            public string? Methods { get; set; }
+            public JsonElement Methods { get; set; }
+
             public int Start { get; set; } = 0;
             public int Size { get; set; } = 200;
             public bool SplitInclude { get; set; } = true;
@@ -369,7 +370,7 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
             )
         {
             return PostMethod(entity, new MethodOptions { 
-                Methods = methods,
+                Methods = JsonDocument.Parse(methods).RootElement,
                 Start = start,
                 Size = size,
                 SplitInclude = splitInclude,
@@ -392,7 +393,7 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
         {
             return PostMethod(entity, new MethodOptions
             {
-                Methods = methods,
+                Methods = JsonDocument.Parse(methods).RootElement,
                 Start = start,
                 Size = size,
                 SplitInclude = splitInclude,
@@ -429,7 +430,11 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
                 options.Trace = TraceQuery;
             }
 
-            var root = JsonDocument.Parse(methods).RootElement;
+            var root = methods;
+            if (root.ValueKind == JsonValueKind.String)
+            {
+                root = JsonDocument.Parse(root.AsString()!).RootElement;
+            }
 
             foreach(var method in root.EnumerateArray())
             {
