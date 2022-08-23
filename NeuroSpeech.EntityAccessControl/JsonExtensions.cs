@@ -133,7 +133,7 @@ namespace NeuroSpeech.EntityAccessControl
                 case JsonValueKind.Null:
                     return 0;
             }
-            throw new ArgumentException($"Unable to convert {@this} to int");
+            throw new ArgumentException($"Unable to convert {@this} to double");
         }
 
         public static double AsDouble(in this JsonElement @this)
@@ -147,7 +147,7 @@ namespace NeuroSpeech.EntityAccessControl
                 case JsonValueKind.Null:
                     return 0;
             }
-            throw new ArgumentException($"Unable to convert {@this} to int");
+            throw new ArgumentException($"Unable to convert {@this} to double");
         }
 
         public static decimal AsDecimal(in this JsonElement @this)
@@ -161,7 +161,7 @@ namespace NeuroSpeech.EntityAccessControl
                 case JsonValueKind.Null:
                     return 0;
             }
-            throw new ArgumentException($"Unable to convert {@this} to int");
+            throw new ArgumentException($"Unable to convert {@this} to decimal");
         }
 
         public static bool AsBoolean(in this JsonElement @this)

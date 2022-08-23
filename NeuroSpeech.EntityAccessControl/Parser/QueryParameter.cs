@@ -16,6 +16,17 @@ namespace NeuroSpeech.EntityAccessControl
 
         internal static MethodInfo StringMethod = typeof(CastAs)
             .GetRuntimeMethod(nameof(String), new Type[] { typeof(int) })!;
+
+        public static double Double(object n) => Convert.ToDouble(n);
+
+        public static double Double(float? n) => n.HasValue ? n.Value : 0;
+        
+        public static double Double(float n) => n;
+
+        internal static MethodInfo DoubleFromFloatNullableMethod = typeof(CastAs)
+            .GetRuntimeMethod(nameof(Double), new Type[] { typeof(float?) })!;
+        internal static MethodInfo DoubleFromFloatMethod = typeof(CastAs)
+            .GetRuntimeMethod(nameof(Double), new Type[] { typeof(float) })!;
     }
 
     public readonly struct QueryParameter: IEnumerable<object>

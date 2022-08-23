@@ -46,6 +46,7 @@ namespace NeuroSpeech.EntityAccessControl
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
             modelBuilder.HasDbFunction(CastAs.StringMethod)
                 .HasTranslation(a =>
                 {
@@ -54,6 +55,24 @@ namespace NeuroSpeech.EntityAccessControl
                         return new SqlUnaryExpression(System.Linq.Expressions.ExpressionType.Convert,
                             u.Operand, typeof(string), new IntTypeMapping("nvarchar(50)", System.Data.DbType.String));
                     return new SqlUnaryExpression(System.Linq.Expressions.ExpressionType.Convert, p, typeof(string), p.TypeMapping);
+                });
+
+            modelBuilder.HasDbFunction(CastAs.DoubleFromFloatNullableMethod)
+                .HasTranslation(a => {
+                    var p = a.ElementAt(0);
+                    if (p is SqlUnaryExpression u)
+                        return new SqlUnaryExpression(System.Linq.Expressions.ExpressionType.Convert,
+                            u.Operand, typeof(double), new IntTypeMapping("real", System.Data.DbType.Double));
+                    return new SqlUnaryExpression(System.Linq.Expressions.ExpressionType.Convert, p, typeof(double), p.TypeMapping);
+                });
+
+            modelBuilder.HasDbFunction(CastAs.DoubleFromFloatMethod)
+                .HasTranslation(a => {
+                    var p = a.ElementAt(0);
+                    if (p is SqlUnaryExpression u)
+                        return new SqlUnaryExpression(System.Linq.Expressions.ExpressionType.Convert,
+                            u.Operand, typeof(double), new IntTypeMapping("real", System.Data.DbType.Double));
+                    return new SqlUnaryExpression(System.Linq.Expressions.ExpressionType.Convert, p, typeof(double), p.TypeMapping);
                 });
 
             modelBuilder.HasDbFunction(this.GetType().GetMethod(nameof(DateRangeView), new Type[] {
