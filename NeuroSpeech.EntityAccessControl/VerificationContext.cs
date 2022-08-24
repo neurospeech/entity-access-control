@@ -13,6 +13,11 @@ using System.Threading.Tasks;
 
 namespace NeuroSpeech.EntityAccessControl
 {
+    [AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = true)]
+    public class SkipVerificationAttribute: Attribute
+    {
+    }
+
     internal class VerificationContext<TContext>
         where TContext : BaseDbContext<TContext>
     {
@@ -137,6 +142,8 @@ namespace NeuroSpeech.EntityAccessControl
                 var keys = new List<(PropertyInfo, object)>();
                 foreach(var property in e.Properties)
                 {
+                    if (property.Metadata.PropertyInfo.GetCustomAttribute<SkipVerificationAttribute>() != null)
+                        continue;
                     if (property.Metadata.IsKey())
                     {
                         if(property.IsTemporary)
@@ -180,6 +187,8 @@ namespace NeuroSpeech.EntityAccessControl
                     if (!properties.Contains(p))
                         continue;
                     var px = e.Property(p.Name);
+                    if (px.Metadata.PropertyInfo.GetCustomAttribute<SkipVerificationAttribute>() != null)
+                        continue;
                     if (px.IsTemporary)
                         continue;
                     if (px.CurrentValue == null)
