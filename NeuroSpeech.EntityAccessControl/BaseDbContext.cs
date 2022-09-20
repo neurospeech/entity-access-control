@@ -306,9 +306,11 @@ namespace NeuroSpeech.EntityAccessControl
                         break;
                 }
             }
-            if (this.PostSaveChangesQueue?.Count > 0)
+            var postSaveChanges = this.PostSaveChangesQueue;
+            this.PostSaveChangesQueue = null;
+            if (postSaveChanges?.Count > 0)
             {
-                foreach(var (priority, change) in this.PostSaveChangesQueue.OrderBy((x) => x.priority))
+                foreach(var (priority, change) in postSaveChanges.OrderBy((x) => x.priority))
                 {
                     await change();
                 }
