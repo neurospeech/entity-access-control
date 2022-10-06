@@ -142,7 +142,7 @@ namespace NeuroSpeech.EntityAccessControl
                 var keys = new List<(PropertyInfo, object)>();
                 foreach(var property in e.Properties)
                 {
-                    if (property.Metadata.PropertyInfo.GetCustomAttribute<SkipVerificationAttribute>() != null)
+                    if (property.Metadata.PropertyInfo?.GetCustomAttribute<SkipVerificationAttribute>() != null)
                         continue;
                     if (property.Metadata.IsKey())
                     {

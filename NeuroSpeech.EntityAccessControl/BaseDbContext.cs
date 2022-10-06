@@ -80,6 +80,35 @@ namespace NeuroSpeech.EntityAccessControl
                 typeof(DateTime),
                 typeof(string)
             }));
+
+            modelBuilder.HasDbFunction(this.GetType().GetMethod(nameof(JsonIDs), new Type[] {
+                typeof(string)
+            }));
+            modelBuilder.HasDbFunction(this.GetType().GetMethod(nameof(JsonStringArray), new Type[] {
+                typeof(string)
+            }));
+        }
+
+        [Keyless]
+        public class JsonLongValue
+        {
+            public long Value { get; set; }
+        }
+
+        [Keyless]
+        public class JsonStringValue
+        {
+            public string? Value { get; set; }
+        }
+
+        public IQueryable<JsonLongValue> JsonIDs(string json)
+        {
+            return FromExpression(() => JsonIDs(json));
+        }
+
+        public IQueryable<JsonStringValue> JsonStringArray(string json)
+        {
+            return FromExpression(() => JsonStringArray(json));
         }
 
         public IQueryable<DateRange> DateRangeView(DateTime start, DateTime end, string step = "Day")
@@ -368,7 +397,7 @@ namespace NeuroSpeech.EntityAccessControl
                 {
                     foreach(var p in et.GetProperties()
                         .Where(x => x.PropertyInfo
-                            .GetCustomAttribute<DatabaseGeneratedAttribute>()?.DatabaseGeneratedOption == DatabaseGeneratedOption.Computed))
+                            ?.GetCustomAttribute<DatabaseGeneratedAttribute>()?.DatabaseGeneratedOption == DatabaseGeneratedOption.Computed))
                     {
                         all ??= new List<PropertyInfo>();
                         all.Add(p.PropertyInfo);

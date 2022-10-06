@@ -13,14 +13,15 @@ namespace NeuroSpeech.EntityAccessControl
 {
     public static class QueryContextExtensions {
 
-        public static IQueryContext<T> WithSource<T>(this IQueryContext<T> @this, string source)
-            where T : class
-        {
-            if (@this is QueryContext<T> qc) {
-                return qc.WithSource(source);
-            }
-            throw new NotSupportedException();
-        }
+        // don't know what it is...
+        //public static IQueryContext<T> WithSource<T>(this IQueryContext<T> @this, string source)
+        //    where T : class
+        //{
+        //    if (@this is QueryContext<T> qc) {
+        //        return qc.WithSource(source);
+        //    }
+        //    throw new NotSupportedException();
+        //}
 
         public static IQueryContext<T> Where<T>(this IQueryContext<T> @this, Expression<Func<T,bool>> filter)
             where T: class
