@@ -28,6 +28,23 @@ namespace NeuroSpeech.EntityAccessControl
     //    }
     //}
 
+    public class EntityJsonSerializer
+    {
+        public static string Serialize<T>(DbContext db, T item)
+        {
+            return JsonSerializer.Serialize(item, Options(db));
+        }
+
+        public static JsonSerializerOptions Options(DbContext db)
+        {
+            if (db is ISecureQueryProvider sp)
+            {
+                return new EntitySerializationSettings(sp).Options;
+            }
+            return new EntitySerializationSettings(db).Options;
+        }
+    }
+
     public class EntitySerializationSettings: JsonConverterFactory
     {
         public string TypeCacheKey;
