@@ -89,18 +89,6 @@ namespace NeuroSpeech.EntityAccessControl
             }));
         }
 
-        [Keyless]
-        public class JsonLongValue
-        {
-            public long Value { get; set; }
-        }
-
-        [Keyless]
-        public class JsonStringValue
-        {
-            public string? Value { get; set; }
-        }
-
         public IQueryable<JsonLongValue> JsonIDs(string json)
         {
             return FromExpression(() => JsonIDs(json));

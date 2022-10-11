@@ -6,6 +6,18 @@ using System.Text;
 namespace NeuroSpeech.EntityAccessControl
 {
     [Keyless]
+    public class JsonLongValue
+    {
+        public long Value { get; set; }
+    }
+
+    [Keyless]
+    public class JsonStringValue
+    {
+        public string? Value { get; set; }
+    }
+
+    [Keyless]
     public class DateRange
     {
 
