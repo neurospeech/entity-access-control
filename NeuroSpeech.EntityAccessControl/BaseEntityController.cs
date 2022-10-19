@@ -488,6 +488,17 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
                         lm.Method = "JoinDateRange";
                         lm.Expression = "@0, @1, @2";
                         break;
+                    case "join":
+                        var typeName= method[1].GetString();
+                        var left = method[2].GetString();
+                        var right = method[3].GetString();
+
+                        // this will ensure that the type exits..
+                        FindEntityType(typeName);
+
+                        lm.Method = $"Container().JoinWith<{typeName}>().Join({left}, {right})";
+                        lm.Expression = null;
+                        break;
                     case "include":
                         lm.Method = "Include";
                         hasInclude = true;

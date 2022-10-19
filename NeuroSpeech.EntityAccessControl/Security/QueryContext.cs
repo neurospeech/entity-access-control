@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore.Query;
 using NeuroSpeech.EntityAccessControl.Internal;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -417,6 +418,19 @@ namespace NeuroSpeech.EntityAccessControl
             return new IncludableQueryContext<T, TEnumerableProperty>(db, q, errorModel);
         }
 
+        internal IQueryContext<WithInner<T, T1>> Join<T1, TKey>(
+            IQueryContext<T1> inner,
+            Expression<Func<T,TKey>> leftSelector,
+            Expression<Func<T1,TKey>> rightSelector)
+            where T1: class
+        {
+            var join = this.queryable.Join(inner.ToQuery(), leftSelector, rightSelector, (x, y) => new WithInner<T, T1>
+            {
+                Entity = x,
+                Inner = y
+            });
+            return new QueryContext<WithInner<T,T1>>(db, (join), errorModel);
+        }
     }
 
     public class IncludableQueryContext<T, TP> : QueryContext<T>, IIncludableQueryContext<T, TP>

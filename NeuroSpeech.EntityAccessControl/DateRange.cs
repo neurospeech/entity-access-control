@@ -34,4 +34,11 @@ namespace NeuroSpeech.EntityAccessControl
         public T Entity { get; set; }
     }
 
+    public class WithInner<T, T1>
+    {
+        public T Entity { get; set; }
+
+        public T1 Inner { get; set; }
+    }
+
 }

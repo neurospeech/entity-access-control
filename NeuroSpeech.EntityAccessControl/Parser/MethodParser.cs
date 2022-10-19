@@ -56,6 +56,11 @@ namespace NeuroSpeech.EntityAccessControl.Parser
             foreach(var m in methods)
             {
                 var code = m.Expression;
+                if(code == null)
+                {
+                    exec.AppendLine($".{m.Method}");
+                    continue; ;
+                }
                 sb.AppendLine($"method = methods.Methods[{methodIndex++}];");
                 for (int i = 0; i < m.Length; i++)
                 {

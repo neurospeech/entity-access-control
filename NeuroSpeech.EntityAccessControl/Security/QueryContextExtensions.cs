@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
 using NeuroSpeech.EntityAccessControl.Parser;
+using Org.BouncyCastle.Crypto.Modes.Gcm;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -62,6 +63,40 @@ namespace NeuroSpeech.EntityAccessControl
             where T:class
         {
             return ((QueryContext<T>)@this).JoinDateRange(start, end, step);
+        }
+
+        public static InternalContainer<T> Container<T>(this IQueryContext<T> @this)
+            where T: class
+        {
+            return new InternalContainer<T>(@this);
+        }
+
+        public struct InternalContainer<T>
+            where T: class
+        {
+            private IQueryContext<T> queryContext;
+
+            public InternalContainer(IQueryContext<T> @this) : this()
+            {
+                this.queryContext = @this;
+            }
+
+            public (IQueryContext<T> entity, IQueryContext<TInner> inner) JoinWith<TInner>()
+                where TInner : class
+            {
+                return (queryContext, ((QueryContext<T>)queryContext).Set<TInner>());
+            }
+        }
+
+        public static IQueryContext<WithInner<T,TInner>> Join<T, TInner, TKey>(
+            this (IQueryContext<T> entity, IQueryContext<TInner> inner) @this,
+            Expression<Func<T, TKey>> keySelector,
+            Expression<Func<TInner, TKey>> joinKeySelector
+            )
+            where T: class
+            where TInner: class
+        {
+            return ((QueryContext<T>)@this.entity).Join(@this.inner, keySelector, joinKeySelector);
         }
 
         public static IQueryContext<T> OrderBy<T, T2>(this IQueryContext<T> @this, Expression<Func<T, T2>> expression)

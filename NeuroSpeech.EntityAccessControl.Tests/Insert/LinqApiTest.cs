@@ -201,6 +201,34 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
 
             Assert.IsNotNull(r);
         }
+
+        [TestMethod]
+        public async Task SelectJoinAsync()
+        {
+            using var scope = CreateScope();
+
+            var db = scope.GetRequiredService<AppDbContext>();
+            db.UserID = 2;
+
+            var sdb = db;
+
+            var controller = new TestEntityController(sdb);
+            var name = "NeuroSpeech.EntityAccessControl.Tests.Model.Account";
+
+            var end = DateTime.UtcNow;
+            var start = end.AddMonths(-1);
+
+            var m = System.Text.Json.JsonSerializer.Serialize(new object[] {
+                new object[] {"join", "NeuroSpeech.EntityAccessControl.Tests.Model.Campaign", "x => x.AccountID", "x => x.AuthorID"  },
+                new object[] { "select", "x => new { dateCreated = x.Inner.DateCreated }" }
+            });
+
+            var r = await controller.Methods(name,
+                methods: m
+                );
+
+            Assert.IsNotNull(r);
+        }
         //[TestMethod]
         //public async Task SelectGroupAsync()
         //{
