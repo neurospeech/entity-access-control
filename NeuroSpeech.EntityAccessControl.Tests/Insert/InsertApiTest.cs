@@ -53,6 +53,18 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
         }
 
         [TestMethod]
+        public async Task Empty()
+        {
+            using var services = CreateScope();
+            ;
+            var db = services.GetRequiredService<AppDbContext>();
+            var controller = new TestEntityController(db);
+
+            var doc = System.Text.Json.JsonDocument.Parse("[]");
+            await controller.Save(doc.RootElement);
+        }
+
+        [TestMethod]
         public async Task SchedulePosts()
         {
             var (p, c) = await CreatePostCampaigns(2);
