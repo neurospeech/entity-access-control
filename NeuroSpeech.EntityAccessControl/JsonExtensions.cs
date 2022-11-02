@@ -24,6 +24,21 @@ namespace NeuroSpeech.EntityAccessControl
             return false;
         }
 
+        public static bool TryGetInt32Property(
+            in this JsonElement element,
+            string name,
+            [NotNullWhen(true)]
+            out int value)
+        {
+            if (element.TryGetProperty(name, out var token))
+            {
+                value = token.GetInt32();
+                return true;
+            }
+            value = default;
+            return false;
+        }
+
         public static bool TryGetStringProperty(
             in this JsonElement element, 
             string name, 

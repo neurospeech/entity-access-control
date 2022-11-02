@@ -42,12 +42,23 @@ namespace NeuroSpeech.EntityAccessControl
         //        .MakeGenericMethod(type.ClrType)!.Invoke(this, null) as IQueryable;
         //}
 
+        private Dictionary<int, object> objects = new Dictionary<int, object>();
+
         protected virtual async Task<object> LoadOrCreateAsync(Type? type,
             JsonElement body, 
             bool isChild = false,
             CancellationToken cancellationToken = default)
         {
             IEntityType entityType;
+
+            if (body.TryGetInt32Property("$id", out var id))
+            {
+                if(objects.TryGetValue(id, out var v))
+                {
+                    return v;
+                }
+            }
+
             if (body.TryGetStringProperty("$type", out var typeName))
             {
                 if (typeName.EqualsIgnoreCase("null"))
@@ -85,6 +96,10 @@ namespace NeuroSpeech.EntityAccessControl
             if (exists && IsDeleted(body))
             {
                 db.Remove(e);
+            }
+            if (id > 0)
+            {
+                objects[id] = e;
             }
             return e;
 
