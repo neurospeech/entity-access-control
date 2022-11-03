@@ -1,7 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata;
+using MimeKit.Tnef;
+using NetTopologySuite.IO;
 using NeuroSpeech.EntityAccessControl.Internal;
+using NeuroSpeech.EntityAccessControl.Security;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -99,26 +102,22 @@ namespace NeuroSpeech.EntityAccessControl
             if (!db.EnforceSecurity) {
                 return;
             }
-            this.GetInstanceGenericMethod(nameof(QueueEntry), entry.Entity.GetType())
+            var type = entry.Entity.GetType();
+            this.GetInstanceGenericMethod(nameof(QueueEntry), type)
                    .As<int>()
                    .Invoke(entry);
         }
 
         private IQueryContext<T> ApplyFilter<T>(
            EntityState state,
-           IQueryContext<T> qec,
-           FilterContext? fc = null)
+           IQueryContext<T> qec)
            where T : class
         {
             var type = typeof(T);
-            var eh = events.GetEvents(services, type);
+            var eh = db.GetEntityEvents(type);
             if (eh == null)
             {
                 throw new EntityAccessException($"Access denied to {type.FullName}");
-            }
-            if (fc != null)
-            {
-                return (IQueryContext<T>)eh.ReferenceFilter(qec, fc);
             }
             switch (state)
             {
@@ -131,6 +130,34 @@ namespace NeuroSpeech.EntityAccessControl
             return (IQueryContext<T>)eh.Filter(qec);
         }
 
+        private IQueryContext<T>? ApplyFKFilter<TP, T>(
+           EntityEntry entry,
+           List<(PropertyInfo key,object value,PropertyInfo fkProperty)> keys)
+           where T : class
+            where TP: class
+        {
+            var type = typeof(TP);
+            var eh = db.GetEntityEvents(type);
+            if (eh == null)
+            {
+                throw new EntityAccessException($"Access denied to {type.FullName}");
+            }
+            switch (entry.State)
+            {
+                case EntityState.Modified:
+                case EntityState.Added:
+                    IQueryContext<T>? qec = null!;
+                    foreach (var (key,value, fk) in keys)
+                    {
+                        var fs = FilterFactory.From<T>(db, qec);
+                        qec = (IQueryContext<T>?)eh.ForeignKeyFilter(entry, fk, value, fs);
+                    }
+                    return qec;
+            }
+            return null;
+        }
+
+
         [EditorBrowsable(EditorBrowsableState.Never)]
         public int QueueEntry<T>(EntityEntry e)
             where T: class
@@ -139,23 +166,25 @@ namespace NeuroSpeech.EntityAccessControl
             // verify access to this entity first...
             if (e.State != EntityState.Added)
             {
-                var keys = new List<(PropertyInfo, object)>();
-                foreach(var property in e.Properties)
+
+                var keys = new List<(PropertyInfo, object?, PropertyInfo)>();
+                foreach (var property in e.Properties)
                 {
                     if (property.Metadata.PropertyInfo?.GetCustomAttribute<SkipVerificationAttribute>() != null)
                         continue;
                     if (property.Metadata.IsKey())
                     {
-                        if(property.IsTemporary)
+                        if (property.IsTemporary)
                         {
                             continue;
                         }
-                        keys.Add((property.Metadata.PropertyInfo, property.CurrentValue));
+                        var p = property.Metadata.PropertyInfo!;
+                        keys.Add((p, property.CurrentValue, p));
                     }
                 }
                 if (keys.Count > 0)
                 {
-                    this.QueueEntityKeyForeignKey<T>(e, keys);
+                    this.QueueEntityKeyForeignKey<T, T>(e, keys);
                 }
             }
 
@@ -180,7 +209,7 @@ namespace NeuroSpeech.EntityAccessControl
                 var principalType = nav.ForeignKey.PrincipalEntityType.ClrType;
                 var principalKey = nav.ForeignKey.PrincipalKey;
 
-                List<(PropertyInfo, object)> keys = new List<(PropertyInfo, object)>();
+                List<(PropertyInfo, object,PropertyInfo)> keys = new List<(PropertyInfo, object,PropertyInfo)>();
 
                 foreach (var p in nav.ForeignKey.Properties)
                 {
@@ -203,14 +232,14 @@ namespace NeuroSpeech.EntityAccessControl
                         }
                     }
                     var pKey = principalKey.Properties[0];
-                    keys.Add((pKey.PropertyInfo, px.CurrentValue));
+                    keys.Add((pKey.PropertyInfo, px.CurrentValue, px.Metadata.PropertyInfo));
                 }
 
                 if (keys.Count > 0)
                 {
                     var fc = new FilterContext(e, nav);
 
-                    this.GetInstanceGenericMethod(nameof(QueueEntityKeyForeignKey), principalType)
+                    this.GetInstanceGenericMethod(nameof(QueueEntityKeyForeignKey), typeof(T), principalType)
                         .As<int>()
                         .Invoke(e, keys, fc);
                 }
@@ -219,20 +248,25 @@ namespace NeuroSpeech.EntityAccessControl
         }
 
         [EditorBrowsable(EditorBrowsableState.Never)]
-        public int QueueEntityKeyForeignKey<T>(
+        public int QueueEntityKeyForeignKey<TP, T>(
             EntityEntry e,
-            List<(PropertyInfo,object)> keys,
+            List<(PropertyInfo,object?, PropertyInfo)> keys,
             FilterContext? fc = null)
             where T: class
+            where TP: class
         {
-            Type type = typeof(T);
-            var typeName = type.Name;
+            Type keyType = typeof(T);
+            Type entityType = typeof(TP);
+            var isSameType = entityType == keyType;
+
+
+            var typeName = keyType.Name;
             Expression? body = null;
-            var pe = Expression.Parameter(type, "x");
+            var pe = Expression.Parameter(keyType, "x");
             bool cached = true;
-            foreach (var (property, value) in keys)
+            foreach (var (property, value, p2) in keys)
             {
-                var cacheKey = (type, property, value);
+                var cacheKey = (keyType, property, value);
                 if (!queryCache.ContainsKey(cacheKey))
                 {
                     cached = false;
@@ -254,19 +288,27 @@ namespace NeuroSpeech.EntityAccessControl
             }
 
             var qc = new QueryContext<T>(db, db.Set<T>());
-            var qc1 = ApplyFilter<T>(e.State, qc, fc);
-            if (qc == qc1)
+            var qc1 = isSameType ? ApplyFilter<T>(e.State, qc) : ApplyFKFilter<TP, T>(e, keys);
+            if (qc1 == null)
             {
 #if DEBUG                
-                System.Diagnostics.Debug.WriteLine($"No active rule for {type.Name}");
+                System.Diagnostics.Debug.WriteLine($"FK rule ignored for {keyType.Name}");
                 System.Diagnostics.Debug.WriteLine("");
 #endif
                 return 0;
             }
+            if (qc == qc1)
+            {
+#if DEBUG                
+                System.Diagnostics.Debug.WriteLine($"No active rule for {keyType.Name}");
+                System.Diagnostics.Debug.WriteLine("");
+#endif
+                return 0;
+            }
+
             var q = qc1.ToQuery();
             Expression<Func<T, bool>> filter = Expression.Lambda<Func<T,bool>>(body, pe);
             q = q.Where(filter);
-            var isSameType = e.Entity.GetType() == type;
             var state = ToState(e.State);
             var error = isSameType
                 ? $"Cannot {state} type {typeName}. "

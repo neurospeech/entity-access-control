@@ -1,4 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using Microsoft.EntityFrameworkCore.ChangeTracking;
+using NeuroSpeech.EntityAccessControl.Security;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text.Json.Serialization;
@@ -34,6 +37,6 @@ namespace NeuroSpeech.EntityAccessControl
 
         Task DeletedAsync(object entity);
 
-        IQueryContext ReferenceFilter(IQueryContext qec, FilterContext fc);
+        IQueryContext? ForeignKeyFilter(EntityEntry entity, PropertyInfo key, object value, FilterFactory fs);
     }
 }

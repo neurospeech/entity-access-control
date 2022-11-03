@@ -29,7 +29,8 @@ namespace NeuroSpeech.EntityAccessControl
         }
 
         public void Register<T1, TE>()
-            where TE: DbEntityEvents<T1>
+            where T1 : class
+            where TE : DbEntityEvents<T1>
         {
             registrations[typeof(T1)] = typeof(TE);
         }

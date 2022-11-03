@@ -128,6 +128,10 @@ namespace NeuroSpeech.EntityAccessControl
         public IEntityEvents? GetEntityEvents(Type type)
         {
             var eh = events.GetEvents(services, type);
+            if (eh != null)
+            {
+                eh.EnforceSecurity = this.EnforceSecurity;
+            }
             return eh;
         }
 

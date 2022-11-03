@@ -1,4 +1,6 @@
-﻿using NeuroSpeech.EntityAccessControl.Internal;
+﻿using Microsoft.EntityFrameworkCore.ChangeTracking;
+using NeuroSpeech.EntityAccessControl.Internal;
+using NeuroSpeech.EntityAccessControl.Security;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -15,6 +17,7 @@ namespace NeuroSpeech.EntityAccessControl
             JsonIgnoreCondition condition = JsonIgnoreCondition.Always);
 
     public class DbEntityEvents<T> : IEntityEvents
+        where T: class
     {
         public bool EnforceSecurity { get; set; }
 
@@ -144,15 +147,15 @@ namespace NeuroSpeech.EntityAccessControl
             return Filter(q);
         }
 
-        public virtual IQueryContext<T> ReferenceFilter(IQueryContext<T> q, FilterContext fc)
-        {
-            return ModifyFilter(q);
-        }
+        //public virtual IQueryContext<T> ReferenceFilter(IQueryContext<T> q, FilterContext fc)
+        //{
+        //    return ModifyFilter(q);
+        //}
 
-        IQueryContext IEntityEvents.ReferenceFilter(IQueryContext q, FilterContext fc)
-        {
-            return ReferenceFilter((IQueryContext<T>)q, fc);
-        }
+        //IQueryContext IEntityEvents.ReferenceFilter(IQueryContext q, FilterContext fc)
+        //{
+        //    return ReferenceFilter((IQueryContext<T>)q, fc);
+        //}
 
 
         IQueryContext IEntityEvents.Filter(IQueryContext q)
@@ -223,6 +226,20 @@ namespace NeuroSpeech.EntityAccessControl
         public virtual Task UpdatedAsync(T entity)
         {
             return Task.CompletedTask;
+        }
+
+        IQueryContext? IEntityEvents.ForeignKeyFilter(EntityEntry entity, PropertyInfo key, object value, FilterFactory fs)
+        {
+            if(!EnforceSecurity)
+            {
+                return null;
+            }
+            return ForeignKeyFilter(new ForeignKeyInfo<T>((entity as EntityEntry<T>)!, key, value, fs));
+        }
+
+        protected virtual IQueryContext? ForeignKeyFilter(ForeignKeyInfo<T> fk)
+        {
+            return fk.Filtered();
         }
 
         Task IEntityEvents.UpdatedAsync(object entity)

@@ -3,6 +3,7 @@
 namespace NeuroSpeech.EntityAccessControl.Tests.Model.Events
 {
     internal class AppEntityEvents<T>: DbEntityEvents<T>
+        where T : class
     {
         protected readonly AppDbContext db;
 

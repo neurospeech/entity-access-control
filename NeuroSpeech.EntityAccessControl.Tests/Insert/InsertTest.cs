@@ -183,6 +183,63 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
         }
 
         [TestMethod]
+        public async Task InsertLikeActivityAsync()
+        {
+            using var scope = CreateScope();
+            using var db = scope.GetRequiredService<AppDbContext>();
+            db.UserID = 2;
+            var sdb = db;
+
+            var post = new Post
+            {
+                Name = "a",
+                Tags = new List<PostTag> {
+                    new PostTag {
+                        Name = "funny"
+                    },
+                    new PostTag
+                    {
+                        Name = "public"
+                    }
+                },
+                Contents = new List<PostContent> {
+                    new PostContent {
+                        Name = "b",
+                        Tags = new List<PostContentTag> {
+                            new PostContentTag {
+                                Name = "funny"
+                            },
+                            new PostContentTag
+                            {
+                                Name = "public"
+                            }
+                        }
+                    }
+                }
+            };
+
+            sdb.Add(post);
+
+            await sdb.SaveChangesAsync();
+
+            using var scope2 = CreateScope();
+
+            var db2 = scope2.GetRequiredService<AppDbContext>();
+            db2.UserID = 4;
+
+            db2.PostActivities.Add(new PostActivity { 
+                PostID = post.PostID,
+                AccountID = db2.UserID
+            });
+
+            db2.RaiseEvents = true;
+            db2.EnforceSecurity = true;
+
+            await db2.SaveChangesAsync();
+        }
+
+
+        [TestMethod]
         public async Task UnauthorizedInsertAuthorsAsync()
         {
             try

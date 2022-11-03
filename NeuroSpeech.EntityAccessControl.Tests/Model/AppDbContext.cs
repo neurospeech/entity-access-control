@@ -22,6 +22,8 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Model
 
         public DbSet<Post> Posts { get; set; }
 
+        public DbSet<PostActivity> PostActivities { get; set; }
+
         public DbSet<Campaign> Campaigns { get; set; }
 
         public DbSet<Account> Accounts { get; set; }
@@ -54,6 +56,28 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Model
                 x.Keyword
             });
         }
+    }
+
+    [Table("PostActivities")]
+    public class PostActivity
+    {
+
+        [Key,DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public long ActivityID { get; set; }
+
+        public long AccountID { get; set; }
+
+        public long PostID { get; set; }
+
+        [MaxLength(50)]
+        public string ActivityType { get; set; }
+
+        [ForeignKey(nameof(PostID))]
+        public Post Post { get; set; }
+
+        [ForeignKey(nameof(AccountID))]
+        public Account Account { get; set; }
+
     }
 
     [Table("Accounts")]

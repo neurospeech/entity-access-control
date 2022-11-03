@@ -114,11 +114,9 @@ namespace NeuroSpeech.EntityAccessControl.Tests
                 Banned = true
             }, new Account
             {
-                // banned user
                 AccountID = 4
             },new Account
             {
-                // banned user
                 AccountID = 5
             });
 
