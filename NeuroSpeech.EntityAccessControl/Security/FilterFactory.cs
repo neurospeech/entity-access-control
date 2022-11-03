@@ -10,28 +10,29 @@ namespace NeuroSpeech.EntityAccessControl.Security
     public readonly ref struct ForeignKeyInfo<T>
         where T : class
     {
-        public readonly EntityEntry<T> Entry;
+        public readonly EntityEntry Entry;
+        public readonly T Entity;
         public readonly PropertyInfo Property;
         public readonly object Value;
         private readonly FilterFactory factory;
-        public readonly string Name;
+        public string Name => Property.Name;
 
         public ForeignKeyInfo(
-            EntityEntry<T> entry,
+            EntityEntry entry,
             PropertyInfo property,
             object value,
             FilterFactory factory)
         {
             this.Entry = entry;
+            this.Entity = (T)entry.Entity;
             this.Property = property;
             this.Value = value;
             this.factory = factory;
-            this.Name = property.Name;
         }
 
         public bool Is(string name)
         {
-            return this.Name == name;
+            return this.Property.Name == name;
         }
 
         public bool Is<TR>(Expression<Func<T,TR>> exp)

@@ -234,7 +234,7 @@ namespace NeuroSpeech.EntityAccessControl
             {
                 return null;
             }
-            return ForeignKeyFilter(new ForeignKeyInfo<T>((entity as EntityEntry<T>)!, key, value, fs));
+            return ForeignKeyFilter(new ForeignKeyInfo<T>(entity, key, value, fs));
         }
 
         protected virtual IQueryContext? ForeignKeyFilter(ForeignKeyInfo<T> fk)
