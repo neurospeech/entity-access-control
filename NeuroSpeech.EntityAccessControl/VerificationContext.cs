@@ -132,7 +132,7 @@ namespace NeuroSpeech.EntityAccessControl
         }
 
         private IQueryContext<T>? ApplyFKFilter<TP, T>(
-           EntityEntry entry, object? value,PropertyInfo fkProperty)
+           EntityEntry entry, PropertyInfo key, object? value,PropertyInfo fkProperty)
            where T : class
             where TP: class
         {
@@ -146,7 +146,7 @@ namespace NeuroSpeech.EntityAccessControl
             {
                 case EntityState.Modified:
                 case EntityState.Added:
-                    var fs = FilterFactory.From<T>(db);
+                    var fs = FilterFactory.From(db, key.DeclaringType);
                     return (IQueryContext<T>?)eh.ForeignKeyFilter(entry, fkProperty, value, fs);
             }
             return null;
@@ -288,7 +288,7 @@ namespace NeuroSpeech.EntityAccessControl
             {
                 foreach(var (key,value, fk) in keys)
                 {
-                    var fkc = ApplyFKFilter<TP, T>(e, value, fk);
+                    var fkc = ApplyFKFilter<TP, T>(e, key, value, fk);
                     if (fkc != null)
                     {
                         var fkq = fkc.ToQuery();

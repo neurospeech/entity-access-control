@@ -1,6 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore.ChangeTracking;
+using NeuroSpeech.EntityAccessControl.Internal;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
@@ -51,75 +53,75 @@ namespace NeuroSpeech.EntityAccessControl.Security
             return false;
         }
 
-        public IQueryContext Set()
-        {
-            return factory.Set();
-        }
-
-        public IQueryContext Filtered()
-        {
-            return factory.Filtered();
-        }
-
-
         public IQueryContext<TEntity> Set<TEntity>()
+            where TEntity: class
         {
             return factory.Set<TEntity>();
         }
 
         public IQueryContext<TEntity> Filtered<TEntity>()
+            where TEntity : class
         {
             return factory.Filtered<TEntity>();
+        }
+
+        public IQueryContext Filtered()
+        {
+            return FilterFactoryHelper.Instance.Filtered(factory);
+        }
+    }
+
+    public class FilterFactoryHelper
+    {
+
+        public static FilterFactoryHelper Instance = new FilterFactoryHelper();
+
+        public IQueryContext Filtered(FilterFactory factory)
+        {
+            return this.GetInstanceGenericMethod(nameof(FilteredSet), factory.fkPrimaryEntityType)
+                .As<IQueryContext>()
+                .Invoke(factory);
+        }
+
+        public IQueryContext FilteredSet<T>(FilterFactory factory)
+            where T: class
+        {
+            return factory.Filtered<T>();
         }
     }
 
     public readonly struct FilterFactory
     {
-        private readonly Func<IQueryContext> filteredSet;
-        private readonly Func<IQueryContext> set;
+        private readonly ISecureQueryProvider db;
+        internal readonly Type fkPrimaryEntityType;
 
-        internal static FilterFactory From<T>(ISecureQueryProvider db)
-            where T: class
+        internal static FilterFactory From(ISecureQueryProvider db, Type fkPrimaryEntityType)
         {
-            var qc = () => new QueryContext<T>(db, db.Set<T>());
-            var fqc = () =>
-            {
-                var feqc = new QueryContext<T>(db, db.Set<T>());
-                var eh = db.GetEntityEvents(typeof(T));
-                if (eh == null)
-                {
-                    throw new EntityAccessException($"Access to {typeof(T).Name} denied");
-                }
-                return eh.ModifyFilter(feqc);
-            };
-            return new FilterFactory(fqc, qc);
+            return new FilterFactory(db, fkPrimaryEntityType);
         }
 
-        internal FilterFactory(Func<IQueryContext> filteredSet, Func<IQueryContext> set)
+        internal FilterFactory(ISecureQueryProvider db, Type fkPrimaryEntityType)
         {
-            this.filteredSet = filteredSet;
-            this.set = set;
-        }
-
-
-        public IQueryContext Filtered()
-        {
-            return this.filteredSet();
-        }
-
-        public IQueryContext Set()
-        {
-            return this.set();
+            this.db = db;
+            this.fkPrimaryEntityType = fkPrimaryEntityType;
         }
 
         public IQueryContext<T> Filtered<T>()
+            where T: class
         {
-            return (this.filteredSet() as IQueryContext<T>)!;
+            var feqc = new QueryContext<T>(db, db.Set<T>());
+            var eh = db.GetEntityEvents(typeof(T));
+            if (eh == null)
+            {
+                throw new EntityAccessException($"Access to {typeof(T).Name} denied");
+            }
+            return (eh.ModifyFilter(feqc) as IQueryContext<T>)!;
         }
 
         public IQueryContext<T> Set<T>()
+            where T: class
         {
-            return (this.set() as IQueryContext<T>)!;
+            return new QueryContext<T>(db, db.Set<T>());
         }
     }
 }
