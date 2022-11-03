@@ -53,6 +53,11 @@ namespace NeuroSpeech.EntityAccessControl.Security
             return false;
         }
 
+        public IQueryContext<T> Where(Expression<Func<T,bool>> filter)
+        {
+            return factory.Set<T>().Where(filter);
+        }
+
         public IQueryContext<TEntity> Set<TEntity>()
             where TEntity: class
         {
