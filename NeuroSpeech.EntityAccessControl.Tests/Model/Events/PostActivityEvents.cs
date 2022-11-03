@@ -16,13 +16,13 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Model.Events
         }
 
 
-        protected override IQueryContext ForeignKeyFilter<T>(ForeignKeyInfo<PostActivity> fk)
+        protected override IQueryContext ForeignKeyFilter(ForeignKeyInfo<PostActivity> fk)
         {
             if(fk.Is(x => x.PostID))
             {
                 return null;
             }
-            return base.ForeignKeyFilter<T>(fk);
+            return base.ForeignKeyFilter(fk);
         }
     }
 }

@@ -72,6 +72,30 @@ namespace NeuroSpeech.EntityAccessControl.Security
             return factory.Filtered<TEntity>();
         }
 
+        internal IQueryContext Filtered()
+        {
+            return FilterFactoryHelper.Instance.Filtered(factory);
+        }
+
+    }
+
+    public class FilterFactoryHelper
+    {
+
+        public static FilterFactoryHelper Instance = new FilterFactoryHelper();
+
+        public IQueryContext Filtered(FilterFactory factory)
+        {
+            return this.GetInstanceGenericMethod(nameof(FilteredSet), factory.fkPrimaryEntityType)
+                .As<IQueryContext>()
+                .Invoke(factory);
+        }
+
+        public IQueryContext FilteredSet<T>(FilterFactory factory)
+            where T : class
+        {
+            return factory.Filtered<T>();
+        }
     }
 
     public readonly struct FilterFactory
