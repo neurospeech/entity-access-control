@@ -55,6 +55,8 @@ namespace NeuroSpeech.EntityAccessControl.Security
 
         public IQueryContext<T> Where(Expression<Func<T,bool>> filter)
         {
+            // careful
+            // the type must change... 
             return factory.Set<T>().Where(filter);
         }
 
@@ -70,29 +72,6 @@ namespace NeuroSpeech.EntityAccessControl.Security
             return factory.Filtered<TEntity>();
         }
 
-        public IQueryContext Filtered()
-        {
-            return FilterFactoryHelper.Instance.Filtered(factory);
-        }
-    }
-
-    public class FilterFactoryHelper
-    {
-
-        public static FilterFactoryHelper Instance = new FilterFactoryHelper();
-
-        public IQueryContext Filtered(FilterFactory factory)
-        {
-            return this.GetInstanceGenericMethod(nameof(FilteredSet), factory.fkPrimaryEntityType)
-                .As<IQueryContext>()
-                .Invoke(factory);
-        }
-
-        public IQueryContext FilteredSet<T>(FilterFactory factory)
-            where T: class
-        {
-            return factory.Filtered<T>();
-        }
     }
 
     public readonly struct FilterFactory

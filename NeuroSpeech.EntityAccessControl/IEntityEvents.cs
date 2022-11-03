@@ -37,6 +37,7 @@ namespace NeuroSpeech.EntityAccessControl
 
         Task DeletedAsync(object entity);
 
-        IQueryContext? ForeignKeyFilter(EntityEntry entity, PropertyInfo key, object value, FilterFactory fs);
+        IQueryContext? ForeignKeyFilter<FKType>(EntityEntry entity, PropertyInfo key, object value, FilterFactory fs)
+            where FKType: class;
     }
 }

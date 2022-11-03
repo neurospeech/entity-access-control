@@ -228,18 +228,20 @@ namespace NeuroSpeech.EntityAccessControl
             return Task.CompletedTask;
         }
 
-        IQueryContext? IEntityEvents.ForeignKeyFilter(EntityEntry entity, PropertyInfo key, object value, FilterFactory fs)
+        IQueryContext? IEntityEvents.ForeignKeyFilter<TFKType>(EntityEntry entity, PropertyInfo key, object value, FilterFactory fs)
+            where TFKType: class
         {
             if(!EnforceSecurity)
             {
                 return null;
             }
-            return ForeignKeyFilter(new ForeignKeyInfo<T>(entity, key, value, fs));
+            return ForeignKeyFilter<TFKType>(new ForeignKeyInfo<T>(entity, key, value, fs));
         }
 
-        protected virtual IQueryContext? ForeignKeyFilter(ForeignKeyInfo<T> fk)
+        protected virtual IQueryContext? ForeignKeyFilter<TFKType>(ForeignKeyInfo<T> fk)
+            where TFKType: class
         {
-            return fk.Filtered();
+            return fk.Filtered<TFKType>();
         }
 
         Task IEntityEvents.UpdatedAsync(object entity)
