@@ -78,13 +78,13 @@ namespace NeuroSpeech.EntityAccessControl.Security
         private readonly Func<IQueryContext> filteredSet;
         private readonly Func<IQueryContext> set;
 
-        internal static FilterFactory From<T>(ISecureQueryProvider db, IQueryContext<T> feqc)
+        internal static FilterFactory From<T>(ISecureQueryProvider db)
             where T: class
         {
-            var qc = () => feqc ?? new QueryContext<T>(db, db.Set<T>());
+            var qc = () => new QueryContext<T>(db, db.Set<T>());
             var fqc = () =>
             {
-                feqc ??= new QueryContext<T>(db, db.Set<T>());
+                var feqc = new QueryContext<T>(db, db.Set<T>());
                 var eh = db.GetEntityEvents(typeof(T));
                 if (eh == null)
                 {

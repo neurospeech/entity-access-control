@@ -8,6 +8,7 @@ using NeuroSpeech.EntityAccessControl.Security;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -131,8 +132,7 @@ namespace NeuroSpeech.EntityAccessControl
         }
 
         private IQueryContext<T>? ApplyFKFilter<TP, T>(
-           EntityEntry entry,
-           List<(PropertyInfo key,object value,PropertyInfo fkProperty)> keys)
+           EntityEntry entry, object? value,PropertyInfo fkProperty)
            where T : class
             where TP: class
         {
@@ -146,13 +146,8 @@ namespace NeuroSpeech.EntityAccessControl
             {
                 case EntityState.Modified:
                 case EntityState.Added:
-                    IQueryContext<T>? qec = null!;
-                    foreach (var (key,value, fk) in keys)
-                    {
-                        var fs = FilterFactory.From<T>(db, qec);
-                        qec = (IQueryContext<T>?)eh.ForeignKeyFilter(entry, fk, value, fs);
-                    }
-                    return qec;
+                    var fs = FilterFactory.From<T>(db);
+                    return (IQueryContext<T>?)eh.ForeignKeyFilter(entry, fkProperty, value, fs);
             }
             return null;
         }
@@ -250,7 +245,7 @@ namespace NeuroSpeech.EntityAccessControl
         [EditorBrowsable(EditorBrowsableState.Never)]
         public int QueueEntityKeyForeignKey<TP, T>(
             EntityEntry e,
-            List<(PropertyInfo,object?, PropertyInfo)> keys,
+            List<(PropertyInfo,object, PropertyInfo)> keys,
             FilterContext? fc = null)
             where T: class
             where TP: class
@@ -287,17 +282,27 @@ namespace NeuroSpeech.EntityAccessControl
                 return 0;
             }
 
-            var qc = new QueryContext<T>(db, db.Set<T>());
-            var qc1 = isSameType ? ApplyFilter<T>(e.State, qc) : ApplyFKFilter<TP, T>(e, keys);
-            if (qc1 == null)
+            var state = ToState(e.State);
+
+            if (!isSameType)
             {
-#if DEBUG                
-                System.Diagnostics.Debug.WriteLine($"FK rule ignored for {keyType.Name}");
-                System.Diagnostics.Debug.WriteLine("");
-#endif
+                foreach(var (key,value, fk) in keys)
+                {
+                    var fkc = ApplyFKFilter<TP, T>(e, value, fk);
+                    if (fkc != null)
+                    {
+                        var fkq = fkc.ToQuery();
+                        var fkExp = Expression.Lambda<Func<T, bool>>(body, pe);
+                        fkq = fkq.Where(fkExp);
+                        this.AddErrorExpression<T>(fkq.Expression, $"Cannot {state} type {typeof(TP).Name} without access to type {typeName}. ");
+                    }
+                }
                 return 0;
             }
-            if (qc == qc1)
+
+            var qc = new QueryContext<T>(db, db.Set<T>());
+            var qc1 = ApplyFilter<T>(e.State, qc);
+            if (qc1 == null || qc == qc1)
             {
 #if DEBUG                
                 System.Diagnostics.Debug.WriteLine($"No active rule for {keyType.Name}");
@@ -309,10 +314,7 @@ namespace NeuroSpeech.EntityAccessControl
             var q = qc1.ToQuery();
             Expression<Func<T, bool>> filter = Expression.Lambda<Func<T,bool>>(body, pe);
             q = q.Where(filter);
-            var state = ToState(e.State);
-            var error = isSameType
-                ? $"Cannot {state} type {typeName}. "
-                : $"Cannot {state} type {e.Entity.GetType().Name} without access to type {typeName}. ";
+            var error = $"Cannot {state} type {typeName}. ";
             this.AddErrorExpression<T>(q.Expression, error);
             return 0;
         }
