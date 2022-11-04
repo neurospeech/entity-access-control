@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 
 namespace NeuroSpeech.EntityAccessControl
 {
+
     public interface IEntityEvents
     {
 
@@ -38,5 +39,14 @@ namespace NeuroSpeech.EntityAccessControl
         Task DeletedAsync(object entity);
 
         IQueryContext? ForeignKeyFilter(EntityEntry entity, PropertyInfo key, object value, FilterFactory fs);
+    }
+
+    public interface IEntityEvents<T> : IEntityEvents
+        where T : class
+    {
+        IQueryContext<T> DeleteFilter(IQueryContext<T> q);
+        IQueryContext<T> Filter(IQueryContext<T> q);
+        IQueryContext<T> IncludeFilter(IQueryContext<T> q);
+        IQueryContext<T> ModifyFilter(IQueryContext<T> q);
     }
 }

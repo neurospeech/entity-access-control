@@ -37,5 +37,6 @@ namespace NeuroSpeech.EntityAccessControl
         void Remove(object entity);
 
         void Add(object entity);
+        IEntityEvents<T>? GetEntityEvents<T>() where T : class;
     }
 }

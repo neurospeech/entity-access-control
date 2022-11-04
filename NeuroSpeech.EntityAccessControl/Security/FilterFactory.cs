@@ -74,56 +74,63 @@ namespace NeuroSpeech.EntityAccessControl.Security
 
         internal IQueryContext Filtered()
         {
-            return FilterFactoryHelper.Instance.Filtered(factory);
+            return factory.DefaultFilter();
         }
 
     }
 
-    public class FilterFactoryHelper
-    {
+    //public class FilterFactoryHelper
+    //{
 
-        public static FilterFactoryHelper Instance = new FilterFactoryHelper();
+    //    public static FilterFactoryHelper Instance = new FilterFactoryHelper();
 
-        public IQueryContext Filtered(FilterFactory factory)
-        {
-            return this.GetInstanceGenericMethod(nameof(FilteredSet), factory.fkPrimaryEntityType)
-                .As<IQueryContext>()
-                .Invoke(factory);
-        }
+    //    public IQueryContext Filtered(FilterFactory factory)
+    //    {
+    //        return this.GetInstanceGenericMethod(nameof(FilteredSet), factory.fkPrimaryEntityType)
+    //            .As<IQueryContext>()
+    //            .Invoke(factory);
+    //    }
 
-        public IQueryContext FilteredSet<T>(FilterFactory factory)
-            where T : class
-        {
-            return factory.Filtered<T>();
-        }
-    }
+    //    public IQueryContext FilteredSet<T>(FilterFactory factory)
+    //        where T : class
+    //    {
+    //        return factory.Filtered<T>();
+    //    }
+    //}
 
     public readonly struct FilterFactory
     {
         private readonly ISecureQueryProvider db;
         internal readonly Type fkPrimaryEntityType;
+        private readonly Func<IQueryContext> defaultFilter;
 
-        internal static FilterFactory From(ISecureQueryProvider db, Type fkPrimaryEntityType)
+        internal static FilterFactory From(ISecureQueryProvider db, Type fkPrimaryEntityType, Func<IQueryContext> defaultFilter)
         {
-            return new FilterFactory(db, fkPrimaryEntityType);
+            return new FilterFactory(db, fkPrimaryEntityType, defaultFilter);
         }
 
-        internal FilterFactory(ISecureQueryProvider db, Type fkPrimaryEntityType)
+        internal FilterFactory(ISecureQueryProvider db, Type fkPrimaryEntityType, Func<IQueryContext> defaultFilter)
         {
             this.db = db;
             this.fkPrimaryEntityType = fkPrimaryEntityType;
+            this.defaultFilter = defaultFilter;
+        }
+
+        public IQueryContext DefaultFilter()
+        {
+            return defaultFilter();
         }
 
         public IQueryContext<T> Filtered<T>()
             where T: class
         {
             var feqc = new QueryContext<T>(db, db.Set<T>());
-            var eh = db.GetEntityEvents(typeof(T));
+            var eh = db.GetEntityEvents<T>();
             if (eh == null)
             {
                 throw new EntityAccessException($"Access to {typeof(T).Name} denied");
             }
-            return (eh.ModifyFilter(feqc) as IQueryContext<T>)!;
+            return eh.ModifyFilter(feqc);
         }
 
         public IQueryContext<T> Set<T>()

@@ -115,7 +115,7 @@ namespace NeuroSpeech.EntityAccessControl
            where T : class
         {
             var type = typeof(T);
-            var eh = db.GetEntityEvents(type);
+            var eh = db.GetEntityEvents<T>();
             if (eh == null)
             {
                 throw new EntityAccessException($"Access denied to {type.FullName}");
@@ -124,11 +124,11 @@ namespace NeuroSpeech.EntityAccessControl
             {
                 case EntityState.Modified:
                 case EntityState.Added:
-                    return (IQueryContext<T>)eh.ModifyFilter(qec);
+                    return eh.ModifyFilter(qec);
                 case EntityState.Deleted:
-                    return (IQueryContext<T>)eh.DeleteFilter(qec);
+                    return eh.DeleteFilter(qec);
             }
-            return (IQueryContext<T>)eh.Filter(qec);
+            return eh.Filter(qec);
         }
 
         private IQueryContext<T>? ApplyFKFilter<TP, T>(
@@ -137,7 +137,7 @@ namespace NeuroSpeech.EntityAccessControl
             where TP: class
         {
             var type = typeof(TP);
-            var eh = db.GetEntityEvents(type);
+            var eh = db.GetEntityEvents<TP>();
             if (eh == null)
             {
                 throw new EntityAccessException($"Access denied to {type.FullName}");
@@ -146,7 +146,7 @@ namespace NeuroSpeech.EntityAccessControl
             {
                 case EntityState.Modified:
                 case EntityState.Added:
-                    var fs = FilterFactory.From(db, typeof(T));
+                    var fs = FilterFactory.From(db, typeof(T), () => new QueryContext<T>(db, db.FilteredQuery<T>()));
                     var q = eh.ForeignKeyFilter(entry, fkProperty, value, fs);
                     if (q == null)
                     {

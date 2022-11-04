@@ -16,7 +16,7 @@ namespace NeuroSpeech.EntityAccessControl
     public delegate void IgnoreDelegate<T>(Expression<Func<T, object>> expression,
             JsonIgnoreCondition condition = JsonIgnoreCondition.Always);
 
-    public class DbEntityEvents<T> : IEntityEvents
+    public class DbEntityEvents<T> : IEntityEvents<T>
         where T: class
     {
         public bool EnforceSecurity { get; set; }

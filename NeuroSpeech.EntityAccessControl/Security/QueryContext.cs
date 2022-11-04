@@ -90,6 +90,11 @@ namespace NeuroSpeech.EntityAccessControl
         {
             return db.GetEntityEvents(type);
         }
+
+        public IEntityEvents<T>? GetEntityEvents<T>() where T : class
+        {
+            return db.GetEntityEvents<T>();
+        }
     }
 
     public class QueryContext<T>: IOrderedQueryContext<T>
@@ -397,7 +402,7 @@ namespace NeuroSpeech.EntityAccessControl
         {
             Expression<Func<T, IEnumerable<TProperty>>> path;
             IQueryable<T> q;
-            var eh = db.GetEntityEvents(typeof(TProperty));
+            var eh = db.GetEntityEvents<TProperty>();
             if (eh != null)
             {
                 var qec = new QueryExpressionContext<TProperty>(null, body) as IQueryContext;

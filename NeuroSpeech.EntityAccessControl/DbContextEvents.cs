@@ -28,6 +28,17 @@ namespace NeuroSpeech.EntityAccessControl
             return null;
         }
 
+        internal IEntityEvents<T1>? GetEvents<T1>(IServiceProvider services)
+            where T1 : class
+        {
+            var type = typeof(T1);
+            if (registrations.TryGetValue(type, out var t))
+            {
+                return services.Build(t) as IEntityEvents<T1>;
+            }
+            return null;
+        }
+
         public void Register<T1, TE>()
             where T1 : class
             where TE : DbEntityEvents<T1>

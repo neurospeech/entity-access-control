@@ -116,7 +116,7 @@ namespace NeuroSpeech.EntityAccessControl
             where T: class
         {
             var q = new QueryContext<T>(this, Set<T>());
-            var eh = events.GetEvents(services, typeof(T));
+            var eh = events.GetEvents<T>(services);
             if (eh == null)
             {
                 throw new EntityAccessException($"No security rule defined for entity {typeof(T).Name}");
@@ -128,6 +128,16 @@ namespace NeuroSpeech.EntityAccessControl
         public IEntityEvents? GetEntityEvents(Type type)
         {
             var eh = events.GetEvents(services, type);
+            if (eh != null)
+            {
+                eh.EnforceSecurity = this.EnforceSecurity;
+            }
+            return eh;
+        }
+
+        public IEntityEvents<T>? GetEntityEvents<T>() where T : class
+        {
+            var eh = events.GetEvents<T>(services);
             if (eh != null)
             {
                 eh.EnforceSecurity = this.EnforceSecurity;
@@ -419,22 +429,22 @@ namespace NeuroSpeech.EntityAccessControl
             where T: class
         {
             var type = typeof(T);
-            var eh = events.GetEvents(services, type);
+            var eh = events.GetEvents<T>(services);
             if (eh == null)
             {
                 throw new EntityAccessException($"Access denied to {type.FullName}");
             }
             if (asInclude)
-                return (IQueryContext<T>)eh.IncludeFilter(qec);
+                return eh.IncludeFilter(qec);
             switch(state)
             {
                 case EntityState.Modified:
                 case EntityState.Added:
-                    return (IQueryContext<T>)eh.ModifyFilter(qec);
+                    return eh.ModifyFilter(qec);
                 case EntityState.Deleted:
-                    return (IQueryContext<T>)eh.DeleteFilter(qec);
+                    return eh.DeleteFilter(qec);
             }
-            return (IQueryContext<T>)eh.Filter(qec);
+            return eh.Filter(qec);
         }
 
         Task ISecureQueryProvider.SaveChangesAsync(CancellationToken cancellationToken)
@@ -572,5 +582,6 @@ namespace NeuroSpeech.EntityAccessControl
         {
             Add(entity);
         }
+
     }
 }
