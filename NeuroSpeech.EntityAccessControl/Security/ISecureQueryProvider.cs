@@ -39,4 +39,55 @@ namespace NeuroSpeech.EntityAccessControl
         void Add(object entity);
         IEntityEvents<T>? GetEntityEvents<T>() where T : class;
     }
+
+    public static class SecureQueryProviderExtensions
+    {
+        internal static IQueryContext<T> CreateFilterQueryContext<T>(this ISecureQueryProvider db)
+            where T: class
+        {
+            var eh = db.GetEntityEvents<T>();
+            if (eh == null)
+            {
+                throw new EntityAccessException($"No security rule defined for entity {typeof(T).Name}");
+            }
+            eh.EnforceSecurity = db.EnforceSecurity;
+            return eh.Filter(new QueryContext<T>(db, db.Set<T>()));
+        }
+
+        internal static IQueryContext<T> CreateModifyFilterQueryContext<T>(this ISecureQueryProvider db)
+            where T : class
+        {
+            var eh = db.GetEntityEvents<T>();
+            if (eh == null)
+            {
+                throw new EntityAccessException($"No security rule defined for entity {typeof(T).Name}");
+            }
+            eh.EnforceSecurity = db.EnforceSecurity;
+            return eh.ModifyFilter(new QueryContext<T>(db, db.Set<T>()));
+        }
+
+        internal static IQueryContext<T> CreateDeleteFilterQueryContext<T>(this ISecureQueryProvider db)
+            where T : class
+        {
+            var eh = db.GetEntityEvents<T>();
+            if (eh == null)
+            {
+                throw new EntityAccessException($"No security rule defined for entity {typeof(T).Name}");
+            }
+            eh.EnforceSecurity = db.EnforceSecurity;
+            return eh.DeleteFilter(new QueryContext<T>(db, db.Set<T>()));
+        }
+
+        internal static IQueryContext<T> CreateIncludeFilterQueryContext<T>(this ISecureQueryProvider db)
+            where T : class
+        {
+            var eh = db.GetEntityEvents<T>();
+            if (eh == null)
+            {
+                throw new EntityAccessException($"No security rule defined for entity {typeof(T).Name}");
+            }
+            eh.EnforceSecurity = db.EnforceSecurity;
+            return eh.IncludeFilter(new QueryContext<T>(db, db.Set<T>()));
+        }
+    }
 }

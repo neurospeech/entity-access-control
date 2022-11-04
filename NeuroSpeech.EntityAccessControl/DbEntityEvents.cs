@@ -239,7 +239,7 @@ namespace NeuroSpeech.EntityAccessControl
 
         protected virtual IQueryContext? ForeignKeyFilter(ForeignKeyInfo<T> fk)
         {
-            return fk.Filtered();
+            return fk.ModifyFilter();
         }
 
         Task IEntityEvents.UpdatedAsync(object entity)

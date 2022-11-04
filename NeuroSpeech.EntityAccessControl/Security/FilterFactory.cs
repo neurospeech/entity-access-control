@@ -66,17 +66,27 @@ namespace NeuroSpeech.EntityAccessControl.Security
             return factory.Set<TEntity>();
         }
 
-        public IQueryContext<TEntity> Filtered<TEntity>()
+        public IQueryContext<TEntity> ModifyFilter<TEntity>()
             where TEntity : class
         {
-            return factory.Filtered<TEntity>();
+            return factory.ModifyFilter<TEntity>();
         }
 
-        internal IQueryContext Filtered()
+        public IQueryContext<TEntity> Filter<TEntity>()
+            where TEntity : class
         {
-            return factory.DefaultFilter();
+            return factory.Filter<TEntity>();
         }
 
+        internal IQueryContext ModifyFilter()
+        {
+            return factory.ModifyFilter();
+        }
+
+        internal IQueryContext Filter()
+        {
+            return factory.Filter();
+        }
     }
 
     //public class FilterFactoryHelper
@@ -101,27 +111,29 @@ namespace NeuroSpeech.EntityAccessControl.Security
     public readonly struct FilterFactory
     {
         private readonly ISecureQueryProvider db;
-        internal readonly Type fkPrimaryEntityType;
-        private readonly Func<IQueryContext> defaultFilter;
+        private readonly Func<IQueryContext> modifyFilter;
+        private readonly Func<IQueryContext> filter;
 
-        internal static FilterFactory From(ISecureQueryProvider db, Type fkPrimaryEntityType, Func<IQueryContext> defaultFilter)
-        {
-            return new FilterFactory(db, fkPrimaryEntityType, defaultFilter);
-        }
-
-        internal FilterFactory(ISecureQueryProvider db, Type fkPrimaryEntityType, Func<IQueryContext> defaultFilter)
+        internal FilterFactory(ISecureQueryProvider db,
+            Func<IQueryContext> modifyFilter,
+            Func<IQueryContext> filter)
         {
             this.db = db;
-            this.fkPrimaryEntityType = fkPrimaryEntityType;
-            this.defaultFilter = defaultFilter;
+            this.modifyFilter = modifyFilter;
+            this.filter = filter;
         }
 
-        public IQueryContext DefaultFilter()
+        public IQueryContext ModifyFilter()
         {
-            return defaultFilter();
+            return modifyFilter();
         }
 
-        public IQueryContext<T> Filtered<T>()
+        public IQueryContext Filter()
+        {
+            return filter();
+        }
+
+        public IQueryContext<T> ModifyFilter<T>()
             where T: class
         {
             var feqc = new QueryContext<T>(db, db.Set<T>());
@@ -131,6 +143,18 @@ namespace NeuroSpeech.EntityAccessControl.Security
                 throw new EntityAccessException($"Access to {typeof(T).Name} denied");
             }
             return eh.ModifyFilter(feqc);
+        }
+
+        public IQueryContext<T> Filter<T>()
+            where T : class
+        {
+            var feqc = new QueryContext<T>(db, db.Set<T>());
+            var eh = db.GetEntityEvents<T>();
+            if (eh == null)
+            {
+                throw new EntityAccessException($"Access to {typeof(T).Name} denied");
+            }
+            return eh.Filter(feqc);
         }
 
         public IQueryContext<T> Set<T>()

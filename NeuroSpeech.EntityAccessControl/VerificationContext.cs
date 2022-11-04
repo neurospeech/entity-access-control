@@ -146,7 +146,10 @@ namespace NeuroSpeech.EntityAccessControl
             {
                 case EntityState.Modified:
                 case EntityState.Added:
-                    var fs = FilterFactory.From(db, typeof(T), () => new QueryContext<T>(db, db.FilteredQuery<T>()));
+                    var fs = new FilterFactory(
+                        db,
+                        modifyFilter: () => db.CreateModifyFilterQueryContext<T>(),
+                        filter: () => db.CreateFilterQueryContext<T>());
                     var q = eh.ForeignKeyFilter(entry, fkProperty, value, fs);
                     if (q == null)
                     {
