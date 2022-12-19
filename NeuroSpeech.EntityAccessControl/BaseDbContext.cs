@@ -75,6 +75,8 @@ namespace NeuroSpeech.EntityAccessControl
                     return new SqlUnaryExpression(System.Linq.Expressions.ExpressionType.Convert, p, typeof(double), p.TypeMapping);
                 });
 
+            CastAs.Register(modelBuilder);
+
             modelBuilder.HasDbFunction(this.GetType().GetMethod(nameof(DateRangeView), new Type[] {
                 typeof(DateTime),
                 typeof(DateTime),

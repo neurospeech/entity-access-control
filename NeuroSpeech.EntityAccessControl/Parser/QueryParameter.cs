@@ -1,8 +1,12 @@
-﻿using NetTopologySuite.Geometries;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
+using Microsoft.EntityFrameworkCore.Storage;
+using NetTopologySuite.Geometries;
 using NetTopologySuite.IO;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Text.Json;
 
@@ -23,10 +27,41 @@ namespace NeuroSpeech.EntityAccessControl
         
         public static double Double(float n) => n;
 
+        public static int? Nullable(int v) => v;
+
+        public static long? Nullable(long v) => v;
+
+        public static double? Nullable(double v) => v;
+
+        public static float? Nullable(float v) => v;
+
+        public static bool? Nullable(bool v) => v;
+
+        public static DateTime? Nullable(DateTime v) => v;
+
+        public static DateTimeOffset? Nullable(DateTimeOffset v) => v;
+
+        public static Guid? Nullable(Guid v) => v;
+
+        public static Decimal? Nullable(decimal v) => v;
+
+        internal static void Register(ModelBuilder modelBuilder)
+        {
+            foreach(var method in typeof(CastAs).GetMethods())
+            {
+                if (method.Name == "Nullable")
+                {
+                    modelBuilder.HasDbFunction(method)
+                        .HasTranslation(a => a.ElementAt(0));
+                }
+            }
+        }
+
         internal static MethodInfo DoubleFromFloatNullableMethod = typeof(CastAs)
             .GetRuntimeMethod(nameof(Double), new Type[] { typeof(float?) })!;
         internal static MethodInfo DoubleFromFloatMethod = typeof(CastAs)
             .GetRuntimeMethod(nameof(Double), new Type[] { typeof(float) })!;
+
     }
 
     public readonly struct QueryParameter: IEnumerable<object>

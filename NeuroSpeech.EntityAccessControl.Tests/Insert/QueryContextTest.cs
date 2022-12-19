@@ -67,5 +67,27 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
 
         }
 
+        [TestMethod]
+        public async Task TestNullable()
+        {
+            using var scope = CreateScope();
+
+            var db = scope.GetRequiredService<AppDbContext>();
+
+            db.EnforceSecurity = true;
+            db.UserID = 2;
+            var sdb = db;
+
+            var qc = new QueryContext<Post>(db, db.FilteredQuery<Post>()) as IQueryContext<Post>;
+
+            var list = await qc.Select((x) => new
+            {
+                Nullable = CastAs.Nullable(x.Author.IsAdmin)
+            }).ToListAsync();
+
+            Assert.IsNotNull(list.FirstOrDefault());
+
+        }
+
     }
 }
