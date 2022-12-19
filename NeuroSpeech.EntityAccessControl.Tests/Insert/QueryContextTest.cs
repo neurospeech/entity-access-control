@@ -26,8 +26,6 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
 
             var qc = new QueryContext<Post>(db, db.Posts) as IQueryContext<Post>;
 
-            // db.Posts.Include(x => x.Tags).ThenInclude(x => x.Tag.Keywords);
-
             await qc
                 .Include(x => x.Tags)
                 .ThenInclude(a => a.Tag.Keywords)
