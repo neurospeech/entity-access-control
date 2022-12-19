@@ -27,15 +27,21 @@ namespace NeuroSpeech.EntityAccessControl
         
         public static double Double(float n) => n;
 
+        public static bool? Nullable(bool v) => v;
+
+        public static short? Nullable(short v) => v;
         public static int? Nullable(int v) => v;
 
         public static long? Nullable(long v) => v;
+        public static ushort? Nullable(ushort v) => v;
+        public static uint? Nullable(uint v) => v;
 
-        public static double? Nullable(double v) => v;
+        public static ulong? Nullable(ulong v) => v;
 
         public static float? Nullable(float v) => v;
+        public static double? Nullable(double v) => v;
 
-        public static bool? Nullable(bool v) => v;
+
 
         public static DateTime? Nullable(DateTime v) => v;
 
