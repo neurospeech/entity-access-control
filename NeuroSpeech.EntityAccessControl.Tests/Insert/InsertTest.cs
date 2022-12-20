@@ -13,6 +13,81 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
     [TestClass]
     public class InsertTest: BaseTest
     {
+
+        [TestMethod]
+        public async Task UnauthorizeDeleteAsync()
+        {
+            try
+            {
+
+                using var scope = CreateScope();
+                using var db = scope.GetRequiredService<AppDbContext>();
+
+                db.EnforceSecurity = true;
+                db.UserID = 2;
+                var sdb = db;
+                var p = new Post
+                {
+                    Name = "a"
+                };
+                sdb.Add(p);
+
+                await sdb.SaveChangesAsync();
+                db.UserID = 4;
+                db.Remove(p);
+                await sdb.SaveChangesAsync();
+
+
+                throw new InvalidOperationException();
+            }
+            catch (EntityAccessException ex)
+            {
+                System.Diagnostics.Debug.WriteLine(ex);
+            }
+        }
+
+        [TestMethod]
+        public async Task UnauthorizeEditAsync()
+        {
+            try
+            {
+
+                using var scope = CreateScope();
+                using var db = scope.GetRequiredService<AppDbContext>();
+
+                db.EnforceSecurity = true;
+                db.UserID = 2;
+                var sdb = db;
+                var p = new Post
+                {
+                    Name = "a",
+                    Tags = new List<PostTag> {
+                    new PostTag {
+                        Name = "funny"
+                    },
+                    new PostTag
+                    {
+                        Name = "public"
+                    }
+                }
+                };
+                sdb.Add(p);
+
+                await sdb.SaveChangesAsync();
+
+                db.UserID = 4;
+                p.Description = "Hey";
+                await sdb.SaveChangesAsync();
+
+
+                throw new InvalidOperationException();
+            }
+            catch (EntityAccessException ex)
+            {
+                System.Diagnostics.Debug.WriteLine(ex);
+            }
+        }
+
         [TestMethod]
         public async Task UnauthorizeAsync()
         {
@@ -58,9 +133,9 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
 
 
                 throw new InvalidOperationException();
-            } catch (EntityAccessException)
+            } catch (EntityAccessException ex)
             {
-
+                System.Diagnostics.Debug.WriteLine(ex);
             }
         }
 
@@ -318,9 +393,9 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
                 await sdb.SaveChangesAsync();
                 Assert.Fail();
 
-            } catch (EntityAccessException)
+            } catch (EntityAccessException ex)
             {
-
+                System.Diagnostics.Debug.WriteLine(ex);
             }
         }
 

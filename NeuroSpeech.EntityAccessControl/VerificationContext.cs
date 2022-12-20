@@ -30,6 +30,7 @@ namespace NeuroSpeech.EntityAccessControl
         private readonly IServiceProvider services;
         private List<Expression> selectExpressions = new List<Expression>();
 
+        // This will prevent same property key query multiple times in a single change set check
         private Dictionary<(Type, PropertyInfo, object), bool> queryCache = new Dictionary<(Type, PropertyInfo, object), bool>();
 
         private static Expression emptyString = Expression.Constant("");
@@ -196,7 +197,7 @@ namespace NeuroSpeech.EntityAccessControl
                 }
                 if (keys.Count > 0)
                 {
-                    this.QueueEntityKeyForeignKey<T, T>(e, keys);
+                    this.QueueEntityKey<T, T>(e, keys);
                 }
             }
 
@@ -228,7 +229,7 @@ namespace NeuroSpeech.EntityAccessControl
                     if (!properties.Contains(p))
                         continue;
                     var px = e.Property(p.Name);
-                    if (px.Metadata.PropertyInfo.GetCustomAttribute<SkipVerificationAttribute>() != null)
+                    if (px.Metadata.PropertyInfo?.GetCustomAttribute<SkipVerificationAttribute>() != null)
                         continue;
                     if (px.IsTemporary)
                         continue;
@@ -244,6 +245,10 @@ namespace NeuroSpeech.EntityAccessControl
                         }
                     }
                     var pKey = principalKey.Properties[0];
+                    if (pKey.PropertyInfo == null)
+                    {
+                        continue;
+                    }
                     keys.Add((pKey.PropertyInfo, px.CurrentValue, px.Metadata.PropertyInfo));
                 }
 
@@ -256,6 +261,67 @@ namespace NeuroSpeech.EntityAccessControl
                         .Invoke(e, keys, fc);
                 }
             }
+            return 0;
+        }
+
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public int QueueEntityKey<TP, T>(
+            EntityEntry e,
+            List<(PropertyInfo, object, PropertyInfo)> keys)
+            where T : class
+            where TP : class
+        {
+            Type keyType = typeof(T);
+            Type entityType = typeof(TP);
+            var isSameType = entityType == keyType;
+
+
+            var typeName = keyType.Name;
+            Expression? body = null;
+            var pe = Expression.Parameter(keyType, "x");
+            bool cached = true;
+            foreach (var (property, value, p2) in keys)
+            {
+                var cacheKey = (keyType, property, value);
+                if (!queryCache.ContainsKey(cacheKey))
+                {
+                    cached = false;
+                    queryCache[cacheKey] = true;
+                }
+                Expression<Func<object>> closure = () => value;
+                var exp = Expression.Equal(Expression.Property(pe, property), Expression.Convert(closure.Body, property.PropertyType));
+                if (body == null)
+                {
+                    body = exp;
+                    continue;
+                }
+                body = Expression.AndAlso(body, exp);
+            }
+
+            if (cached)
+            {
+                return 0;
+            }
+
+            var state = ToState(e.State);
+
+
+            var qc = new QueryContext<T>(db, db.Set<T>());
+            var qc1 = ApplyFilter<T>(e.State, qc);
+            if (qc1 == null || qc == qc1)
+            {
+#if DEBUG
+                System.Diagnostics.Debug.WriteLine($"No active rule for {keyType.Name}");
+                System.Diagnostics.Debug.WriteLine("");
+#endif
+                return 0;
+            }
+
+            var q = qc1.ToQuery();
+            Expression<Func<T, bool>> filter = Expression.Lambda<Func<T, bool>>(body, pe);
+            q = q.Where(filter);
+            var error = $"Cannot {state} type {typeName}. ";
+            this.AddErrorExpression<T>(q.Expression, error);
             return 0;
         }
 
@@ -301,8 +367,8 @@ namespace NeuroSpeech.EntityAccessControl
 
             var state = ToState(e.State);
 
-            if (!isSameType)
-            {
+            //if (!isSameType)
+            //{
                 foreach(var (key,value, fk) in keys)
                 {
                     var fkc = ApplyFKFilter<TP, T>(e, key, value, fk);
@@ -315,25 +381,25 @@ namespace NeuroSpeech.EntityAccessControl
                     }
                 }
                 return 0;
-            }
+//            }
 
-            var qc = new QueryContext<T>(db, db.Set<T>());
-            var qc1 = ApplyFilter<T>(e.State, qc);
-            if (qc1 == null || qc == qc1)
-            {
-#if DEBUG                
-                System.Diagnostics.Debug.WriteLine($"No active rule for {keyType.Name}");
-                System.Diagnostics.Debug.WriteLine("");
-#endif
-                return 0;
-            }
+//            var qc = new QueryContext<T>(db, db.Set<T>());
+//            var qc1 = ApplyFilter<T>(e.State, qc);
+//            if (qc1 == null || qc == qc1)
+//            {
+//#if DEBUG                
+//                System.Diagnostics.Debug.WriteLine($"No active rule for {keyType.Name}");
+//                System.Diagnostics.Debug.WriteLine("");
+//#endif
+//                return 0;
+//            }
 
-            var q = qc1.ToQuery();
-            Expression<Func<T, bool>> filter = Expression.Lambda<Func<T,bool>>(body, pe);
-            q = q.Where(filter);
-            var error = $"Cannot {state} type {typeName}. ";
-            this.AddErrorExpression<T>(q.Expression, error);
-            return 0;
+//            var q = qc1.ToQuery();
+//            Expression<Func<T, bool>> filter = Expression.Lambda<Func<T,bool>>(body, pe);
+//            q = q.Where(filter);
+//            var error = $"Cannot {state} type {typeName}. ";
+//            this.AddErrorExpression<T>(q.Expression, error);
+//            return 0;
         }
 
         private string ToState(EntityState state)

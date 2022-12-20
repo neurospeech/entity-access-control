@@ -139,6 +139,7 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Model
 
         public PostType PostType { get; set; }
 
+        public string Description { get; set; }
 
         public long AuthorID { get; set; }
 
