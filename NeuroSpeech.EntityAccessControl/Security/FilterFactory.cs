@@ -3,6 +3,7 @@ using NeuroSpeech.EntityAccessControl.Internal;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
@@ -53,37 +54,37 @@ namespace NeuroSpeech.EntityAccessControl.Security
             return false;
         }
 
-        public IQueryContext<T> Where(Expression<Func<T,bool>> filter)
+        public IQueryable<T> Where(Expression<Func<T,bool>> filter)
         {
             // careful
             // the type must change... 
             return factory.Set<T>().Where(filter);
         }
 
-        public IQueryContext<TEntity> Set<TEntity>()
+        public IQueryable<TEntity> Set<TEntity>()
             where TEntity: class
         {
             return factory.Set<TEntity>();
         }
 
-        public IQueryContext<TEntity> ModifyFilter<TEntity>()
+        public IQueryable<TEntity> ModifyFilter<TEntity>()
             where TEntity : class
         {
             return factory.ModifyFilter<TEntity>();
         }
 
-        public IQueryContext<TEntity> Filter<TEntity>()
+        public IQueryable<TEntity> Filter<TEntity>()
             where TEntity : class
         {
             return factory.Filter<TEntity>();
         }
 
-        internal IQueryContext ModifyFilter()
+        internal IQueryable ModifyFilter()
         {
             return factory.ModifyFilter();
         }
 
-        internal IQueryContext Filter()
+        internal IQueryable Filter()
         {
             return factory.Filter();
         }
@@ -111,32 +112,32 @@ namespace NeuroSpeech.EntityAccessControl.Security
     public readonly struct FilterFactory
     {
         private readonly ISecureQueryProvider db;
-        private readonly Func<IQueryContext> modifyFilter;
-        private readonly Func<IQueryContext> filter;
+        private readonly Func<IQueryable> modifyFilter;
+        private readonly Func<IQueryable> filter;
 
         internal FilterFactory(ISecureQueryProvider db,
-            Func<IQueryContext> modifyFilter,
-            Func<IQueryContext> filter)
+            Func<IQueryable> modifyFilter,
+            Func<IQueryable> filter)
         {
             this.db = db;
             this.modifyFilter = modifyFilter;
             this.filter = filter;
         }
 
-        public IQueryContext ModifyFilter()
+        public IQueryable ModifyFilter()
         {
             return modifyFilter();
         }
 
-        public IQueryContext Filter()
+        public IQueryable Filter()
         {
             return filter();
         }
 
-        public IQueryContext<T> ModifyFilter<T>()
+        public IQueryable<T> ModifyFilter<T>()
             where T: class
         {
-            var feqc = new QueryContext<T>(db, db.Set<T>());
+            var feqc = db.Set<T>();
             var eh = db.GetEntityEvents<T>();
             if (eh == null)
             {
@@ -145,10 +146,10 @@ namespace NeuroSpeech.EntityAccessControl.Security
             return eh.ModifyFilter(feqc);
         }
 
-        public IQueryContext<T> Filter<T>()
+        public IQueryable<T> Filter<T>()
             where T : class
         {
-            var feqc = new QueryContext<T>(db, db.Set<T>());
+            var feqc = db.Set<T>();
             var eh = db.GetEntityEvents<T>();
             if (eh == null)
             {
@@ -157,10 +158,10 @@ namespace NeuroSpeech.EntityAccessControl.Security
             return eh.Filter(feqc);
         }
 
-        public IQueryContext<T> Set<T>()
+        public IQueryable<T> Set<T>()
             where T: class
         {
-            return new QueryContext<T>(db, db.Set<T>());
+            return db.Set<T>();
         }
     }
 }

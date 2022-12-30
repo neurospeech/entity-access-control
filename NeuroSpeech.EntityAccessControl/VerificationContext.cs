@@ -110,9 +110,9 @@ namespace NeuroSpeech.EntityAccessControl
                    .Invoke(entry);
         }
 
-        private IQueryContext<T> ApplyFilter<T>(
+        private IQueryable<T> ApplyFilter<T>(
            EntityState state,
-           IQueryContext<T> qec)
+           IQueryable<T> qec)
            where T : class
         {
             var type = typeof(T);
@@ -132,7 +132,7 @@ namespace NeuroSpeech.EntityAccessControl
             return eh.Filter(qec);
         }
 
-        private IQueryContext<T>? ApplyFKFilter<TP, T>(
+        private IQueryable<T>? ApplyFKFilter<TP, T>(
            EntityEntry entry, PropertyInfo key, object? value,PropertyInfo fkProperty)
            where T : class
             where TP: class
@@ -156,14 +156,14 @@ namespace NeuroSpeech.EntityAccessControl
                     {
                         return null;
                     }
-                    if (q is IQueryContext<T> qr)
+                    if (q is IQueryable<T> qr)
                     {
                         return qr;
                     }
-                    if (q is IQueryContext<TP> qpr)
+                    if (q is IQueryable<TP> qpr)
                     {
-                        var rq = qpr.ToQuery();
-                        return new QueryContext<T>(db, db.Set<T>()).Where(x => rq.Any());
+                        var rq = qpr;
+                        return db.Set<T>().Where(x => rq.Any());
                     }
                     throw new NotImplementedException();
             }
@@ -306,7 +306,7 @@ namespace NeuroSpeech.EntityAccessControl
             var state = ToState(e.State);
 
 
-            var qc = new QueryContext<T>(db, db.Set<T>());
+            var qc = db.Set<T>();
             var qc1 = ApplyFilter<T>(e.State, qc);
             if (qc1 == null || qc == qc1)
             {
@@ -317,7 +317,7 @@ namespace NeuroSpeech.EntityAccessControl
                 return 0;
             }
 
-            var q = qc1.ToQuery();
+            var q = qc1;
             Expression<Func<T, bool>> filter = Expression.Lambda<Func<T, bool>>(body, pe);
             q = q.Where(filter);
             var error = $"Cannot {state} type {typeName}. ";
@@ -374,7 +374,7 @@ namespace NeuroSpeech.EntityAccessControl
                     var fkc = ApplyFKFilter<TP, T>(e, key, value, fk);
                     if (fkc != null)
                     {
-                        var fkq = fkc.ToQuery();
+                        var fkq = fkc;
                         var fkExp = Expression.Lambda<Func<T, bool>>(body, pe);
                         fkq = fkq.Where(fkExp);
                         this.AddErrorExpression<T>(fkq.Expression, $"Cannot {state} type {typeof(TP).Name} without access to type {typeName}. ");

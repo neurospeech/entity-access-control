@@ -545,7 +545,7 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
             LinqMethodOptions options)
             where T : class
         {
-            var q = new QueryContext<T>(db, db.FilteredQuery<T>()!, new ErrorModel());
+            var q = db.FilteredQuery<T>();
             var result = await MethodParser.Instance.Parse<T>(q, options);
             return Serialize(result);
         }

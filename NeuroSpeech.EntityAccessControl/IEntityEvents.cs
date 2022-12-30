@@ -15,12 +15,12 @@ namespace NeuroSpeech.EntityAccessControl
 
         bool EnforceSecurity { get; set; }
 
-        IQueryContext Filter(IQueryContext q);
+        IQueryable Filter(IQueryable q);
 
-        IQueryContext ModifyFilter(IQueryContext q);
-        IQueryContext DeleteFilter(IQueryContext q);
+        IQueryable ModifyFilter(IQueryable q);
+        IQueryable DeleteFilter(IQueryable q);
 
-        IQueryContext IncludeFilter(IQueryContext q);
+        IQueryable IncludeFilter(IQueryable q);
 
         List<PropertyInfo> GetIgnoreConditions(string typeCacheKey);
 
@@ -38,15 +38,15 @@ namespace NeuroSpeech.EntityAccessControl
 
         Task DeletedAsync(object entity);
 
-        IQueryContext? ForeignKeyFilter(EntityEntry entity, PropertyInfo key, object value, FilterFactory fs);
+        IQueryable? ForeignKeyFilter(EntityEntry entity, PropertyInfo key, object value, FilterFactory fs);
     }
 
     public interface IEntityEvents<T> : IEntityEvents
         where T : class
     {
-        IQueryContext<T> DeleteFilter(IQueryContext<T> q);
-        IQueryContext<T> Filter(IQueryContext<T> q);
-        IQueryContext<T> IncludeFilter(IQueryContext<T> q);
-        IQueryContext<T> ModifyFilter(IQueryContext<T> q);
+        IQueryable<T> DeleteFilter(IQueryable<T> q);
+        IQueryable<T> Filter(IQueryable<T> q);
+        IQueryable<T> IncludeFilter(IQueryable<T> q);
+        IQueryable<T> ModifyFilter(IQueryable<T> q);
     }
 }

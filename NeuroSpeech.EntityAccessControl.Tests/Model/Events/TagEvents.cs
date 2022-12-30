@@ -1,4 +1,5 @@
-﻿namespace NeuroSpeech.EntityAccessControl.Tests.Model.Events
+﻿using System.Linq;
+namespace NeuroSpeech.EntityAccessControl.Tests.Model.Events
 {
     internal class TagEvents : AppEntityEvents<Tag>
     {
@@ -6,7 +7,7 @@
         {
         }
 
-        public override IQueryContext<Tag> Filter(IQueryContext<Tag> q)
+        public override IQueryable<Tag> Filter(IQueryable<Tag> q)
         {
             return q;
         }

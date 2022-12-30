@@ -19,6 +19,7 @@ using System.Linq.Expressions;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore.Metadata;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore.Query;
 
 namespace NeuroSpeech.EntityAccessControl
 {
@@ -81,14 +82,14 @@ namespace NeuroSpeech.EntityAccessControl
                 typeof(DateTime),
                 typeof(DateTime),
                 typeof(string)
-            }));
+            })!);
 
             modelBuilder.HasDbFunction(this.GetType().GetMethod(nameof(JsonIDs), new Type[] {
                 typeof(string)
-            }));
+            })!);
             modelBuilder.HasDbFunction(this.GetType().GetMethod(nameof(JsonStringArray), new Type[] {
                 typeof(string)
-            }));
+            })!);
         }
 
         public IQueryable<JsonLongValue> JsonIDs(string json)
@@ -117,14 +118,14 @@ namespace NeuroSpeech.EntityAccessControl
         public IQueryable<T> FilteredQuery<T>()
             where T: class
         {
-            var q = new QueryContext<T>(this, Set<T>());
+            var q = Set<T>();
             var eh = events.GetEvents<T>(services);
             if (eh == null)
             {
                 throw new EntityAccessException($"No security rule defined for entity {typeof(T).Name}");
             }
             eh.EnforceSecurity = EnforceSecurity;
-            return eh.Filter(q).ToQuery();
+            return new SecureQueryable<T>(this, eh.Filter(q));
         }
 
         public IEntityEvents? GetEntityEvents(Type type)
@@ -417,16 +418,16 @@ namespace NeuroSpeech.EntityAccessControl
             });
         }
 
-        public IQueryContext<T> Apply<T>(IQueryContext<T> qec, bool asInclude = false)
+        public IQueryable<T> Apply<T>(IQueryable<T> qec, bool asInclude = false)
             where T: class
         {
             return ApplyFilter<T>(EntityState.Unchanged, qec, asInclude);
         }
 
         [EditorBrowsable(EditorBrowsableState.Never)]
-        public IQueryContext<T> ApplyFilter<T>(
+        public IQueryable<T> ApplyFilter<T>(
             EntityState state,
-            IQueryContext<T> qec,
+            IQueryable<T> qec,
             bool asInclude = false)
             where T: class
         {

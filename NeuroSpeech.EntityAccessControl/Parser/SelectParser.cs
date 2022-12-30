@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 namespace NeuroSpeech.EntityAccessControl
 {
 
-    public delegate Task<IEnumerable<object>> SelectDelegate<T>(IQueryContext<T> q, params QueryParameter[] args);
+    public delegate Task<IEnumerable<object>> SelectDelegate<T>(IQueryable<T> q, params QueryParameter[] args);
 
     public class SelectParser
     {
@@ -20,7 +20,7 @@ namespace NeuroSpeech.EntityAccessControl
         private Dictionary<(Type, string, int), Task> cache
             = new Dictionary<(Type, string, int), Task>();
 
-        public async Task<IEnumerable<object>> Parse<T>(IQueryContext<T> q, string select, JsonElement parameters)
+        public async Task<IEnumerable<object>> Parse<T>(IQueryable<T> q, string select, JsonElement parameters)
         {
             QueryParameter[] plist = Array.Empty<QueryParameter>();
             if (parameters.ValueKind == JsonValueKind.Array)
@@ -80,9 +80,9 @@ using System.Collections.Generic;
 using System.Text;
 using System;
 
-public static async Task<IEnumerable<object>> Query(IQueryContext<{type.FullName}> q, params QueryParameter[] args) {{
+public static async Task<IEnumerable<object>> Query(IQueryable<{type.FullName}> q, params QueryParameter[] args) {{
 {sb}
-return (await q.Select({code}).ToQuery().ToListAsync()).OfType<object>();
+return (await q.Select({code}).ToListAsync()).OfType<object>();
 }}
 
 return Query;

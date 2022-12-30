@@ -1,4 +1,6 @@
-﻿namespace NeuroSpeech.EntityAccessControl.Tests.Model.Events
+﻿using System.Linq;
+
+namespace NeuroSpeech.EntityAccessControl.Tests.Model.Events
 {
     public class AccountEvents: DbEntityEvents<Account>
     {
@@ -16,7 +18,7 @@
             });
         }
 
-        public override IQueryContext<Account> Filter(IQueryContext<Account> q)
+        public override IQueryable<Account> Filter(IQueryable<Account> q)
         {
             return q.Where(x => x.AccountID == db.UserID && !x.Banned);
         }

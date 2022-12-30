@@ -24,7 +24,7 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
             db.UserID = 2;
             var sdb = db;
 
-            var qc = new QueryContext<Post>(db, db.Posts) as IQueryContext<Post>;
+            var qc = db.Posts;
 
             await qc
                 .Include(x => x.Tags)
@@ -45,7 +45,7 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
             db.UserID = 2;
             var sdb = db;
 
-            var qc = new QueryContext<Account>(db, db.FilteredQuery<Account>()) as IQueryContext<Account>;
+            var qc = db.FilteredQuery<Account>();
 
             var end = DateTime.UtcNow;
             var start = end.AddMonths(-1);
@@ -76,7 +76,7 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
             db.UserID = 2;
             var sdb = db;
 
-            var qc = new QueryContext<Post>(db, db.FilteredQuery<Post>()) as IQueryContext<Post>;
+            var qc = db.FilteredQuery<Post>();
 
             var list = await qc.Select((x) => new
             {

@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore.ChangeTracking;
 using NeuroSpeech.EntityAccessControl.Security;
 using System.Reflection;
+using System.Linq;
 
 namespace NeuroSpeech.EntityAccessControl.Tests.Model.Events
 {
@@ -10,13 +11,13 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Model.Events
         {
         }
 
-        public override IQueryContext<PostActivity> Filter(IQueryContext<PostActivity> q)
+        public override IQueryable<PostActivity> Filter(IQueryable<PostActivity> q)
         {
             return q.Where(x => x.AccountID == db.UserID);
         }
 
 
-        protected override IQueryContext ForeignKeyFilter(ForeignKeyInfo<PostActivity> fk)
+        protected override IQueryable ForeignKeyFilter(ForeignKeyInfo<PostActivity> fk)
         {
             if(fk.Is(x => x.PostID))
             {

@@ -1,5 +1,5 @@
 ﻿using System.Threading.Tasks;
-
+using System.Linq;
 namespace NeuroSpeech.EntityAccessControl.Tests.Model.Events
 {
     internal class PostEvents: AppEntityEvents<Post>
@@ -9,7 +9,7 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Model.Events
             
         }
 
-        public override IQueryContext<Post> Filter(IQueryContext<Post> q)
+        public override IQueryable<Post> Filter(IQueryable<Post> q)
         {
             return q.Where(x => x.AuthorID == db.UserID);
         }

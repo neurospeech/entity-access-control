@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Query;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,7 +29,7 @@ namespace NeuroSpeech.EntityAccessControl
         List<PropertyInfo> GetIgnoredProperties(Type type);
 
         List<PropertyInfo> GetReadonlyProperties(Type type);
-        IQueryContext<T> Apply<T>(IQueryContext<T> qec, bool asInclude = false) where T : class;
+        IQueryable<T> Apply<T>(IQueryable<T> qec, bool asInclude = false) where T : class;
         Task SaveChangesAsync(CancellationToken cancellationToken = default);
         Task<object?> FindByKeysAsync(IEntityType t, JsonElement item, CancellationToken cancellation = default);
 
@@ -42,7 +43,7 @@ namespace NeuroSpeech.EntityAccessControl
 
     public static class SecureQueryProviderExtensions
     {
-        internal static IQueryContext<T> CreateFilterQueryContext<T>(this ISecureQueryProvider db)
+        internal static IQueryable<T> CreateFilterQueryContext<T>(this ISecureQueryProvider db)
             where T: class
         {
             var eh = db.GetEntityEvents<T>();
@@ -51,10 +52,10 @@ namespace NeuroSpeech.EntityAccessControl
                 throw new EntityAccessException($"No security rule defined for entity {typeof(T).Name}");
             }
             eh.EnforceSecurity = db.EnforceSecurity;
-            return eh.Filter(new QueryContext<T>(db, db.Set<T>()));
+            return eh.Filter(db.Set<T>());
         }
 
-        internal static IQueryContext<T> CreateModifyFilterQueryContext<T>(this ISecureQueryProvider db)
+        internal static IQueryable<T> CreateModifyFilterQueryContext<T>(this ISecureQueryProvider db)
             where T : class
         {
             var eh = db.GetEntityEvents<T>();
@@ -63,10 +64,10 @@ namespace NeuroSpeech.EntityAccessControl
                 throw new EntityAccessException($"No security rule defined for entity {typeof(T).Name}");
             }
             eh.EnforceSecurity = db.EnforceSecurity;
-            return eh.ModifyFilter(new QueryContext<T>(db, db.Set<T>()));
+            return eh.ModifyFilter(db.Set<T>());
         }
 
-        internal static IQueryContext<T> CreateDeleteFilterQueryContext<T>(this ISecureQueryProvider db)
+        internal static IQueryable<T> CreateDeleteFilterQueryContext<T>(this ISecureQueryProvider db)
             where T : class
         {
             var eh = db.GetEntityEvents<T>();
@@ -75,10 +76,10 @@ namespace NeuroSpeech.EntityAccessControl
                 throw new EntityAccessException($"No security rule defined for entity {typeof(T).Name}");
             }
             eh.EnforceSecurity = db.EnforceSecurity;
-            return eh.DeleteFilter(new QueryContext<T>(db, db.Set<T>()));
+            return eh.DeleteFilter(db.Set<T>());
         }
 
-        internal static IQueryContext<T> CreateIncludeFilterQueryContext<T>(this ISecureQueryProvider db)
+        internal static IQueryable<T> CreateIncludeFilterQueryContext<T>(this ISecureQueryProvider db)
             where T : class
         {
             var eh = db.GetEntityEvents<T>();
@@ -87,7 +88,7 @@ namespace NeuroSpeech.EntityAccessControl
                 throw new EntityAccessException($"No security rule defined for entity {typeof(T).Name}");
             }
             eh.EnforceSecurity = db.EnforceSecurity;
-            return eh.IncludeFilter(new QueryContext<T>(db, db.Set<T>()));
+            return eh.IncludeFilter(db.Set<T>());
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿namespace NeuroSpeech.EntityAccessControl.Tests.Model.Events
+﻿using System.Linq;
+namespace NeuroSpeech.EntityAccessControl.Tests.Model.Events
 {
     internal class PostAuthorEvents: AppEntityEvents<PostAuthor>
     {
@@ -6,7 +7,7 @@
         {
         }
 
-        public override IQueryContext<PostAuthor> Filter(IQueryContext<PostAuthor> q)
+        public override IQueryable<PostAuthor> Filter(IQueryable<PostAuthor> q)
         {
             return q.Where(x => x.AccountID == db.UserID);
         }

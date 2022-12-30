@@ -25,15 +25,15 @@ namespace NeuroSpeech.EntityAccessControl
         //    return nf;
         //}
 
-        public Func<IQueryContext<T>, TC, IQueryContext<T>> As<T, TC>()
+        public Func<IQueryable<T>, TC, IQueryable<T>> As<T, TC>()
             where T: class
         {
             var t = typeof(T);
             if (cached.TryGetValue(t, out var r))
-                return (r as Func<IQueryContext<T>, TC, IQueryContext<T>>)!;
+                return (r as Func<IQueryable<T>, TC, IQueryable<T>>)!;
 
             // setup cache...
-            Func<IQueryContext<T>, TC, IQueryContext<T>>? nf = null;
+            Func<IQueryable<T>, TC, IQueryable<T>>? nf = null;
 
             List<Type> allTypes = new List<Type>();
             var start = t;
@@ -47,17 +47,17 @@ namespace NeuroSpeech.EntityAccessControl
                 if(rules.TryGetValue(type, out var tr)) {
                     if (nf == null)
                     {
-                        nf = asMethod.MakeGenericMethod(t, type, typeof(TC)).Invoke(null, new object[] { tr } ) as Func<IQueryContext<T>, TC, IQueryContext<T>>;
+                        nf = asMethod.MakeGenericMethod(t, type, typeof(TC)).Invoke(null, new object[] { tr } ) as Func<IQueryable<T>, TC, IQueryable<T>>;
                     } else
                     {
-                        nf += (asMethod.MakeGenericMethod(t, type, typeof(TC)).Invoke(null, new object[] { tr } ) as Func<IQueryContext<T>, TC, IQueryContext<T>>)!;
+                        nf += (asMethod.MakeGenericMethod(t, type, typeof(TC)).Invoke(null, new object[] { tr } ) as Func<IQueryable<T>, TC, IQueryable<T>>)!;
                     }
                 }
             }
 
             if(rules.TryGetValue(t, out r))
             {
-                nf += (r as Func<IQueryContext<T>, TC, IQueryContext<T>>)!;
+                nf += (r as Func<IQueryable<T>, TC, IQueryable<T>>)!;
                 cached[t] = nf;
                 return nf;
             }
@@ -70,7 +70,7 @@ namespace NeuroSpeech.EntityAccessControl
             return nf;
         }
 
-        public void SetFunc<T, TC>(Func<IQueryContext<T>, TC, IQueryContext<T>>? filter)
+        public void SetFunc<T, TC>(Func<IQueryable<T>, TC, IQueryable<T>>? filter)
         {
             if (filter == null)
             {

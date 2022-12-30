@@ -125,24 +125,24 @@ namespace NeuroSpeech.EntityAccessControl
         }
 
 
-        public virtual IQueryContext<T> Filter(IQueryContext<T> q)
+        public virtual IQueryable<T> Filter(IQueryable<T> q)
         {
             if (EnforceSecurity)
                 throw new EntityAccessException($"No security rule defined for {typeof(T).Name}");
             return q;
         }
 
-        public virtual IQueryContext<T> ModifyFilter(IQueryContext<T> q)
+        public virtual IQueryable<T> ModifyFilter(IQueryable<T> q)
         {
             return Filter(q);
         }
 
-        public virtual IQueryContext<T> DeleteFilter(IQueryContext<T> q)
+        public virtual IQueryable<T> DeleteFilter(IQueryable<T> q)
         {
             return ModifyFilter(q);
         }
 
-        public virtual IQueryContext<T> IncludeFilter(IQueryContext<T> q)
+        public virtual IQueryable<T> IncludeFilter(IQueryable<T> q)
         {
             return Filter(q);
         }
@@ -158,25 +158,25 @@ namespace NeuroSpeech.EntityAccessControl
         //}
 
 
-        IQueryContext IEntityEvents.Filter(IQueryContext q)
+        IQueryable IEntityEvents.Filter(IQueryable q)
         {
-            return Filter((IQueryContext<T>)q);
+            return Filter((IQueryable<T>)q);
         }
 
-        IQueryContext IEntityEvents.IncludeFilter(IQueryContext q)
+        IQueryable IEntityEvents.IncludeFilter(IQueryable q)
         {
-            return IncludeFilter((IQueryContext<T>)q);
+            return IncludeFilter((IQueryable<T>)q);
         }
 
 
-        IQueryContext IEntityEvents.ModifyFilter(IQueryContext q)
+        IQueryable IEntityEvents.ModifyFilter(IQueryable q)
         {
-            return ModifyFilter((IQueryContext<T>)q);
+            return ModifyFilter((IQueryable<T>)q);
         }
 
-        IQueryContext IEntityEvents.DeleteFilter(IQueryContext q)
+        IQueryable IEntityEvents.DeleteFilter(IQueryable q)
         {
-            return DeleteFilter((IQueryContext<T>)q);
+            return DeleteFilter((IQueryable<T>)q);
         }
 
         public virtual Task DeletedAsync(T entity)
@@ -228,7 +228,7 @@ namespace NeuroSpeech.EntityAccessControl
             return Task.CompletedTask;
         }
 
-        IQueryContext? IEntityEvents.ForeignKeyFilter(EntityEntry entity, PropertyInfo key, object value, FilterFactory fs)
+        IQueryable? IEntityEvents.ForeignKeyFilter(EntityEntry entity, PropertyInfo key, object value, FilterFactory fs)
         {
             if(!EnforceSecurity)
             {
@@ -237,7 +237,7 @@ namespace NeuroSpeech.EntityAccessControl
             return ForeignKeyFilter(new ForeignKeyInfo<T>(entity, key, value, fs));
         }
 
-        protected virtual IQueryContext? ForeignKeyFilter(ForeignKeyInfo<T> fk)
+        protected virtual IQueryable? ForeignKeyFilter(ForeignKeyInfo<T> fk)
         {
             return fk.ModifyFilter();
         }
