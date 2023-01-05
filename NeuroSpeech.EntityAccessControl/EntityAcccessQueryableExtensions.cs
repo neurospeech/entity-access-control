@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query;
 using NeuroSpeech.EntityAccessControl.Parser;
 using System;
 using System.Collections.Generic;
@@ -72,6 +73,63 @@ namespace NeuroSpeech.EntityAccessControl
             });
 
             return join;
+        }
+
+        public static IIncludableQueryable<T, TProperty>
+            IncludeSecure<T, TProperty>(this IQueryable<T> queryable, string path)
+            where T : class
+        {
+            throw new NotSupportedException();
+        }
+
+
+
+        public static IIncludableQueryable<T, TProperty> 
+            IncludeSecure<T, TProperty>(this IQueryable<T> queryable, Expression<Func<T,TProperty>> path)
+            where T: class
+        {
+            if (queryable.Provider is EntityAccessQueryProvider qp)
+            {
+                return new SecureIncludableQueryable<T, TProperty>( qp.db, qp.CreateQuery<T>(Expression.Call(
+                    instance: null,
+                    method: ReflectionHelper.QueryableClass.Include(typeof(T), typeof(TProperty)),
+                    arguments: new[] {
+                        queryable.Expression, Expression.Quote(path)
+                    })));
+            }
+            return queryable.Include(path);
+        }
+
+        public static IIncludableQueryable<T, TNext>
+            ThenIncludeSecure<T, TProperty, TNext>(this IIncludableQueryable<T, IEnumerable<TProperty>> queryable, Expression<Func<TProperty, TNext>> path)
+            where T : class
+        {
+            if (queryable.Provider is EntityAccessQueryProvider qp)
+            {
+                return new SecureIncludableQueryable<T, TNext>(qp.db, qp.CreateQuery<T>(Expression.Call(
+                    instance: null,
+                    method: ReflectionHelper.QueryableClass.ThenIncludeEnumerable(typeof(T), typeof(TProperty), typeof(TNext)),
+                    arguments: new[] {
+                        queryable.Expression, Expression.Quote(path)
+                    })));
+            }
+            return queryable.ThenInclude(path);
+        }
+
+        public static IIncludableQueryable<T, TNext>
+            ThenIncludeSecure<T, TProperty, TNext>(this IIncludableQueryable<T, TProperty> queryable, Expression<Func<TProperty, TNext>> path)
+            where T : class
+        {
+            if (queryable.Provider is EntityAccessQueryProvider qp)
+            {
+                return new SecureIncludableQueryable<T, TNext>(qp.db, qp.CreateQuery<T>(Expression.Call(
+                    instance: null,
+                    method: ReflectionHelper.QueryableClass.ThenInclude(typeof(T), typeof(TProperty), typeof(TNext)),
+                    arguments: new[] {
+                        queryable.Expression, Expression.Quote(path)
+                    })));
+            }
+            return queryable.ThenInclude(path);
         }
 
 

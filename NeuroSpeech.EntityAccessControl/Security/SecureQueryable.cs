@@ -10,6 +10,13 @@ using System.Xml.Linq;
 
 namespace NeuroSpeech.EntityAccessControl
 {
+    internal class SecureIncludableQueryable<T, TP> : SecureQueryable<T>, IIncludableQueryable<T, TP>
+    {
+        public SecureIncludableQueryable(ISecureQueryProvider secureQueryProvider, IQueryable<T> start) : base(secureQueryProvider, start)
+        {
+        }
+    }
+
     internal class SecureQueryable<T> : IOrderedQueryable<T>, IAsyncEnumerable<T>
     {
         private readonly IQueryable<T> start;

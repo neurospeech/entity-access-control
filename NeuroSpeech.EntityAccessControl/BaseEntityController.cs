@@ -500,13 +500,13 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
                         lm.Expression = null;
                         break;
                     case "include":
-                        lm.Method = "Include";
+                        lm.Method = "IncludeSecure";
                         hasInclude = true;
                         if (!lm.Expression.Contains("=>"))
                             lm.Expression = System.Text.Json.JsonSerializer.Serialize(lm.Expression);
                         break;
                     case "thenInclude":
-                        lm.Method = "ThenInclude";
+                        lm.Method = "ThenIncludeSecure";
                         if (!lm.Expression.Contains("=>"))
                             lm.Expression = System.Text.Json.JsonSerializer.Serialize(lm.Expression);
                         break;

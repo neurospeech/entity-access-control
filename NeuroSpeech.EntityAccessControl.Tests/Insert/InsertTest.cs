@@ -147,7 +147,7 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
             using var db = scope.GetRequiredService<AppDbContext>();
             db.UserID = 2;
             var sdb = db;
-
+            db.Posts.Include(x => x.Tags);
             sdb.Add(new Post { 
                 Name = "a",
                 Tags = new List<PostTag> {

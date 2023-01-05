@@ -5,10 +5,30 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
 
 namespace NeuroSpeech.EntityAccessControl
 {
-    internal class ReplaceExpression: ExpressionVisitor
+    internal static class DoNotVisitExtensions
+    {
+        private static System.Runtime.CompilerServices.ConditionalWeakTable<Expression, object> doNotVisitCache = new System.Runtime.CompilerServices.ConditionalWeakTable<Expression, object>();
+
+        public static void DoNotVisit(this Expression expression)
+        {
+            doNotVisitCache.Add(expression, "");
+        }
+
+        public static bool CanVisit(this Expression expression)
+        {
+            if(doNotVisitCache.TryGetValue(expression, out var result))
+            {
+                return false;
+            }
+            return true;
+        }
+    }
+
+    internal class ReplaceExpression : ExpressionVisitor
     {
         private readonly ISecureQueryProvider db;
         private readonly IAsyncQueryProvider provider;
@@ -20,21 +40,51 @@ namespace NeuroSpeech.EntityAccessControl
             this.provider = provider;
         }
 
+        public override Expression Visit(Expression node)
+        {
+            if (!node.CanVisit())
+            {
+                return node;
+            }
+            return base.Visit(node);
+        }
+
+        protected override Expression VisitNew(NewExpression node)
+        {
+            var args = new List<Expression>();
+            foreach(var arg in node.Arguments)
+            {
+                var visited = Visit(arg);
+                if (!arg.Type.IsAssignableFrom(visited.Type))
+                {
+                    visited = Expression.Call(
+                        null, ReflectionHelper.EnumerableClass.ToList(visited.Type.GetFirstGenericArgument()),
+                        visited);
+                }
+                // make tolist...
+                args.Add(visited);
+            }
+            return node.Update(args);
+        }
+
         protected override Expression VisitMethodCall(MethodCallExpression node)
         {
             // Include with string must be split
             var isInclude = node.Method.Name == "Include" || node.Method.Name == "ThenInclude";
             if (isInclude)
             {
-                if(node.Arguments.First().NodeType == ExpressionType.Constant)
+                if (node.Arguments.First().NodeType == ExpressionType.Constant)
                 {
                     throw new NotSupportedException("Include with string literal is not supported");
                 }
             }
 
+            var reset = false;
+
             if (node.Method.Name == "Select" || isInclude)
             {
                 CanReplace = true;
+                reset = true;
             }
             var args = node.Arguments.Select(Visit).ToList();
             var target = node.Object;
@@ -42,8 +92,54 @@ namespace NeuroSpeech.EntityAccessControl
             {
                 target = Visit(target);
             }
-            var result = node.Update(target, args);
-            if (CanReplace) CanReplace = false;
+
+            Expression result;
+            if (isInclude)
+            {
+                if (node.Method.Name == "ThenInclude")
+                {
+                    var md = node.Method.GetGenericMethodDefinition();
+                    var targetType = args[0].Type.GetFirstGenericArgument();
+                    var previousType = args[0].Type.GetSecondGenericArgument().GetFirstGenericArgument();
+                    var funcReturnType = args[1].Type.GetFuncReturnType();
+                    var method = md.MakeGenericMethod(targetType, previousType, funcReturnType);
+                    result = Expression.Call(target, method, args);
+                }
+                else
+                {
+                    // we need to change generic method definition...
+                    var md = node.Method.GetGenericMethodDefinition();
+                    var targetType = args[0].Type.GetFirstGenericArgument();
+                    var funcReturnType = args[1].Type.GetFuncReturnType();
+                    var method = md.MakeGenericMethod(targetType, funcReturnType);
+                    result = Expression.Call(target, method, args);
+                }
+            }
+            else
+            {
+                result = node.Update(target, args);
+            }
+            if (reset)
+            {
+                CanReplace = false;
+            }
+            return result;
+        }
+
+        //private Expression VisitAndConvert(Expression node)
+        //{
+        //    if (node.NodeType == ExpressionType.Quote && node is UnaryExpression quote)
+        //    {
+        //        var result = Visit(quote.Operand);
+        //        return Expression.Quote(result);
+        //    }
+        //    return Visit(node);
+        //}        
+
+        protected override Expression VisitLambda<T>(Expression<T> node)
+        {
+            var body = Visit(node.Body);
+            var result = Expression.Lambda(body, node.Parameters);
             return result;
         }
 
@@ -81,9 +177,11 @@ namespace NeuroSpeech.EntityAccessControl
                 var itemType = nav.TargetEntityType.ClrType;
 
                 // apply where...
-                return this.GetInstanceGenericMethod(nameof(Apply), itemType)
+                var result = this.GetInstanceGenericMethod(nameof(Apply), itemType)
                     .As<Expression>()
                     .Invoke(node);
+                result.DoNotVisit();
+                return result;
             }
             return base.VisitMember(node);
         }

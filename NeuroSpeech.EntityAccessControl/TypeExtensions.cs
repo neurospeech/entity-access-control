@@ -19,6 +19,31 @@ namespace NeuroSpeech.EntityAccessControl.Internal
     public static class EnumerableExtensions
     {
 
+        internal static Type GetFirstGenericArgument(this Type type)
+        {
+            if (type.IsConstructedGenericType)
+            {
+                return type.GetGenericArguments()[0];
+            }
+            return type;
+        }
+
+        internal static Type GetSecondGenericArgument(this Type type)
+        {
+            if (type.IsConstructedGenericType)
+            {
+                return type.GetGenericArguments()[1];
+            }
+            return type;
+        }
+
+        internal static Type GetFuncReturnType(this Type type)
+        {
+            var itemType = type.GetFirstGenericArgument();
+            return itemType.GetMethod("Invoke").ReturnType;
+        }
+
+
         public static bool TryGetFirst<T,TCompare>(this IEnumerable<T> target, TCompare key, Func<T, TCompare, bool> fx, out T value)
         {
             foreach (var v in target)
