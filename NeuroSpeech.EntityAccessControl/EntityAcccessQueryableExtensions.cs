@@ -23,6 +23,15 @@ namespace NeuroSpeech.EntityAccessControl
             return provider.db;
         }
 
+        public static IQueryable<TResult> Select<T, TInner, TResult>(
+            this (IQueryable<T> entity, IQueryable<TInner> inner) @this,
+            Func<IQueryable<T>, IQueryable<TInner>, Expression<Func<T, TResult>>> selector)
+        {
+            return @this.entity.Select(
+                selector(@this.entity, @this.inner));
+        }
+
+
         public static IQueryable<WithInner<T,TInner>> Join<T,TInner, TKey>(
             this (IQueryable<T> entity,IQueryable<TInner> inner) @this,
             Expression<Func<T,TKey>> keySelector,
@@ -56,6 +65,7 @@ namespace NeuroSpeech.EntityAccessControl
             {
                 return (queryContext, queryContext.GetSecureQueryProvider().FilteredQuery<TInner>());
             }
+
         }
 
         public static IQueryable<DateRangeEntity<T>> JoinDateRange<T>(this IQueryable<T> @this, DateTime start, DateTime end, string step)

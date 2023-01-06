@@ -499,6 +499,15 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
                         lm.Method = $"Container().JoinWith<{typeName}>().Join({left}, {right})";
                         lm.Expression = null;
                         break;
+                    case "selectWith":
+                        typeName = method[1].GetString();
+
+                        // this will ensure that the type exits..
+                        FindEntityType(typeName);
+
+                        lm.Method = $"Container().SelectWith<{typeName}>()";
+                        lm.Expression = null;
+                        break;
                     case "include":
                         lm.Method = "IncludeSecure";
                         hasInclude = true;
