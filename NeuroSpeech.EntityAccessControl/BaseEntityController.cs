@@ -559,6 +559,8 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
             where T : class
         {
             var q = db.FilteredQuery<T>();
+            var type = db.GetType();
+            options.Type = type;
             var result = await MethodParser.Instance.Parse<T>(q, options);
             return Serialize(result);
         }

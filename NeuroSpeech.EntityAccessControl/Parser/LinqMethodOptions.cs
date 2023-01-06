@@ -13,5 +13,7 @@ namespace NeuroSpeech.EntityAccessControl.Parser
         public Action<string>? Trace { get; set; }
         public CancellationToken CancelToken { get; set; }
 
+        internal Type Type { get; set; }
+
     }
 }

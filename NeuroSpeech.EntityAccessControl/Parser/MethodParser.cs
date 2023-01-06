@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -26,25 +27,34 @@ namespace NeuroSpeech.EntityAccessControl.Parser
 
         public async Task<LinqResult> Parse<T>(IQueryable<T> queryContext, LinqMethodOptions args)
         {
-            var d = await Parse<T>(new CacheKeyBuilder(typeof(T), args.Methods));
+            var d = await Parse<T>(args);
             return await d(queryContext, args);
         }
 
-        public Task<LinqMethodDelegate<T>> Parse<T>(CacheKeyBuilder methods)
+        private Task<LinqMethodDelegate<T>> Parse<T>(LinqMethodOptions args)
         {
+            var methods = new CacheKeyBuilder(typeof(T), args.Methods);
             var key = methods.CacheKey;
-            return (Task<LinqMethodDelegate<T>>)cache.GetOrAdd(key, k => ParseQuery<T>(methods.Methods));
+            return (Task<LinqMethodDelegate<T>>)cache.GetOrAdd(key, k => ParseQuery<T>(args, methods.Methods));
         }
 
 
-        private Task<LinqMethodDelegate<T>> ParseQuery<T>(List<LinqMethod> methods)
+        private Task<LinqMethodDelegate<T>> ParseQuery<T>(LinqMethodOptions args, List<LinqMethod> methods)
         {
+            var list = new List<Assembly> {typeof(Queryable).Assembly,
+                typeof(Microsoft.EntityFrameworkCore.EF).Assembly,
+                typeof(QueryParser).Assembly,
+                typeof(RelationalQueryableExtensions).Assembly,
+                typeof(T).Assembly
+            };
+
+            if (!list.Contains(args.Type.Assembly))
+            {
+                list.Add(args.Type.Assembly);
+            }
+
             var options = ScriptOptions.Default
-                            .AddReferences(typeof(Queryable).Assembly,
-                            typeof(Microsoft.EntityFrameworkCore.EF).Assembly,
-                            typeof(QueryParser).Assembly,
-                            typeof(RelationalQueryableExtensions).Assembly,
-                            typeof(T).Assembly)
+                            .AddReferences(list)
                             .WithOptimizationLevel(OptimizationLevel.Debug);
 
             var type = typeof(T);
