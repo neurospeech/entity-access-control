@@ -484,6 +484,10 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
                     case "thenByDescending":
                         lm.Method = "ThenByDescending";
                         break;
+                    case "dateRange":
+                        lm.Method = "DateRange";
+                        lm.Expression = "@0, @1, @2";
+                        break;
                     case "joinDateRange":
                         lm.Method = "JoinDateRange";
                         lm.Expression = "@0, @1, @2";

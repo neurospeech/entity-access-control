@@ -85,6 +85,17 @@ namespace NeuroSpeech.EntityAccessControl
             return join;
         }
 
+        public static IQueryable<DateRange> DateRange<T>(this IQueryable<T> @this, DateTime start, DateTime end, string step)
+            where T : class
+        {
+            if (@this.Provider is not EntityAccessQueryProvider q1)
+            {
+                throw new NotSupportedException();
+            }
+            var db = q1.db;
+            return db.DateRangeView(start, end, step);
+        }
+
         public static IIncludableQueryable<T, TProperty>
             IncludeSecure<T, TProperty>(this IQueryable<T> queryable, string path)
             where T : class
