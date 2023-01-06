@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -211,6 +212,7 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
             db.UserID = 2;
 
             var sdb = db;
+               
 
             var controller = new TestEntityController(sdb);
             var name = "NeuroSpeech.EntityAccessControl.Tests.Model.Account";
@@ -240,6 +242,17 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
             db.UserID = 2;
 
             var sdb = db;
+
+            //var q1 = db.PostActivities;
+
+            //var a = db.Posts.Where(x => x.PostType == PostType.Page)
+            //    .Select(x => new
+            //    {
+            //        all = q1.Count()
+            //    });
+
+            //Assert.IsNotNull(a)
+
 
             var controller = new TestEntityController(sdb);
             var name = "NeuroSpeech.EntityAccessControl.DateRange";

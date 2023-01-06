@@ -27,37 +27,37 @@ namespace NeuroSpeech.EntityAccessControl
         IAsyncEnumerable<T>,
         ISecureQueryable
     {
-        private readonly IQueryable<T> start;
+        internal readonly IQueryable<T> Start;
 
         public SecureQueryable(ISecureQueryProvider secureQueryProvider, IQueryable<T> start)
         {
-            this.start = start;
+            this.Start = start;
             this.Provider = new EntityAccessQueryProvider(secureQueryProvider, (start.Provider as IAsyncQueryProvider)!);
         }
 
         public Type ElementType => typeof(T);
 
-        public Expression Expression => start.Expression;
+        public Expression Expression => Start.Expression;
 
         public IQueryProvider Provider { get; }
 
-        IQueryable ISecureQueryable.Query => start;
+        IQueryable ISecureQueryable.Query => Start;
 
         public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken = default)
         {
-            if (start is IAsyncEnumerable<T> en)
+            if (Start is IAsyncEnumerable<T> en)
                 return en.GetAsyncEnumerator(cancellationToken);
             throw new NotSupportedException();
         }
 
         public IEnumerator<T> GetEnumerator()
         {
-            return start.GetEnumerator();
+            return Start.GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()
         {
-            return start.GetEnumerator();
+            return Start.GetEnumerator();
         }
     }
 }

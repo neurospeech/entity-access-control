@@ -33,7 +33,11 @@ namespace NeuroSpeech.EntityAccessControl
 
             var xPE = selector.Parameters[0];
 
-            var ce = Expression.Constant(@this.inner is ISecureQueryable seq ? seq.Query : @this.inner);
+            var query = @this.inner is SecureQueryable<TInner> seq ? seq.Start : @this.inner;
+
+            Expression<Func<IQueryable<TInner>>> exp = () => query;
+
+            var ce = exp.Body;
             var body = ReplaceExpressionVisitor.Replace(yPE, ce, selector.Body);
             var selectorFinal = Expression.Lambda<Func<T, TResult>>(body, xPE);
             return @this.entity.Select(
