@@ -17,7 +17,15 @@ namespace NeuroSpeech.EntityAccessControl
         }
     }
 
-    internal class SecureQueryable<T> : IOrderedQueryable<T>, IAsyncEnumerable<T>
+    internal interface ISecureQueryable
+    {
+        IQueryable Query { get; }
+    }
+
+    internal class SecureQueryable<T> :
+        IOrderedQueryable<T>,
+        IAsyncEnumerable<T>,
+        ISecureQueryable
     {
         private readonly IQueryable<T> start;
 
@@ -32,6 +40,8 @@ namespace NeuroSpeech.EntityAccessControl
         public Expression Expression => start.Expression;
 
         public IQueryProvider Provider { get; }
+
+        IQueryable ISecureQueryable.Query => start;
 
         public IAsyncEnumerator<T> GetAsyncEnumerator(CancellationToken cancellationToken = default)
         {

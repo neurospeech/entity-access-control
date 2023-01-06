@@ -28,13 +28,13 @@ namespace NeuroSpeech.EntityAccessControl
         }
     }
 
-    internal class ReplaceExpression : ExpressionVisitor
+    internal class InjectFiltersVisitor : ExpressionVisitor
     {
         private readonly ISecureQueryProvider db;
         private readonly IAsyncQueryProvider provider;
         private bool CanReplace;
 
-        public ReplaceExpression(ISecureQueryProvider db, IAsyncQueryProvider provider)
+        public InjectFiltersVisitor(ISecureQueryProvider db, IAsyncQueryProvider provider)
         {
             this.db = db;
             this.provider = provider;
@@ -221,24 +221,32 @@ namespace NeuroSpeech.EntityAccessControl
             return result;
         }
 
-        class ReplaceLambdaToFunc: ExpressionVisitor {
-            private readonly Expression from;
-            private readonly Expression to;
+       
+    } 
+    internal class ReplaceExpressionVisitor: ExpressionVisitor {
+        
+        public static Expression Replace(Expression from, Expression to, Expression body)
+        {
+            var visitor = new ReplaceExpressionVisitor(from, to);
+            return visitor.Visit(body);
+        }
+        
+        private readonly Expression from;
+        private readonly Expression to;
 
-            public ReplaceLambdaToFunc(Expression from, Expression to)
-            {
-                this.from = from;
-                this.to = to;
-            }
+        public ReplaceExpressionVisitor(Expression from, Expression to)
+        {
+            this.from = from;
+            this.to = to;
+        }
 
-            public override Expression Visit(Expression node)
+        public override Expression Visit(Expression node)
+        {
+            if (node == from)
             {
-                if (node == from)
-                {
-                    return to;
-                }
-                return base.Visit(node);
+                return to;
             }
+            return base.Visit(node);
         }
     }
 }

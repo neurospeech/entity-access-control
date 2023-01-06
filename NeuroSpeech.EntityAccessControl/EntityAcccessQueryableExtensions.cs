@@ -25,10 +25,19 @@ namespace NeuroSpeech.EntityAccessControl
 
         public static IQueryable<TResult> Select<T, TInner, TResult>(
             this (IQueryable<T> entity, IQueryable<TInner> inner) @this,
-            Func<IQueryable<TInner>, Expression<Func<T, TResult>>> selector)
+            Expression<Func<T, IQueryable<TInner>, TResult>> selector)
         {
+
+            // we need to inject parameter at runtime...
+            var yPE = selector.Parameters[1];
+
+            var xPE = selector.Parameters[0];
+
+            var ce = Expression.Constant(@this.inner is ISecureQueryable seq ? seq.Query : @this.inner);
+            var body = ReplaceExpressionVisitor.Replace(yPE, ce, selector.Body);
+            var selectorFinal = Expression.Lambda<Func<T, TResult>>(body, xPE);
             return @this.entity.Select(
-                selector(@this.inner));
+                selectorFinal);
         }
 
 
@@ -93,7 +102,7 @@ namespace NeuroSpeech.EntityAccessControl
                 throw new NotSupportedException();
             }
             var db = q1.db;
-            return db.DateRangeView(start, end, step);
+            return new SecureQueryable<DateRange>(db, db.DateRangeView(start, end, step));
         }
 
         public static IIncludableQueryable<T, TProperty>

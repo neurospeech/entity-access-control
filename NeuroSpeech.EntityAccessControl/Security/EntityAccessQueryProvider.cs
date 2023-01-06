@@ -24,10 +24,10 @@ namespace NeuroSpeech.EntityAccessControl
         {
             this.db = sep;
             this.provider = provider;
-            Visitor = new ReplaceExpression(db, provider);
+            Visitor = new InjectFiltersVisitor(db, provider);
         }
 
-        private ReplaceExpression Visitor { get; }
+        private InjectFiltersVisitor Visitor { get; }
 
         public IQueryable CreateQuery(Expression expression)
         {

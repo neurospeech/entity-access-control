@@ -229,6 +229,36 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
 
             Assert.IsNotNull(r);
         }
+
+
+        [TestMethod]
+        public async Task SelectDateRange()
+        {
+            using var scope = CreateScope();
+
+            var db = scope.GetRequiredService<AppDbContext>();
+            db.UserID = 2;
+
+            var sdb = db;
+
+            var controller = new TestEntityController(sdb);
+            var name = "NeuroSpeech.EntityAccessControl.DateRange";
+
+            var end = DateTime.UtcNow;
+            var start = end.AddMonths(-1);
+
+            var m = System.Text.Json.JsonSerializer.Serialize(new object[] {
+                new object[] {"dateRange", "", start, end, "Day" },
+                new object[] { "selectWith", "NeuroSpeech.EntityAccessControl.Tests.Model.Post" },
+                new object[] { "select", "(x,y) => new { count = y.Count() }" }
+            });
+
+            var r = await controller.Methods(name,
+                methods: m
+                );
+
+            Assert.IsNotNull(r);
+        }
         //[TestMethod]
         //public async Task SelectGroupAsync()
         //{
