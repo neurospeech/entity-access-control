@@ -263,7 +263,7 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
             var m = System.Text.Json.JsonSerializer.Serialize(new object[] {
                 new object[] {"dateRange", "", start, end, "Day" },
                 new object[] { "selectWith", "NeuroSpeech.EntityAccessControl.Tests.Model.Post" },
-                new object[] { "select", "(x,y) => new { count = y.Count() }" }
+                new object[] { "select", "(x,y) => new { count = y.Count(c => c.DateCreated > x.StartDate) }" }
             });
 
             var r = await controller.Methods(name,
