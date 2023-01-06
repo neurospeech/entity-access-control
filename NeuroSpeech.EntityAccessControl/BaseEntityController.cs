@@ -509,7 +509,7 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
                         // this will ensure that the type exits..
                         FindEntityType(typeName);
 
-                        lm.Method = $"Container().SelectWith<{typeName}>()";
+                        lm.Method = $"Container().JoinWith<{typeName}>()";
                         lm.Expression = null;
                         break;
                     case "include":
