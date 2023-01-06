@@ -25,10 +25,10 @@ namespace NeuroSpeech.EntityAccessControl
 
         public static IQueryable<TResult> Select<T, TInner, TResult>(
             this (IQueryable<T> entity, IQueryable<TInner> inner) @this,
-            Func<IQueryable<T>, IQueryable<TInner>, Expression<Func<T, TResult>>> selector)
+            Func<IQueryable<TInner>, Expression<Func<T, TResult>>> selector)
         {
             return @this.entity.Select(
-                selector(@this.entity, @this.inner));
+                selector(@this.inner));
         }
 
 
