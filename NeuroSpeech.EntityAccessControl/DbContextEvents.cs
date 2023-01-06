@@ -14,6 +14,11 @@ namespace NeuroSpeech.EntityAccessControl
 
         private readonly Dictionary<Type, Type> registrations = new();
 
+        public DbContextEvents()
+        {
+            Register<DateRangeEvents>();
+        }
+
         internal abstract class EntityHandler
         {
             public abstract Task Run(DbContext db, object entity);
@@ -59,6 +64,14 @@ namespace NeuroSpeech.EntityAccessControl
             }
             var et = start.GenericTypeArguments[0];
             registrations[et] = t;
+        }
+    }
+
+    internal class DateRangeEvents: DbEntityEvents<DateRange>
+    {
+        public override IQueryable<DateRange> Filter(IQueryable<DateRange> q)
+        {
+            return q;
         }
     }
 }
