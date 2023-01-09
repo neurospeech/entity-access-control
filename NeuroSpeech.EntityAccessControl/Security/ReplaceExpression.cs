@@ -20,6 +20,10 @@ namespace NeuroSpeech.EntityAccessControl
 
         public static bool CanVisit(this Expression expression)
         {
+            if(expression == null)
+            {
+                return false;
+            }
             if(doNotVisitCache.TryGetValue(expression, out var result))
             {
                 return false;
