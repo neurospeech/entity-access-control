@@ -401,7 +401,7 @@ namespace NeuroSpeech.EntityAccessControl
                 if (et != null)
                 {
                     foreach(var p in et.GetProperties()
-                        .Where(x => x.PropertyInfo
+                        .Where(x => !x.PropertyInfo.CanWrite || x.PropertyInfo
                             ?.GetCustomAttribute<DatabaseGeneratedAttribute>()?.DatabaseGeneratedOption == DatabaseGeneratedOption.Computed))
                     {
                         all ??= new List<PropertyInfo>();
