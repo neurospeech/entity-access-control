@@ -48,6 +48,8 @@ namespace NeuroSpeech.EntityAccessControl
         {
             base.OnModelCreating(modelBuilder);
 
+            modelBuilder.RegisterCompositeKeys();
+
             modelBuilder.HasDbFunction(CastAs.StringMethod)
                 .HasTranslation(a =>
                 {
