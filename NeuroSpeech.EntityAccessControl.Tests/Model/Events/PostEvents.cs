@@ -2,6 +2,7 @@
 using System.Linq;
 namespace NeuroSpeech.EntityAccessControl.Tests.Model.Events
 {
+    [RegisterEvents(typeof(AppDbContext))]
     internal class PostEvents: AppEntityEvents<Post>
     {
         public PostEvents(AppDbContext db): base(db)

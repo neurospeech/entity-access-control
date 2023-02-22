@@ -10,6 +10,7 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Model.Events
         public AppDbContextEvents()
         {
             SetupPostEvents();
+            Register();
         }
 
 
@@ -17,7 +18,7 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Model.Events
         private void SetupPostEvents()
         {
             Register<AccountEvents>();
-            Register<PostEvents>();
+            // Register<PostEvents>();
             Register<PostActivityEvents>();
             Register<PostTagEvents>();
             Register<PostContentEvents>();
