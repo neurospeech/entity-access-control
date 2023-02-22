@@ -7,7 +7,7 @@ using System.Text;
 
 namespace NeuroSpeech.EntityAccessControl
 {
-    [AttributeUsage(AttributeTargets.Property, Inherited = true, AllowMultiple = false)]
+    [AttributeUsage(AttributeTargets.Class, Inherited = true, AllowMultiple = false)]
     public class CompositeKeyAttribute: Attribute
     {
         public readonly string[] Names;
