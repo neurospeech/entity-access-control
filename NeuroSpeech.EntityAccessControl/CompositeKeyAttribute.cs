@@ -12,7 +12,7 @@ namespace NeuroSpeech.EntityAccessControl
     {
         public readonly string[] Names;
 
-        public CompositeKeyAttribute(string[] names)
+        public CompositeKeyAttribute(params string[] names)
         {
             this.Names = names;
         }
