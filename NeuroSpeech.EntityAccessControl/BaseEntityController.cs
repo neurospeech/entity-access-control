@@ -533,9 +533,7 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
             {
                 options.SplitInclude = hasInclude && !hasSelect;
             }
-            var result = await this.GetInstanceGenericMethod(nameof(InvokeAsync), t.ClrType)
-                .As<Task<IActionResult>>()
-                .Invoke(options);
+            var result = await this.InvokeAs(t.ClrType, InvokeAsync<object>, options);
             var cacheSeconds = model.CacheSeconds;
             if (cacheSeconds > 0)
             {

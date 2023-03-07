@@ -59,9 +59,7 @@ namespace NeuroSpeech.EntityAccessControl
         {
             if (firstSet == null)
                 return Task.CompletedTask;
-            return this.GetInstanceGenericMethod(nameof(VerifyInternalAsync), firstSet)
-                .As<Task>()
-                .Invoke();
+            return this.InvokeAs(firstSet, VerifyInternalAsync<object>);
         }
 
         [EditorBrowsable(EditorBrowsableState.Never)]
@@ -105,9 +103,7 @@ namespace NeuroSpeech.EntityAccessControl
                 return;
             }
             var type = entry.Entity.GetType();
-            this.GetInstanceGenericMethod(nameof(QueueEntry), type)
-                   .As<int>()
-                   .Invoke(entry);
+            this.InvokeAs(type, QueueEntry<object>, entry);
         }
 
         private IQueryable<T> ApplyFilter<T>(
@@ -256,9 +252,7 @@ namespace NeuroSpeech.EntityAccessControl
                 {
                     var fc = new FilterContext(e, nav);
 
-                    this.GetInstanceGenericMethod(nameof(QueueEntityKeyForeignKey), typeof(T), principalType)
-                        .As<int>()
-                        .Invoke(e, keys, fc);
+                    this.InvokeAs(typeof(T), principalType, QueueEntityKeyForeignKey<object, object>, e, keys, fc);
                 }
             }
             return 0;

@@ -468,15 +468,14 @@ namespace NeuroSpeech.EntityAccessControl
             JsonElement item,
             CancellationToken cancellation)
         {
-            return this.GetInstanceGenericMethod(nameof(InternalBuildOrLoadAsync), entityType.ClrType)
-                .As<Task<(object, bool)>>()
-                .Invoke(entityType, item, cancellation);
+            return this.InvokeAs(entityType.ClrType, InternalBuildOrLoadAsync<object>, entityType, item, cancellation);
         }
 
         [EditorBrowsable(EditorBrowsableState.Never)]
         public async Task<(object, bool)> InternalBuildOrLoadAsync<T>(
-            Microsoft.EntityFrameworkCore.Metadata.IEntityType t,
-            JsonElement keys, CancellationToken token)
+            IEntityType t,
+            JsonElement keys,
+            CancellationToken token)
             where T : class
         {
             var type = typeof(T);
@@ -534,9 +533,7 @@ namespace NeuroSpeech.EntityAccessControl
             Microsoft.EntityFrameworkCore.Metadata.IEntityType t,
             JsonElement keys, CancellationToken cancellation)
         {
-            return this.GetInstanceGenericMethod(nameof(FindByKeysInternalAsync), t.ClrType)
-                .As<Task<object?>>()
-                .Invoke(t, keys, cancellation);
+            return this.InvokeAs(t.ClrType, FindByKeysInternalAsync<object>, t, keys, cancellation);
         }
         public Task<object?> FindByKeysInternalAsync<T>(
             Microsoft.EntityFrameworkCore.Metadata.IEntityType t,

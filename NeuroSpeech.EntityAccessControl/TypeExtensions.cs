@@ -337,9 +337,66 @@ namespace NeuroSpeech.EntityAccessControl.Internal
     //        public MethodWithTarget<RT> As<RT>() => new MethodWithTarget<RT>(method, target);
 
     //    }
-        
-    //}
 
+    //}
+    public static class Generic
+    {
+        private static ConcurrentDictionary<(Type, Type, MethodInfo), object> cache
+            = new ConcurrentDictionary<(Type, Type, MethodInfo), object>();
+        public static T InvokeAs<Target, T>(this Target target, Type type, Func<T> fx)
+        {
+            var key = (type, type, fx.Method.GetGenericMethodDefinition());
+            var method = (Func<Target, T>)cache.GetOrAdd(key, (_) => fx.Method.GetGenericMethodDefinition().MakeGenericMethod(type).CreateDelegate(typeof(Func<Target, T>)));
+            return method(target);
+        }
+
+        public static T InvokeAs<Target, T1, T>(this Target target, Type type, Func<T1, T> fx, T1 p1)
+        {
+            var key = (type,type, fx.Method.GetGenericMethodDefinition());
+            var method = (Func<Target, T1, T>)cache.GetOrAdd(key, (_) => fx.Method.GetGenericMethodDefinition().MakeGenericMethod(type).CreateDelegate(typeof(Func<Target, T1, T>)));
+            return method(target, p1);
+        }
+
+        public static T InvokeAs<Target, T1, T2, T>(this Target target, Type type, Func<T1, T2, T> fx, T1 p1, T2 p2)
+        {
+            var key = (type, type, fx.Method.GetGenericMethodDefinition());
+            var method = (Func<Target, T1, T2, T>)cache.GetOrAdd(key, (_) => fx.Method.GetGenericMethodDefinition().MakeGenericMethod(type).CreateDelegate(typeof(Func<Target, T1, T2, T>)));
+            return method(target, p1, p2);
+        }
+        public static T InvokeAs<Target, T1, T2, T3, T>(this Target target, Type type, Func<T1, T2, T3, T> fx, T1 p1, T2 p2, T3 p3)
+        {
+            var key = (type, type, fx.Method.GetGenericMethodDefinition());
+            var method = (Func<Target, T1, T2, T3, T>)cache.GetOrAdd(key, (_) => fx.Method.GetGenericMethodDefinition().MakeGenericMethod(type).CreateDelegate(typeof(Func<Target, T1, T2, T3, T>)));
+            return method(target, p1, p2, p3);
+        }
+
+        public static T InvokeAs<Target, T>(this Target target, Type type, Type type2, Func<T> fx)
+        {
+            var key = (type, type2, fx.Method.GetGenericMethodDefinition());
+            var method = (Func<Target, T>)cache.GetOrAdd(key, (_) => fx.Method.GetGenericMethodDefinition().MakeGenericMethod(type, type2).CreateDelegate(typeof(Func<Target, T>)));
+            return method(target);
+        }
+
+        public static T InvokeAs<Target, T1, T>(this Target target, Type type, Type type2, Func<T1, T> fx, T1 p1)
+        {
+            var key = (type, type2, fx.Method.GetGenericMethodDefinition());
+            var method = (Func<Target, T1, T>)cache.GetOrAdd(key, (_) => fx.Method.GetGenericMethodDefinition().MakeGenericMethod(type, type2).CreateDelegate(typeof(Func<Target, T1, T>)));
+            return method(target, p1);
+        }
+
+        public static T InvokeAs<Target, T1, T2, T>(this Target target, Type type, Type type2, Func<T1, T2, T> fx, T1 p1, T2 p2)
+        {
+            var key = (type, type2, fx.Method.GetGenericMethodDefinition());
+            var method = (Func<Target, T1, T2, T>)cache.GetOrAdd(key, (_) => fx.Method.GetGenericMethodDefinition().MakeGenericMethod(type, type2).CreateDelegate(typeof(Func<Target, T1, T2, T>)));
+            return method(target, p1, p2);
+        }
+        public static T InvokeAs<Target, T1, T2, T3, T>(this Target target, Type type, Type type2, Func<T1, T2, T3, T> fx, T1 p1, T2 p2, T3 p3)
+        {
+            var key = (type, type2, fx.Method.GetGenericMethodDefinition());
+            var method = (Func<Target, T1, T2, T3, T>)cache.GetOrAdd(key, (_) => fx.Method.GetGenericMethodDefinition().MakeGenericMethod(type, type2).CreateDelegate(typeof(Func<Target, T1, T2, T3, T>)));
+            return method(target, p1, p2, p3);
+        }
+    }
 
     public static class GenericHelper1
     {

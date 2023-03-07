@@ -181,9 +181,7 @@ namespace NeuroSpeech.EntityAccessControl
                 var itemType = nav.TargetEntityType.ClrType;
 
                 // apply where...
-                var result = this.GetInstanceGenericMethod(nameof(Apply), itemType)
-                    .As<Expression>()
-                    .Invoke(node);
+                var result = this.InvokeAs(itemType, Apply<object>, node);
                 result.DoNotVisit();
                 return result;
             }
