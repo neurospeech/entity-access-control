@@ -345,7 +345,7 @@ namespace NeuroSpeech.EntityAccessControl.Internal
             = new ConcurrentDictionary<(Type, Type, MethodInfo), object>();
 
         private static T CreateTypedDelegate<T>(this MethodInfo method)
-            where T: Delegate
+            where T : Delegate
         {
             return (T)method.CreateDelegate(typeof(T));
         }
@@ -357,10 +357,53 @@ namespace NeuroSpeech.EntityAccessControl.Internal
             return (T)cache.GetOrAdd(key, (x) => create(x));
         }
 
+        public static T InvokeAs<T>(Type type, Func<T> fx)
+        {
+            var method = TypedGet(
+                    (type, type, fx.Method),
+                    (k) => k.method
+                        .GetGenericMethodDefinition()
+                        .MakeGenericMethod(k.type1)
+                        .CreateTypedDelegate<Func<T>>());
+            return method();
+        }
+
+        public static T InvokeAs<T1, T>(Type type, Func<T1, T> fx, T1 p1)
+        {
+            var method = TypedGet(
+                    (type, type, fx.Method),
+                    (k) => k.method
+                        .GetGenericMethodDefinition()
+                        .MakeGenericMethod(k.type1)
+                        .CreateTypedDelegate<Func<T1, T>>());
+            return method(p1);
+        }
+
+        public static T InvokeAs<T1, T2, T>(Type type, Func<T1, T2, T> fx, T1 p1, T2 p2)
+        {
+            var method = TypedGet(
+                    (type, type, fx.Method),
+                    (k) => k.method
+                        .GetGenericMethodDefinition()
+                        .MakeGenericMethod(k.type1)
+                        .CreateTypedDelegate<Func<T1, T2, T>>());
+            return method(p1, p2);
+        }
+        public static T InvokeAs<T1, T2, T3, T>(Type type, Func<T1, T2, T3, T> fx, T1 p1, T2 p2, T3 p3)
+        {
+            var method = TypedGet(
+                    (type, type, fx.Method),
+                    (k) => k.method
+                        .GetGenericMethodDefinition()
+                        .MakeGenericMethod(k.type1)
+                        .CreateTypedDelegate<Func<T1, T2, T3, T>>());
+            return method(p1, p2, p3);
+        }
+
         public static T InvokeAs<Target, T>(this Target target, Type type, Func<T> fx)
         {
             var method = TypedGet(
-                    (type,type,fx.Method),
+                    (type, type, fx.Method),
                     (k) => k.method
                         .GetGenericMethodDefinition()
                         .MakeGenericMethod(k.type1)
@@ -444,150 +487,150 @@ namespace NeuroSpeech.EntityAccessControl.Internal
         }
     }
 
-    public static class GenericHelper1
-    {
+    //public static class GenericHelper1
+    //{
 
-        class GenericCache<T, RT>
-            where T: notnull
-        {
+    //    class GenericCache<T, RT>
+    //        where T: notnull
+    //    {
 
-            internal static readonly ConcurrentDictionary<T, RT> cache
-                = new ConcurrentDictionary<T, RT>();
-        }
+    //        internal static readonly ConcurrentDictionary<T, RT> cache
+    //            = new ConcurrentDictionary<T, RT>();
+    //    }
 
-        private static T GetOrAdd<TKey, T>(TKey key, Func<TKey, T> factory)
-            where TKey: notnull
-        {
-            return GenericCache<TKey, T>.cache.GetOrAdd(key, factory);
-        }
+    //    private static T GetOrAdd<TKey, T>(TKey key, Func<TKey, T> factory)
+    //        where TKey: notnull
+    //    {
+    //        return GenericCache<TKey, T>.cache.GetOrAdd(key, factory);
+    //    }
 
-        public class GenericMethod<T>
-        {
-            private MethodInfo method;
-            private object? @delegate;
+    //    public class GenericMethod<T>
+    //    {
+    //        private MethodInfo method;
+    //        private object? @delegate;
 
-            public GenericMethod(MethodInfo method)
-            {
-                this.method = method;
-                @delegate = null;
-            }
+    //        public GenericMethod(MethodInfo method)
+    //        {
+    //            this.method = method;
+    //            @delegate = null;
+    //        }
 
-            internal TDelegate CreateDelegate<TDelegate>()
-            {
-                return (TDelegate)(@delegate ??= method.CreateDelegate(typeof(TDelegate)));
-            }
-        }
+    //        internal TDelegate CreateDelegate<TDelegate>()
+    //        {
+    //            return (TDelegate)(@delegate ??= method.CreateDelegate(typeof(TDelegate)));
+    //        }
+    //    }
 
-        public struct GenericMethodWithTarget<T>
-        {
-            private readonly GenericMethod<T> method;
-            private readonly T target;
+    //    public struct GenericMethodWithTarget<T>
+    //    {
+    //        private readonly GenericMethod<T> method;
+    //        private readonly T target;
 
-            public GenericMethodWithTarget(GenericMethod<T> method, T target)
-            {
-                this.method = method;
-                this.target = target;
-            }
+    //        public GenericMethodWithTarget(GenericMethod<T> method, T target)
+    //        {
+    //            this.method = method;
+    //            this.target = target;
+    //        }
 
-            public GenericMethod<T, RT> As<RT>() => new GenericMethod<T, RT>(method, target);
+    //        public GenericMethod<T, RT> As<RT>() => new GenericMethod<T, RT>(method, target);
 
 
-        }
+    //    }
 
-        public struct GenericMethod<T, RT>
-        {
-            private GenericMethod<T> genericMethod;
-            private readonly T target;
+    //    public struct GenericMethod<T, RT>
+    //    {
+    //        private GenericMethod<T> genericMethod;
+    //        private readonly T target;
 
-            public GenericMethod(GenericMethod<T> genericMethod, T target)
-            {
-                this.genericMethod = genericMethod;
-                this.target = target;
-            }
+    //        public GenericMethod(GenericMethod<T> genericMethod, T target)
+    //        {
+    //            this.genericMethod = genericMethod;
+    //            this.target = target;
+    //        }
 
-            public RT Invoke()
-            {
-                return genericMethod.CreateDelegate<Func<T, RT>>()(target);
-            }
+    //        public RT Invoke()
+    //        {
+    //            return genericMethod.CreateDelegate<Func<T, RT>>()(target);
+    //        }
 
-            public RT Invoke<T1>(T1 p1)
-            {
-                return genericMethod.CreateDelegate<Func<T, T1, RT>>()(target, p1);
-            }
+    //        public RT Invoke<T1>(T1 p1)
+    //        {
+    //            return genericMethod.CreateDelegate<Func<T, T1, RT>>()(target, p1);
+    //        }
 
-            public RT Invoke<T1, T2>(T1 p1, T2 p2)
-            {
-                return genericMethod.CreateDelegate<Func<T, T1, T2, RT>>()(target, p1, p2);
-            }
+    //        public RT Invoke<T1, T2>(T1 p1, T2 p2)
+    //        {
+    //            return genericMethod.CreateDelegate<Func<T, T1, T2, RT>>()(target, p1, p2);
+    //        }
 
-            public RT Invoke<T1, T2, T3>(T1 p1, T2 p2, T3 p3)
-            {
-                return genericMethod.CreateDelegate<Func<T, T1, T2, T3, RT>>()(target, p1, p2, p3);
-            }
+    //        public RT Invoke<T1, T2, T3>(T1 p1, T2 p2, T3 p3)
+    //        {
+    //            return genericMethod.CreateDelegate<Func<T, T1, T2, T3, RT>>()(target, p1, p2, p3);
+    //        }
 
-            public RT Invoke<T1, T2, T3, T4>(T1 p1, T2 p2, T3 p3, T4 p4)
-            {
-                return genericMethod.CreateDelegate<Func<T, T1, T2, T3, T4, RT>>()(target, p1, p2, p3, p4);
-            }
+    //        public RT Invoke<T1, T2, T3, T4>(T1 p1, T2 p2, T3 p3, T4 p4)
+    //        {
+    //            return genericMethod.CreateDelegate<Func<T, T1, T2, T3, T4, RT>>()(target, p1, p2, p3, p4);
+    //        }
 
-            public RT Invoke<T1, T2, T3, T4, T5>(T1 p1, T2 p2, T3 p3, T4 p4, T5 p5)
-            {
-                return genericMethod.CreateDelegate<Func<T, T1, T2, T3, T4, T5, RT>>()(target, p1, p2, p3, p4, p5);
-            }
+    //        public RT Invoke<T1, T2, T3, T4, T5>(T1 p1, T2 p2, T3 p3, T4 p4, T5 p5)
+    //        {
+    //            return genericMethod.CreateDelegate<Func<T, T1, T2, T3, T4, T5, RT>>()(target, p1, p2, p3, p4, p5);
+    //        }
 
-            public RT Invoke<T1, T2, T3, T4, T5, T6>(T1 p1, T2 p2, T3 p3, T4 p4, T5 p5, T6 p6)
-            {
-                return genericMethod.CreateDelegate<Func<T, T1, T2, T3, T4, T5, T6, RT>>()(target, p1, p2, p3, p4, p5, p6);
-            }
+    //        public RT Invoke<T1, T2, T3, T4, T5, T6>(T1 p1, T2 p2, T3 p3, T4 p4, T5 p5, T6 p6)
+    //        {
+    //            return genericMethod.CreateDelegate<Func<T, T1, T2, T3, T4, T5, T6, RT>>()(target, p1, p2, p3, p4, p5, p6);
+    //        }
 
-        }
+    //    }
 
-        public static GenericMethodWithTarget<T> GetInstanceGenericMethod<T>(this T target, string methodName, Type type)
-            where T: notnull
-        {
-            var m = GetOrAdd((target, methodName, type), (x) =>
-                {
-                    var method = typeof(T)
-                        .GetMethod(methodName)!
-                        .MakeGenericMethod(type);
-                    return new GenericMethod<T>(method);
-                });
-            return new GenericMethodWithTarget<T>(m, target);
-        }
+    //    public static GenericMethodWithTarget<T> GetInstanceGenericMethod<T>(this T target, string methodName, Type type)
+    //        where T: notnull
+    //    {
+    //        var m = GetOrAdd((target, methodName, type), (x) =>
+    //            {
+    //                var method = typeof(T)
+    //                    .GetMethod(methodName)!
+    //                    .MakeGenericMethod(type);
+    //                return new GenericMethod<T>(method);
+    //            });
+    //        return new GenericMethodWithTarget<T>(m, target);
+    //    }
 
-        public static GenericMethodWithTarget<T> GetInstanceGenericMethod<T>(this T target, 
-            string methodName, 
-            Type type1,
-            Type type2)
-            where T : notnull
-        {
-            var m = GetOrAdd((target, methodName, type1, type2), (x) =>
-            {
-                var method = typeof(T)
-                    .GetMethod(methodName)!
-                    .MakeGenericMethod(type1, type2);
-                return new GenericMethod<T>(method);
-            });
-            return new GenericMethodWithTarget<T>(m, target);
-        }
+    //    public static GenericMethodWithTarget<T> GetInstanceGenericMethod<T>(this T target, 
+    //        string methodName, 
+    //        Type type1,
+    //        Type type2)
+    //        where T : notnull
+    //    {
+    //        var m = GetOrAdd((target, methodName, type1, type2), (x) =>
+    //        {
+    //            var method = typeof(T)
+    //                .GetMethod(methodName)!
+    //                .MakeGenericMethod(type1, type2);
+    //            return new GenericMethod<T>(method);
+    //        });
+    //        return new GenericMethodWithTarget<T>(m, target);
+    //    }
 
-        public static GenericMethodWithTarget<T> GetInstanceGenericMethod<T>(this T target,
-            string methodName,
-            Type type1,
-            Type type2,
-            Type type3)
-            where T : notnull
-        {
-            var m = GetOrAdd((target, methodName, type1, type2, type3), (x) =>
-            {
-                var method = typeof(T)
-                    .GetMethod(methodName)!
-                    .MakeGenericMethod(type1, type2, type3);
-                return new GenericMethod<T>(method);
-            });
-            return new GenericMethodWithTarget<T>(m, target);
-        }
-    }
+    //    public static GenericMethodWithTarget<T> GetInstanceGenericMethod<T>(this T target,
+    //        string methodName,
+    //        Type type1,
+    //        Type type2,
+    //        Type type3)
+    //        where T : notnull
+    //    {
+    //        var m = GetOrAdd((target, methodName, type1, type2, type3), (x) =>
+    //        {
+    //            var method = typeof(T)
+    //                .GetMethod(methodName)!
+    //                .MakeGenericMethod(type1, type2, type3);
+    //            return new GenericMethod<T>(method);
+    //        });
+    //        return new GenericMethodWithTarget<T>(m, target);
+    //    }
+    //}
 
     public static class TaskExtensions
     {
