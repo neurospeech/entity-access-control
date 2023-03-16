@@ -269,6 +269,9 @@ namespace NeuroSpeech.EntityAccessControl
             this.ChangeTracker.Tracked -= tracker;
         }
 
+        private bool isChanging = false;
+        private bool queueChanges = false;
+
         /// <summary>
         /// Save changes will validate object after executing all relevant events, so event handlers can set default properties before they are validated.
         /// </summary>
@@ -278,80 +281,96 @@ namespace NeuroSpeech.EntityAccessControl
         public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
         {
             // this.ChangeTracker.DetectChanges();
-            if (!RaiseEvents)
+            if(isChanging)
             {
-                Validate();
-                return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+                throw new InvalidOperationException("Save Changes is already in progress, please queue your changes...");
             }
-            var vc = new VerificationContext<TContext>(this, events, services);
+            isChanging = true;
+            try
+            {
 
-            var pending = new List<(EntityState State, object item, Type type)>();
-            var errors = new List<ValidationResult>();
-            foreach(var e in Entries())
-            {
-                var item = e.Entity;
-                var type = item.GetType();
-                switch (e.State)
+                if (!RaiseEvents)
                 {
-                    case EntityState.Added:
-                        pending.Add((e.State, item, type));
-                        await OnInsertingAsync(type, item);
-                        Validator.TryValidateObject(item, new ValidationContext(item), errors);
-                        vc.QueueVerification(e);
-                        break;
-                    case EntityState.Modified:
-                        pending.Add((e.State, item, type));
-                        await OnUpdatingAsync(type, item);
-                        Validator.TryValidateObject(item, new ValidationContext(item), errors);
-                        vc.QueueVerification(e);
-                        break;
-                    case EntityState.Deleted:
-                        pending.Add((e.State, item, type));
-                        await OnDeletingAsync(type, item);
-                        Validator.TryValidateObject(item, new ValidationContext(item), errors);
-                        vc.QueueVerification(e);
-                        break;
+                    Validate();
+                    return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
                 }
-            }
-            if (errors.Any())
-            {
-                throw new AppValidationException(new AppValidationErrors
+
+                var vc = new VerificationContext<TContext>(this, events, services);
+
+                var pending = new List<(EntityState State, object item, Type type)>();
+                var errors = new List<ValidationResult>();
+                foreach (var e in Entries())
                 {
-                    Message = $"Invalid model { string.Join(", ", errors.Select(x => x.ErrorMessage + ": " + string.Join(", ", x.MemberNames))) }",
-                    Errors = errors.Select(x => new AppValidationError
+                    var item = e.Entity;
+                    var type = item.GetType();
+                    switch (e.State)
                     {
-                        Name = string.Join(", ", x.MemberNames),
-                        Error = x.ErrorMessage!
-                    })
-                });
-            }
-            await vc.VerifyAsync();
-            var r = await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
-            foreach (var (state, item, type) in pending)
-            {
-                switch (state)
-                {
-                    case EntityState.Added:
-                        await OnInsertedAsync(type, item);
-                        break;
-                    case EntityState.Modified:
-                        await OnUpdatedAsync(type, item);
-                        break;
-                    case EntityState.Deleted:
-                        await OnDeletedAsync(type, item);
-                        break;
+                        case EntityState.Added:
+                            pending.Add((e.State, item, type));
+                            await OnInsertingAsync(type, item);
+                            Validator.TryValidateObject(item, new ValidationContext(item), errors);
+                            vc.QueueVerification(e);
+                            break;
+                        case EntityState.Modified:
+                            pending.Add((e.State, item, type));
+                            await OnUpdatingAsync(type, item);
+                            Validator.TryValidateObject(item, new ValidationContext(item), errors);
+                            vc.QueueVerification(e);
+                            break;
+                        case EntityState.Deleted:
+                            pending.Add((e.State, item, type));
+                            await OnDeletingAsync(type, item);
+                            Validator.TryValidateObject(item, new ValidationContext(item), errors);
+                            vc.QueueVerification(e);
+                            break;
+                    }
                 }
-            }
-            var postSaveChanges = this.PostSaveChangesQueue;
-            this.PostSaveChangesQueue = null;
-            if (postSaveChanges?.Count > 0)
-            {
-                foreach(var (priority, change) in postSaveChanges.OrderBy((x) => x.priority))
+                if (errors.Any())
                 {
-                    await change();
+                    throw new AppValidationException(new AppValidationErrors
+                    {
+                        Message = $"Invalid model {string.Join(", ", errors.Select(x => x.ErrorMessage + ": " + string.Join(", ", x.MemberNames)))}",
+                        Errors = errors.Select(x => new AppValidationError
+                        {
+                            Name = string.Join(", ", x.MemberNames),
+                            Error = x.ErrorMessage!
+                        })
+                    });
                 }
+                await vc.VerifyAsync();
+                var r = await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+                foreach (var (state, item, type) in pending)
+                {
+                    switch (state)
+                    {
+                        case EntityState.Added:
+                            await OnInsertedAsync(type, item);
+                            break;
+                        case EntityState.Modified:
+                            await OnUpdatedAsync(type, item);
+                            break;
+                        case EntityState.Deleted:
+                            await OnDeletedAsync(type, item);
+                            break;
+                    }
+                }
+
+                isChanging = false;
+
+                var postSaveChanges = this.PostSaveChangesQueue;
+                this.PostSaveChangesQueue = null;
+                if (postSaveChanges?.Count > 0)
+                {
+                    foreach (var (priority, change) in postSaveChanges.OrderBy((x) => x.priority))
+                    {
+                        await change();
+                    }
+                }
+                return r;
+            } finally
+            {
+                isChanging = false;
             }
-            return r;
         }
 
         public void QueuePostSaveTask(Func<Task> task, int priority = int.MaxValue)
