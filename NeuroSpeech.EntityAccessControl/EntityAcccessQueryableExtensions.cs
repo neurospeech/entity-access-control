@@ -207,7 +207,7 @@ namespace NeuroSpeech.EntityAccessControl
             {
                 q = q.AsSplitQuery();
             }
-            // if (options.Trace != null)
+            if (options.Trace != null)
             {
                 string text = source + "\r\n" + q.ToQueryString();
                 options.Trace?.Invoke(text);
