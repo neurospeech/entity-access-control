@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 
 namespace NeuroSpeech.EntityAccessControl.Tests.Insert
 {
+
     [TestClass]
     public class QueryContextTest: BaseTest
     {
