@@ -98,11 +98,11 @@ namespace NeuroSpeech.EntityAccessControl
             }
 
             Expression result;
-            if (isInclude)
+            if (isInclude || node.Method.Name == "SelectMany")
             {
-                if (node.Method.Name == "ThenInclude" || node.Method.Name == "SelectMany")
+                var md = node.Method.GetGenericMethodDefinition();
+                if (node.Method.Name == "ThenInclude")
                 {
-                    var md = node.Method.GetGenericMethodDefinition();
                     var targetType = args[0].Type.GetFirstGenericArgument();
                     var previousType = args[0].Type.GetSecondGenericArgument().GetFirstGenericArgument();
                     var funcReturnType = args[1].Type.GetFuncReturnType();
@@ -112,7 +112,6 @@ namespace NeuroSpeech.EntityAccessControl
                 else
                 {
                     // we need to change generic method definition...
-                    var md = node.Method.GetGenericMethodDefinition();
                     var targetType = args[0].Type.GetFirstGenericArgument();
                     var funcReturnType = args[1].Type.GetFuncReturnType();
                     var method = md.MakeGenericMethod(targetType, funcReturnType);
