@@ -127,7 +127,10 @@ namespace NeuroSpeech.EntityAccessControl
                 throw new EntityAccessException($"No security rule defined for entity {typeof(T).Name}");
             }
             eh.EnforceSecurity = EnforceSecurity;
-            return new SecureQueryable<T>(this, eh.Filter(q));
+            var fq = eh.Filter(q);
+            // fq is already filtered...
+            fq.Expression.DoNotVisit();
+            return new SecureQueryable<T>(this, fq);
         }
 
         public IEntityEvents? GetEntityEvents(Type type)
