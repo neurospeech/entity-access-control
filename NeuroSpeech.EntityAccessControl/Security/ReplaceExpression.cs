@@ -155,8 +155,9 @@ namespace NeuroSpeech.EntityAccessControl
             //          Expression<Func<Project,IEnumerable<ProjectRole>>> arg1)
 
             var body = Visit(node.Body);
-            if (node.Type.IsConstructedGenericType
-                && node.Type.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+            var type = typeof(T);
+            if (type.IsConstructedGenericType
+                && type.GetGenericTypeDefinition() == typeof(IEnumerable<>))
             {
                 return Expression.Lambda(typeof(T), body, node.Parameters);
             }
