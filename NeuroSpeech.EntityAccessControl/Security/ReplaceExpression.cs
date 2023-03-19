@@ -100,7 +100,7 @@ namespace NeuroSpeech.EntityAccessControl
             Expression result;
             if (isInclude)
             {
-                if (node.Method.Name == "ThenInclude")
+                if (node.Method.Name == "ThenInclude" || node.Method.Name == "SelectMany")
                 {
                     var md = node.Method.GetGenericMethodDefinition();
                     var targetType = args[0].Type.GetFirstGenericArgument();
