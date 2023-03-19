@@ -15,7 +15,7 @@ namespace NeuroSpeech.EntityAccessControl
 
         public static void DoNotVisit(this Expression expression)
         {
-            doNotVisitCache.Add(expression, "");
+            doNotVisitCache.AddOrUpdate(expression, "");
         }
 
         public static bool CanVisit(this Expression expression)
