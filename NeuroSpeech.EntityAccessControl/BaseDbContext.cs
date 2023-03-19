@@ -280,12 +280,19 @@ namespace NeuroSpeech.EntityAccessControl
         /// <returns></returns>
         public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
         {
-            // this.ChangeTracker.DetectChanges();
             if(isChanging)
             {
-                throw new InvalidOperationException("Save Changes is already in progress, please queue your changes...");
+                if (!RaiseEvents)
+                {
+                    this.QueuePostSaveTask(() => this.SaveChangesWithoutEventsAsync(cancellationToken));
+                    return 0;
+                }
+                this.QueuePostSaveTask(() => this.SaveChangesAsync(cancellationToken));
+                return 0;
             }
+
             isChanging = true;
+
             try
             {
 

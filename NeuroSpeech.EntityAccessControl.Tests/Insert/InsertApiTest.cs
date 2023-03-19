@@ -107,7 +107,7 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
             {
                 AuthorID = userID,
                 Name = "a",
-                Tags = new PostTag[] {
+                Tags = new List<PostTag> {
                             new PostTag {
                                 Name = "funny",
                             },

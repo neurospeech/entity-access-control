@@ -220,8 +220,14 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
             var start = end.AddMonths(-1);
 
             var m = System.Text.Json.JsonSerializer.Serialize(new object[] {
-                new object[] {"joinDateRange", "", start, end, "Day"  },
-                new object[] { "select", "x => new { tags = x.Entity.Posts.SelectMany(p => p.Tags).Count() }" }
+                new object[] {"JoinDateRange", "", start, end, "Day"  },
+                new object[] { "Select", @"
+                x => new {
+                    tags = x.Entity.Posts
+                        .SelectMany(p => p.Tags)
+                        .Where(x => x.PostID > 0)
+                        .Sum(x => x.PostID) 
+                }" }
             });
 
             var r = await controller.Methods(name,

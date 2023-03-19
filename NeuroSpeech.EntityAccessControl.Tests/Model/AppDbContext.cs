@@ -92,7 +92,7 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Model
 
         public string Password { get; set; }
 
-        public ICollection<Post> Posts { get; set; }
+        public List<Post> Posts { get; set; }
     }
 
     [Table("Campaign")]
@@ -148,7 +148,7 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Model
 
         public DateTime DateCreated { get; set; } = DateTime.UtcNow;
 
-        public ICollection<PostTag> Tags { get; set; }
+        public List<PostTag> Tags { get; set; }
 
         public ICollection<PostContent> Contents { get; set; }
 
