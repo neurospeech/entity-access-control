@@ -87,6 +87,21 @@ namespace NeuroSpeech.EntityAccessControl.Internal
     public static class TypeExtensions
     {
 
+        public static Type LowerToEnumerable(this Type type)
+        {
+            if(!type.IsConstructedGenericType)
+            {
+                return type;
+            }
+            var gtd = type.GetGenericTypeDefinition();
+            var lowered = typeof(IEnumerable<>).MakeGenericType(type.GenericTypeArguments[0]);
+            if (lowered.IsAssignableFrom(gtd))
+            {
+                return lowered;
+            }
+            return type;
+        }
+
         public static bool IsAnonymous(this Type type)
         {
             if (type == null)

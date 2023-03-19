@@ -145,9 +145,24 @@ namespace NeuroSpeech.EntityAccessControl
 
         protected override Expression VisitLambda<T>(Expression<T> node)
         {
+
+            // Expression<Func<Project, List<ProjectRole>>> x;
+            // cannot be used for parameter of type '
+            // Expression<Func<Project,IEnumerable<ProjectRole>> of method
+            // IQueryable<ProjectRole>
+            //      SelectMany<Project,ProjectRole>(
+            //          IQueryable<Project> @this,
+            //          Expression<Func<Project,IEnumerable<ProjectRole>>> arg1)
+
             var body = Visit(node.Body);
+            if (node.Type.IsConstructedGenericType
+                && node.Type.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+            {
+                return Expression.Lambda(typeof(T), body, node.Parameters);
+            }
             var result = Expression.Lambda(body, node.Parameters);
             return result;
+
         }
 
         protected override Expression VisitMember(MemberExpression node)

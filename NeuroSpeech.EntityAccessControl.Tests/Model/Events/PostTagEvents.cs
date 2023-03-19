@@ -13,5 +13,10 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Model.Events
         {
             return q.Where(x => x.Post.AuthorID == db.UserID);
         }
+
+        public override IQueryable<PostTag> IncludeFilter(IQueryable<PostTag> q)
+        {
+            return q;
+        }
     }
 }
