@@ -65,6 +65,39 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
 
         }
 
+        //[TestMethod]
+        //public async Task TestMany()
+        //{
+        //    using var scope = CreateScope();
+
+        //    var db = scope.GetRequiredService<AppDbContext>();
+
+        //    db.EnforceSecurity = true;
+        //    db.UserID = 2;
+        //    var sdb = db;
+
+        //    var qc = db.FilteredQuery<Account>();
+
+        //    var end = DateTime.UtcNow;
+        //    var start = end.AddMonths(-1);
+
+        //    var diff = end - start;
+        //    var qjoin = qc.JoinDateRange(start, end, "Day");
+
+        //    var text = qjoin.ToQueryString();
+
+        //    var list = await qjoin.Select((x) => new
+        //    {
+        //        count = x.Entity.Posts.SelectMany(p => p.Contents)
+        //            .Where(p => p.PostContentID > 2)
+        //            .Sum( p => p.PostID)
+        //    }).ToListAsync();
+
+        //    Assert.AreEqual(diff.TotalDays, list.Count);
+        //    Assert.AreEqual(2, list[0].count);
+
+        //}
+
         [TestMethod]
         public async Task TestNullable()
         {

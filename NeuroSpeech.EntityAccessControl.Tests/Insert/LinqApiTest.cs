@@ -204,6 +204,34 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
         }
 
         [TestMethod]
+        public async Task SelectManyDateRangeAsync()
+        {
+            using var scope = CreateScope();
+
+            var db = scope.GetRequiredService<AppDbContext>();
+            db.UserID = 2;
+
+            var sdb = db;
+
+            var controller = new TestEntityController(sdb);
+            var name = "NeuroSpeech.EntityAccessControl.Tests.Model.Account";
+
+            var end = DateTime.UtcNow;
+            var start = end.AddMonths(-1);
+
+            var m = System.Text.Json.JsonSerializer.Serialize(new object[] {
+                new object[] {"joinDateRange", "", start, end, "Day"  },
+                new object[] { "select", "x => new { tags = x.Entity.Posts.SelectMany(p => p.Tags).Count() }" }
+            });
+
+            var r = await controller.Methods(name,
+                methods: m
+                );
+
+            Assert.IsNotNull(r);
+        }
+
+        [TestMethod]
         public async Task SelectJoinAsync()
         {
             using var scope = CreateScope();

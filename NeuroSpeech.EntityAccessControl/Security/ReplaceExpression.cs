@@ -85,7 +85,7 @@ namespace NeuroSpeech.EntityAccessControl
 
             var reset = false;
 
-            if (node.Method.Name == "Select" || isInclude)
+            if (node.Method.Name == "Select" || node.Method.Name == "SelectMany" || isInclude)
             {
                 CanReplace = true;
                 reset = true;
