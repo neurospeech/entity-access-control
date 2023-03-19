@@ -92,7 +92,7 @@ namespace NeuroSpeech.EntityAccessControl
             foreach (var item in args)
             {
                 var p = mps[index++];
-                if (!p.ParameterType.IsAssignableFrom(item.Type))
+                if (p.ParameterType != item.Type)
                 {
                     return false;
                 }

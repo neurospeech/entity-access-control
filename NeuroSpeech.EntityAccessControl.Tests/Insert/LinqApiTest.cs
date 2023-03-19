@@ -225,9 +225,9 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
                 x => new {
                     tags = x.Entity.Posts
                         .SelectMany(p => p.Tags)
-                        .Where(x => x.PostID > 0)
+                        .Where(x => x.PostID > @0)
                         .Sum(x => x.PostID) 
-                }" }
+                }", 5 }
             });
 
             var r = await controller.Methods(name,
