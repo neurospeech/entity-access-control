@@ -66,6 +66,26 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
 
         }
 
+        [TestMethod]
+        public async Task TestMultiRef()
+        {
+            using var scope = CreateScope();
+
+            var db = scope.GetRequiredService<AppDbContext>();
+
+            db.EnforceSecurity = true;
+            db.UserID = 2;
+            var sdb = db;
+
+            var post = await db.Posts.FirstOrDefaultAsync();
+
+            await db.Entry(post)
+                .BuildReferenceQuery(x => x.Author)
+                .JoinCollection(x => x.Authors)
+                .LoadAsync();
+
+        }
+
         //[TestMethod]
         //public async Task TestMany()
         //{
