@@ -57,8 +57,7 @@ namespace NeuroSpeech.EntityAccessControl
                     entry.Collection(collection).Query().Process(postProcess)
                     .Select(x => new Selection<TR2, TR>
                     {
-                        Left = x
-                        ,
+                        Left = x,
                         Right = rs.ToList()
                     })
                 );
@@ -67,7 +66,7 @@ namespace NeuroSpeech.EntityAccessControl
 
             public Task LoadAsync()
             {
-                return rs.LoadAsync();
+                return rs.ToListAsync();
             }
         }
 
