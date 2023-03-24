@@ -66,7 +66,7 @@ namespace NeuroSpeech.EntityAccessControl
 
             public Task LoadAsync()
             {
-                return rs.ToListAsync();
+                return rs.LoadAsync();
             }
         }
 
@@ -100,11 +100,7 @@ namespace NeuroSpeech.EntityAccessControl
             this IQueryable<T> q, 
             Func<IQueryable<T>,IQueryable<T>>? fx = null)
         {
-            if (fx == null)
-            {
-                return q;
-            }
-            return q.Process(fx);
+            return fx?.Invoke(q) ?? q;
         }
     }
 }
