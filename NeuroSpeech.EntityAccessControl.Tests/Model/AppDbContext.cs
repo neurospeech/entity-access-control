@@ -7,6 +7,14 @@ using System.Linq;
 
 namespace NeuroSpeech.EntityAccessControl.Tests.Model
 {
+    [Keyless]
+    public class Pair
+    {
+        public string Label { get; set; }
+
+        public int Value { get; set; }  
+    }
+
     public class AppDbContext: BaseDbContext<AppDbContext>
     {
         public long UserID;
@@ -30,9 +38,14 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Model
 
         public DbSet<Tag> Tags { get; set; }
 
+        [ExternalFunction]
+        public IQueryable<Pair> GetLabelPairs(int i) => FromExpression(() => GetLabelPairs(i));
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            this.RegisterExternalFunctions(modelBuilder);
 
 
             var cascadeFKs = modelBuilder.Model.GetEntityTypes()

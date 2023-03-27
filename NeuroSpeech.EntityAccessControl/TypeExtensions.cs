@@ -415,6 +415,49 @@ namespace NeuroSpeech.EntityAccessControl.Internal
             return method(p1, p2, p3);
         }
 
+        public static T InvokeAs<T>(Type type, Type type2, Func<T> fx)
+        {
+            var method = TypedGet(
+                    (type, type2, fx.Method),
+                    (k) => k.method
+                        .GetGenericMethodDefinition()
+                        .MakeGenericMethod(k.type1, k.type2)
+                        .CreateTypedDelegate<Func<T>>());
+            return method();
+        }
+
+        public static T InvokeAs<T1, T>(Type type, Type type2, Func<T1, T> fx, T1 p1)
+        {
+            var method = TypedGet(
+                    (type, type2, fx.Method),
+                    (k) => k.method
+                        .GetGenericMethodDefinition()
+                        .MakeGenericMethod(k.type1, k.type2)
+                        .CreateTypedDelegate<Func<T1, T>>());
+            return method(p1);
+        }
+
+        public static T InvokeAs<T1, T2, T>(Type type, Type type2, Func<T1, T2, T> fx, T1 p1, T2 p2)
+        {
+            var method = TypedGet(
+                    (type, type2, fx.Method),
+                    (k) => k.method
+                        .GetGenericMethodDefinition()
+                        .MakeGenericMethod(k.type1, k.type2)
+                        .CreateTypedDelegate<Func<T1, T2, T>>());
+            return method(p1, p2);
+        }
+        public static T InvokeAs<T1, T2, T3, T>(Type type, Type type2, Func<T1, T2, T3, T> fx, T1 p1, T2 p2, T3 p3)
+        {
+            var method = TypedGet(
+                    (type, type2, fx.Method),
+                    (k) => k.method
+                        .GetGenericMethodDefinition()
+                        .MakeGenericMethod(k.type1, k.type2)
+                        .CreateTypedDelegate<Func<T1, T2, T3, T>>());
+            return method(p1, p2, p3);
+        }
+
         public static T InvokeAs<Target, T>(this Target target, Type type, Func<T> fx)
         {
             var method = TypedGet(

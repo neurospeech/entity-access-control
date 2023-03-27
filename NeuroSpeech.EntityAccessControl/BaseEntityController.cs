@@ -16,6 +16,8 @@ using NeuroSpeech.EntityAccessControl.Parser;
 using Microsoft.AspNetCore.Http;
 using System.Reflection;
 using Microsoft.AspNetCore.Mvc.Filters;
+using System.Linq.Expressions;
+using NeuroSpeech.EntityAccessControl.Extensions;
 
 namespace NeuroSpeech.EntityAccessControl
 {
@@ -349,6 +351,10 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
         {
             public JsonElement Methods { get; set; }
 
+            public string? Function { get; set; }
+
+            public JsonElement Parameters { get; set; }
+
             public int Start { get; set; } = 0;
             public int Size { get; set; } = 200;
             public bool SplitInclude { get; set; } = true;
@@ -424,6 +430,8 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
             options.Methods = methodList;
             options.Start = model.Start;
             options.Size = model.Size;
+            options.Function = model.Function;
+            options.Parameters = model.Parameters;
             options.SplitInclude = model.SplitInclude;
             if (model.Trace)
             {
@@ -556,12 +564,15 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
             LinqMethodOptions options)
             where T : class
         {
-            var q = db.FilteredQuery<T>();
+            var q = options.Function != null
+                ? DbFunctionInvoker.CallFunction<T>(db, options.Function, options.Parameters)
+                : db.FilteredQuery<T>();
             var type = db.GetType();
             options.Type = type;
             var result = await MethodParser.Instance.Parse<T>(q, options);
             return Serialize(result);
         }
+
 
         //[HttpGet("query/{entity}")]
         //public async Task<IActionResult> Query(

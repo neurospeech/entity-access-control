@@ -18,6 +18,12 @@ namespace NeuroSpeech.EntityAccessControl.Tests
             Execute($"CREATE DATABASE [{DBName}] ON PRIMARY (NAME = {DBName}_data, FILENAME='{DbFile}') LOG ON (NAME={DBName}_Log, FILENAME='{LogFile}')");
 
             CreateDateRangeView(DBName);
+
+            Execute(@$"CREATE FUNCTION [dbo].[GetLabelPairs]( @n int ) RETURNS TABLE AS RETURN (
+        SELECT 'Select' as [Label], 0 as [Value]
+        UNION ALL
+        SELECT 'Label' as [Label], @n as [Value]
+)", DBName);
         }
 
         private void CreateDateRangeView(string dBName)
