@@ -38,8 +38,11 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Model
 
         public DbSet<Tag> Tags { get; set; }
 
-        [ExternalFunction]
+        [ExternalFunction, DbFunction]
         public IQueryable<Pair> GetLabelPairs(int i) => FromExpression(() => GetLabelPairs(i));
+
+        [ExternalFunction]
+        public IQueryable<Pair> GetLabelPairs2(int i) => GetLabelPairs(i).Where( x=> x.Value > 0);
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

@@ -16,21 +16,11 @@ namespace NeuroSpeech.EntityAccessControl
     //}
 
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = true)]
-    public class ExternalFunctionAttribute: DbFunctionAttribute
+    public class ExternalFunctionAttribute: Attribute
     {
 
     }
 
-    public static class ExternalFunctionExtensions
-    {
-        public static void RegisterExternalFunctions<TDbContext>(this TDbContext context, ModelBuilder builder)
-        {
-            foreach(var em in typeof(TDbContext).GetMethods().Where(x => x.GetCustomAttribute<DbFunctionAttribute>() != null))
-            {
-                builder.HasDbFunction(em);
-            }
-        }
-    }
 
     [AttributeUsage(AttributeTargets.Class, Inherited = true, AllowMultiple = false)]
     public class CompositeKeyAttribute: Attribute
