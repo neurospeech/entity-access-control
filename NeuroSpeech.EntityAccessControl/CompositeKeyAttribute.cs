@@ -9,11 +9,11 @@ using System.Text;
 namespace NeuroSpeech.EntityAccessControl
 {
 
-    [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = true)]
-    public class DbFunctionAttribute: Attribute
-    {
+    //[AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = true)]
+    //public class DbFunctionAttribute: Attribute
+    //{
 
-    }
+    //}
 
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = true)]
     public class ExternalFunctionAttribute: DbFunctionAttribute

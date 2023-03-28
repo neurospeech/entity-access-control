@@ -45,7 +45,7 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Model
         {
             base.OnModelCreating(modelBuilder);
 
-            this.RegisterExternalFunctions(modelBuilder);
+            // this.RegisterExternalFunctions(modelBuilder);
 
 
             var cascadeFKs = modelBuilder.Model.GetEntityTypes()
