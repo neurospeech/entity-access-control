@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 namespace NeuroSpeech.EntityAccessControl.Parser
 {
 
-    public delegate Task<LinqResult>
+    public delegate Task<object>
         LinqMethodDelegate<T>(IQueryable<T> query, LinqMethodOptions args);
 
     public class MethodParser
@@ -25,7 +25,7 @@ namespace NeuroSpeech.EntityAccessControl.Parser
         private readonly ConcurrentDictionary<string, Task> cache
             = new();
 
-        public async Task<LinqResult> Parse<T>(IQueryable<T> queryContext, LinqMethodOptions args)
+        public async Task<object> Parse<T>(IQueryable<T> queryContext, LinqMethodOptions args)
         {
             var d = await Parse<T>(args);
             return await d(queryContext, args);
@@ -96,14 +96,14 @@ using System.Collections.Generic;
 using System.Text;
 using System;
 
-public static Task<LinqResult> Query(
+public static async Task<object> Query(
     IQueryable<{type.FullName}> q, 
     NeuroSpeech.EntityAccessControl.Parser.LinqMethodOptions methods) {{
     NeuroSpeech.EntityAccessControl.Parser.LinqMethod method;
 
     {sb}
     var rq = q{exec};
-    return rq.ToPagedListAsync(methods, {execString});
+    return await rq.ToPagedListAsync(methods, {execString});
 }}
 
 return Query;

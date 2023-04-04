@@ -2,9 +2,9 @@
 
 namespace NeuroSpeech.EntityAccessControl
 {
-    public class LinqResult
+    public class LinqResult<T>
     {
-        public IEnumerable<object>? Items { get; set; }
+        public IEnumerable<T>? Items { get; set; }
 
         public long Total { get; set; }
     }

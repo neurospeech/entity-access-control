@@ -11,6 +11,8 @@ namespace NeuroSpeech.EntityAccessControl.Parser
         public int Start { get; set; }
         public int Size { get; set; }
         public bool SplitInclude { get; set; }
+
+        public bool Count { get; set; }
         public Action<string>? Trace { get; set; }
         public CancellationToken CancelToken { get; set; }
         public string? Function { get; internal set; }

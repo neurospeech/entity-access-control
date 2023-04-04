@@ -361,6 +361,7 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
             public bool Trace { get; set; }
 
             public int CacheSeconds { get; set; }
+            public bool? Count { get; set; }
         }
 
         [HttpGet("methods/{entity}")]
@@ -372,6 +373,7 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
             [FromQuery] bool splitInclude = true,
             [FromQuery] bool trace = false,
             [FromQuery] int cacheSeconds = 0,
+            [FromQuery] bool count = true,
             CancellationToken cancellationToken = default
             )
         {
@@ -379,6 +381,7 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
                 Methods = JsonDocument.Parse(methods).RootElement,
                 Start = start,
                 Size = size,
+                Count = count,
                 SplitInclude = splitInclude,
                 Trace = trace,
                 CacheSeconds = cacheSeconds
@@ -394,6 +397,7 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
             [FromRoute] bool splitInclude = true,
             [FromRoute] bool trace = false,
             [FromRoute] int cacheSeconds = 0,
+            [FromRoute] bool count = true,
             CancellationToken cancellationToken = default
         )
         {
@@ -403,6 +407,7 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
                 Start = start,
                 Size = size,
                 SplitInclude = splitInclude,
+                Count = count,
                 Trace = trace,
                 CacheSeconds = cacheSeconds
             }, cancellationToken);
@@ -433,6 +438,8 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
             options.Function = model.Function;
             options.Parameters = model.Parameters;
             options.SplitInclude = model.SplitInclude;
+            // default is true if not supplied...
+            options.Count = model.Count ?? true;
             if (model.Trace)
             {
                 options.Trace = TraceQuery;
@@ -443,99 +450,101 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
             {
                 root = JsonDocument.Parse(root.AsString()!).RootElement;
             }
-
-            foreach(var method in root.EnumerateArray())
+            if (root.ValueKind == JsonValueKind.Array)
             {
-                LinqMethod lm = new();
-
-                if (method.ValueKind != JsonValueKind.Array)
+                foreach (var method in root.EnumerateArray())
                 {
-                    throw new NotSupportedException($"Each method should be an array with format [name, query, ... parameters ]");
+                    LinqMethod lm = new();
+
+                    if (method.ValueKind != JsonValueKind.Array)
+                    {
+                        throw new NotSupportedException($"Each method should be an array with format [name, query, ... parameters ]");
+                    }
+
+                    int n = method.GetArrayLength();
+                    if (n < 2)
+                    {
+                        throw new ArgumentException($"Method Siganture must have two elements atleast");
+                    }
+
+                    string name = method[0].GetString()!;
+
+                    lm.Expression = method[1].GetString()!;
+
+                    for (int i = 2; i < n; i++)
+                    {
+                        lm.Parameters.Add(new QueryParameter(method[i]));
+                    }
+
+                    switch (name)
+                    {
+                        case "select":
+                            lm.Method = "Select";
+                            hasSelect = true;
+                            break;
+                        case "groupBy":
+                            lm.Method = "GroupBy";
+                            break;
+                        case "where":
+                            lm.Method = "Where";
+                            break;
+                        case "orderBy":
+                            lm.Method = "OrderBy";
+                            break;
+                        case "orderByDescending":
+                            lm.Method = "OrderByDescending";
+                            break;
+                        case "thenBy":
+                            lm.Method = "ThenBy";
+                            break;
+                        case "thenByDescending":
+                            lm.Method = "ThenByDescending";
+                            break;
+                        case "dateRange":
+                            lm.Method = "DateRange";
+                            lm.Expression = "@0, @1, @2";
+                            break;
+                        case "joinDateRange":
+                            lm.Method = "JoinDateRange";
+                            lm.Expression = "@0, @1, @2";
+                            break;
+                        case "join":
+                            var typeName = method[1].GetString();
+                            var left = method[2].GetString();
+                            var right = method[3].GetString();
+
+                            // this will ensure that the type exits..
+                            FindEntityType(typeName);
+
+                            lm.Method = $"Container().JoinWith<{typeName}>().Join({left}, {right})";
+                            lm.Expression = null;
+                            break;
+                        case "selectWith":
+                            typeName = method[1].GetString();
+
+                            // this will ensure that the type exits..
+                            FindEntityType(typeName);
+
+                            lm.Method = $"Container().JoinWith<{typeName}>()";
+                            lm.Expression = null;
+                            break;
+                        case "include":
+                            lm.Method = "IncludeSecure";
+                            hasInclude = true;
+                            if (!lm.Expression.Contains("=>"))
+                                lm.Expression = System.Text.Json.JsonSerializer.Serialize(lm.Expression);
+                            break;
+                        case "thenInclude":
+                            lm.Method = "ThenIncludeSecure";
+                            if (!lm.Expression.Contains("=>"))
+                                lm.Expression = System.Text.Json.JsonSerializer.Serialize(lm.Expression);
+                            break;
+                        default:
+                            continue;
+                    }
+
+                    methodList.Add(lm);
                 }
-
-                int n = method.GetArrayLength();
-                if (n < 2)
-                {
-                    throw new ArgumentException($"Method Siganture must have two elements atleast");
-                }
-
-                string name = method[0].GetString()!;
-
-                lm.Expression = method[1].GetString()!;
-
-                for (int i = 2; i < n; i++)
-                {
-                    lm.Parameters.Add(new QueryParameter(method[i]));
-                }
-
-                switch (name)
-                {
-                    case "select":
-                        lm.Method = "Select";
-                        hasSelect = true;
-                        break;
-                    case "groupBy":
-                        lm.Method = "GroupBy";
-                        break;
-                    case "where":
-                        lm.Method = "Where";
-                        break;
-                    case "orderBy":
-                        lm.Method = "OrderBy";
-                        break;
-                    case "orderByDescending":
-                        lm.Method = "OrderByDescending";
-                        break;
-                    case "thenBy":
-                        lm.Method = "ThenBy";
-                        break;
-                    case "thenByDescending":
-                        lm.Method = "ThenByDescending";
-                        break;
-                    case "dateRange":
-                        lm.Method = "DateRange";
-                        lm.Expression = "@0, @1, @2";
-                        break;
-                    case "joinDateRange":
-                        lm.Method = "JoinDateRange";
-                        lm.Expression = "@0, @1, @2";
-                        break;
-                    case "join":
-                        var typeName= method[1].GetString();
-                        var left = method[2].GetString();
-                        var right = method[3].GetString();
-
-                        // this will ensure that the type exits..
-                        FindEntityType(typeName);
-
-                        lm.Method = $"Container().JoinWith<{typeName}>().Join({left}, {right})";
-                        lm.Expression = null;
-                        break;
-                    case "selectWith":
-                        typeName = method[1].GetString();
-
-                        // this will ensure that the type exits..
-                        FindEntityType(typeName);
-
-                        lm.Method = $"Container().JoinWith<{typeName}>()";
-                        lm.Expression = null;
-                        break;
-                    case "include":
-                        lm.Method = "IncludeSecure";
-                        hasInclude = true;
-                        if (!lm.Expression.Contains("=>"))
-                            lm.Expression = System.Text.Json.JsonSerializer.Serialize(lm.Expression);
-                        break;
-                    case "thenInclude":
-                        lm.Method = "ThenIncludeSecure";
-                        if (!lm.Expression.Contains("=>"))
-                            lm.Expression = System.Text.Json.JsonSerializer.Serialize(lm.Expression);
-                        break;
-                    default:
-                        continue;
-                }
-
-                methodList.Add(lm);
             }
             if (options.SplitInclude)
             {

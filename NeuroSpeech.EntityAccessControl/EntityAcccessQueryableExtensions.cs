@@ -182,7 +182,7 @@ namespace NeuroSpeech.EntityAccessControl
         }
 
         [EditorBrowsable(EditorBrowsableState.Never)]
-        public static async Task<LinqResult> ToPagedListAsync<T>(
+        public static async Task<LinqResult<T>> ToPagedListAsync<T>(
             this IQueryable<T> @this,
             LinqMethodOptions options,
             string source)
@@ -192,16 +192,14 @@ namespace NeuroSpeech.EntityAccessControl
             int size = options.Size;
             var cancellationToken = options.CancelToken;
             var q = @this;
-            bool hasPaging = false;
+            bool count = options.Count;
             if (start > 0)
             {
                 q = q.Skip(start);
-                hasPaging = true;
             }
             if (size > 0)
             {
                 q = q.Take(size);
-                hasPaging = true;
             }
             if (options.SplitInclude)
             {
@@ -212,17 +210,17 @@ namespace NeuroSpeech.EntityAccessControl
                 string text = source + "\r\n" + q.ToQueryString();
                 options.Trace?.Invoke(text);
             }
-            if (hasPaging)
+            if (count)
             {
-                return new LinqResult
+                return new LinqResult<T>
                 {
                     Total = await @this.CountAsync(cancellationToken),
-                    Items = (await q.ToListAsync(cancellationToken)).OfType<object>(),
+                    Items = (await q.ToListAsync(cancellationToken)),
                 };
             }
-            return new LinqResult
+            return new LinqResult<T>
             {
-                Items = (await @this.ToListAsync(cancellationToken)).OfType<object>(),
+                Items = (await @this.ToListAsync(cancellationToken)),
                 Total = 0
             };
         }
