@@ -438,6 +438,7 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
             options.Function = model.Function;
             options.Parameters = model.Parameters;
             options.SplitInclude = model.SplitInclude;
+            options.CancelToken = cancellationToken;
             // default is true if not supplied...
             options.Count = model.Count ?? true;
             if (model.Trace)
