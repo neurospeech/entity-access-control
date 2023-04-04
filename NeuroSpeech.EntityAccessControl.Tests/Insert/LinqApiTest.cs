@@ -41,7 +41,7 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
             var r = await controller.PostMethod(name,
                 new BaseEntityController.MethodOptions { 
                     Function = "GetLabelPairs",
-                    Parameters = parser.RootElement,
+                    Args = parser.RootElement,
                     Methods = methods.RootElement
                 }
                 );
@@ -74,7 +74,7 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
                 new BaseEntityController.MethodOptions
                 {
                     Function = "GetLabelPairs2",
-                    Parameters = parser.RootElement,
+                    Args = parser.RootElement,
                     Methods = methods.RootElement
                 }
                 );
@@ -107,7 +107,7 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
                 new BaseEntityController.MethodOptions
                 {
                     Function = "PublicPosts",
-                    Parameters = parser.RootElement,
+                    Args = parser.RootElement,
                     Methods = methods.RootElement
                 }
                 );

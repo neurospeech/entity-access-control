@@ -353,16 +353,58 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
 
             public string? Function { get; set; }
 
-            public JsonElement Parameters { get; set; }
+            public JsonElement Args { get; set; }
 
             public int Start { get; set; } = 0;
             public int Size { get; set; } = 200;
             public bool SplitInclude { get; set; } = true;
+
+            public bool Split { get => SplitInclude; set => SplitInclude = value; }
             public bool Trace { get; set; }
 
             public int CacheSeconds { get; set; }
+            public int Cache { get => CacheSeconds; set => CacheSeconds = value; }
             public bool? Count { get; set; }
         }
+
+        [HttpGet("query/{entity}")]
+        public Task<IActionResult> Query(
+            [FromRoute] string entity,
+            [FromQuery] string methods = "[]",
+            [FromQuery] int start = 0,
+            [FromQuery] int size = 200,
+            [FromQuery] bool split = true,
+            [FromQuery] bool trace = false,
+            [FromQuery] int cache = 0,
+            [FromQuery] bool count = true,
+            [FromQuery] string? function = null,
+            [FromQuery] string args = "[]",
+            CancellationToken cancellationToken = default
+        )
+        {
+            return PostMethod(entity, new MethodOptions
+            {
+                Methods = JsonDocument.Parse(methods ?? "[]").RootElement,
+                Start = start,
+                Size = size,
+                Count = count,
+                SplitInclude = split,
+                Trace = trace,
+                Cache = cache,
+                Function = function,
+                Args = JsonDocument.Parse(args ?? "[]").RootElement,
+            }, cancellationToken);
+        }
+
+//        [HttpGet("c2/{entity}/{json}")]
+//        public Task<IActionResult> CachedMethodsV2(
+//            [FromRoute] string entity,
+//            [FromRoute] string json,
+//            CancellationToken cancellationToken = default
+//)
+//        {
+//            return PostMethod(entity, System.Text.Json.JsonSerializer.Deserialize<MethodOptions>(json)!, cancellationToken);
+//        }
 
         [HttpGet("methods/{entity}")]
         public Task<IActionResult> Methods(
@@ -436,7 +478,7 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
             options.Start = model.Start;
             options.Size = model.Size;
             options.Function = model.Function;
-            options.Parameters = model.Parameters;
+            options.Parameters = model.Args;
             options.SplitInclude = model.SplitInclude;
             options.CancelToken = cancellationToken;
             // default is true if not supplied...
