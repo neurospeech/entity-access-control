@@ -89,6 +89,41 @@ namespace NeuroSpeech.EntityAccessControl.Extensions
             Expression body = Expression.Call(dbP, method, plist);
 
 
+            var exp = Expression.Lambda<Func<TDb, QueryParameter[], IQueryable<T>>>(body, dbP, pe);
+
+            return exp.Compile();
+        }
+
+
+        static Func<TDb, QueryParameter[], IQueryable<T>> EventFunction<TDb, T>(MethodInfo method)
+            where TDb : DbContext
+        {
+            var dbP = Expression.Parameter(typeof(TDb));
+            var pe = Expression.Parameter(typeof(QueryParameter[]));
+
+            var et = method.DeclaringType;
+
+            var etMethod = typeof(ISecureQueryProvider)
+                .GetMethod(nameof(ISecureQueryProvider.GetEntityEvents), new Type[] { typeof(Type) });
+
+            var parameters = method.GetParameters();
+
+            var length = parameters.Length;
+
+            var plist = new Expression[length];
+
+            var callee = Expression.Convert(Expression.Call(dbP, etMethod, Expression.Constant(typeof(T))), et);
+
+            for (int i = 0; i < length; i++)
+            {
+                var pi = parameters[i];
+                plist[i] = Expression.Convert(
+                    Expression.ArrayIndex(pe, Expression.Constant(i)), pi.ParameterType);
+            }
+
+            Expression body = Expression.Call(callee, method, plist);
+
+
             var exp = Expression.Lambda<Func<TDb,QueryParameter[],IQueryable<T>>>(body, dbP, pe);
 
             return exp.Compile();
@@ -103,24 +138,23 @@ namespace NeuroSpeech.EntityAccessControl.Extensions
 
             var type = db.GetType();
 
+            var entityType = typeof(T);
+
+            var k = ("static-function", entityType, function);
+
             var fx = type.StaticCacheGetOrCreate(
-                $"static-function-{function}",
+                k,
                 () =>
                 {
-                    var et = sdb.GetEntityEvents(type);
-                    if (et == null)
-                    {
-                        return NotExternalFunction<Db, T>;
-                    }
-
-                    var m = et.GetType().GetMethod(function);
+                    var et = sdb.GetEntityEvents(entityType);
+                    var m = et?.GetType().GetMethod(function);
                     if (m != null)
                     {
                         if(m.GetCustomAttribute<ExternalFunctionAttribute>() == null)
                         {
                             return NotExternalFunction<Db, T>;
                         }
-                        return Function<Db, T>(m);
+                        return EventFunction<Db, T>(m);
                     }
 
                     m = type.GetMethod(function);
