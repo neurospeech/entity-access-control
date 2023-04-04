@@ -100,26 +100,45 @@ namespace NeuroSpeech.EntityAccessControl.Extensions
             where Db: DbContext
         {
             var db = (Db)sdb;
+
             var type = db.GetType();
+
             var fx = type.StaticCacheGetOrCreate(
                 $"static-function-{function}",
                 () =>
                 {
-                    var m = type.GetMethod(function);
-                    if (m == null)
+                    var et = sdb.GetEntityEvents(type);
+                    if (et == null)
                     {
-                        return NotFunction<Db,T>;
-                    }
-                    if(m.GetCustomAttribute<ExternalFunctionAttribute>() == null)
-                    {
-                        return NotExternalFunction<Db,T>;
-                    }
-                    if(m.GetCustomAttribute<DbFunctionAttribute>() != null)
-                    {
-                        return FromExpressionFunction<Db,T>(m);
+                        return NotExternalFunction<Db, T>;
                     }
 
-                    return Function<Db, T>(m);
+                    var m = et.GetType().GetMethod(function);
+                    if (m != null)
+                    {
+                        if(m.GetCustomAttribute<ExternalFunctionAttribute>() == null)
+                        {
+                            return NotExternalFunction<Db, T>;
+                        }
+                        return Function<Db, T>(m);
+                    }
+
+                    m = type.GetMethod(function);
+                    if (m != null)
+                    {
+                        if (m.GetCustomAttribute<ExternalFunctionAttribute>() == null)
+                        {
+                            return NotExternalFunction<Db, T>;
+                        }
+                        if (m.GetCustomAttribute<DbFunctionAttribute>() != null)
+                        {
+                            return FromExpressionFunction<Db, T>(m);
+                        }
+
+                        return Function<Db, T>(m);
+                    }
+
+                    return NotFunction<Db, T>;
                 });
 
             return fx(db, list);
