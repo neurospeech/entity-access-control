@@ -220,7 +220,7 @@ namespace NeuroSpeech.EntityAccessControl
             }
             return new LinqResult<T>
             {
-                Items = (await @this.ToListAsync(cancellationToken)),
+                Items = (await q.ToListAsync(cancellationToken)),
                 Total = 0
             };
         }
