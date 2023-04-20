@@ -42,7 +42,8 @@ namespace NeuroSpeech.EntityAccessControl
 
             if (expression is MethodCallExpression method
                 && (method.Method.Name == "Select"
-                || method.Method.Name == "Include")) {  
+                || method.Method.Name == "Include"
+                || method.Method.Name == "ThenInclude")) {  
                     expression = Visitor.Visit(expression);
             }
 
