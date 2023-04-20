@@ -32,11 +32,22 @@ namespace NeuroSpeech.EntityAccessControl
         }
     }
 
+    internal class ReplacementStack: Stack<bool>
+    {
+        public bool CanReplace => Count > 0 ? Peek() : false;
+
+        public IDisposable EnableReplacement()
+        {
+            Push(true);
+            return new DisposableAction(() => Pop());
+        }
+    }
+
     internal class InjectFiltersVisitor : ExpressionVisitor
     {
         private readonly ISecureQueryProvider db;
         private readonly IAsyncQueryProvider provider;
-        private bool CanReplace;
+        private ReplacementStack replacementStack = new ReplacementStack();
 
         public InjectFiltersVisitor(ISecureQueryProvider db, IAsyncQueryProvider provider)
         {
@@ -83,18 +94,41 @@ namespace NeuroSpeech.EntityAccessControl
                 }
             }
 
-            var reset = false;
+            bool replace = false;
 
             if (node.Method.Name == "Select" || node.Method.Name == "SelectMany" || isInclude)
             {
-                CanReplace = true;
-                reset = true;
+                replace = true;
             }
-            var args = node.Arguments.Select(Visit).ToList();
             var target = node.Object;
             if (target != null)
             {
                 target = Visit(target);
+            }
+            var args = new List<Expression>();
+
+            var en = node.Arguments.GetEnumerator();
+
+            if (target == null)
+            {
+                if (en.MoveNext())
+                {
+                    args.Add(Visit(en.Current));
+                }
+            }
+
+            while(en.MoveNext())
+            {
+                var arg = en.Current;
+
+                if(!replace)
+                {
+                    args.Add(Visit(arg));
+                    continue;
+                }
+
+                using var a = replacementStack.EnableReplacement();
+                args.Add(Visit(arg));
             }
 
             Expression result;
@@ -125,10 +159,6 @@ namespace NeuroSpeech.EntityAccessControl
             else
             {
                 result = node.Update(target, args);
-            }
-            if (reset)
-            {
-                CanReplace = false;
             }
             return result;
         }
@@ -170,7 +200,7 @@ namespace NeuroSpeech.EntityAccessControl
 
         protected override Expression VisitMember(MemberExpression node)
         {
-            if (!CanReplace)
+            if (!replacementStack.CanReplace)
             {
                 return base.VisitMember(node);
             }
