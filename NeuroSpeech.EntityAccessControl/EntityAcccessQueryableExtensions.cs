@@ -131,7 +131,7 @@ namespace NeuroSpeech.EntityAccessControl
                         queryable.Expression, Expression.Quote(path)
                     })));
             }
-            return queryable.Include(path);
+            throw new InvalidOperationException($"Invalid provider {queryable.Provider.GetType().Name}");
         }
 
         public static IIncludableQueryable<T, TNext>
@@ -147,7 +147,7 @@ namespace NeuroSpeech.EntityAccessControl
                         queryable.Expression, Expression.Quote(path)
                     })));
             }
-            return queryable.ThenInclude(path);
+            throw new InvalidOperationException($"Invalid provider {queryable.Provider.GetType().Name}");
         }
 
         public static IIncludableQueryable<T, TNext>
@@ -163,7 +163,7 @@ namespace NeuroSpeech.EntityAccessControl
                         queryable.Expression, Expression.Quote(path)
                     })));
             }
-            return queryable.ThenInclude(path);
+            throw new InvalidOperationException($"Invalid provider {queryable.Provider.GetType().Name}");
         }
 
 
