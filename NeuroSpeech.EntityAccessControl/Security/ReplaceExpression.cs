@@ -9,6 +9,50 @@ using System.Collections.Generic;
 
 namespace NeuroSpeech.EntityAccessControl
 {
+    public static class ExpressionPathExtensions
+    {
+        public static string ToExpressionPath(this Expression expression)
+        {
+            var p = new ToPathVisitor();
+            expression = p.Visit(expression);
+            return expression.ToString();
+        }
+
+        public class ToPathVisitor : ExpressionVisitor
+        {
+
+            private Dictionary<ParameterExpression, ParameterExpression> parameters
+                = new();
+
+            protected override Expression VisitParameter(ParameterExpression node)
+            {
+                if (parameters.TryGetValue(node, out var n))
+                {
+                    return base.VisitParameter(n);
+                }
+                return base.VisitParameter(node);
+            }
+
+            protected override Expression VisitLambda<T>(Expression<T> node)
+            {
+                var i = 0;
+                var list = new List<ParameterExpression>();
+                // create params..
+                foreach (var p in node.Parameters)
+                {
+                    var r = Expression.Parameter(p.Type, $"p_{i}_{p.Type.FullName}");
+                    parameters.Add(p, r);
+                    list.Add(r);
+                }
+
+                var body = Visit(node.Body);
+
+                return node.Update(body, list);
+            }
+
+        }
+    }
+
     internal static class DoNotVisitExtensions
     {
         private static System.Runtime.CompilerServices.ConditionalWeakTable<Expression, object> doNotVisitCache = new System.Runtime.CompilerServices.ConditionalWeakTable<Expression, object>();
@@ -29,6 +73,28 @@ namespace NeuroSpeech.EntityAccessControl
                 return false;
             }
             return true;
+        }
+
+        private static System.Runtime.CompilerServices.ConditionalWeakTable<ISecureQueryProvider, List<string>>
+            visited = new System.Runtime.CompilerServices.ConditionalWeakTable<ISecureQueryProvider, List<string>>();
+
+        public static bool IncludedAlready(this Expression expression, ISecureQueryProvider provider)
+        {
+            if(!visited.TryGetValue(provider, out var list))
+            {
+                list = new ();
+                visited.Add(provider, list);
+            }
+            var path = expression.ToExpressionPath();
+            foreach(var item in list)
+            {
+                if (item.StartsWith(path))
+                {
+                    return true;
+                }
+            }
+            list.Add(path);
+            return false;
         }
     }
 
@@ -125,6 +191,15 @@ namespace NeuroSpeech.EntityAccessControl
                 {
                     args.Add(Visit(arg));
                     continue;
+                }
+
+                if (isInclude)
+                {
+                    if (arg.IncludedAlready(db))
+                    {
+                        args.Add(arg);
+                        continue;
+                    }
                 }
 
                 using var a = replacementStack.EnableReplacement();

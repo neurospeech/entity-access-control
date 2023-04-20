@@ -251,6 +251,36 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
         }
 
         [TestMethod]
+        public async Task MultipleIncludeTest()
+        {
+            using var scope = CreateScope();
+
+            var db = scope.GetRequiredService<AppDbContext>();
+            db.UserID = 2;
+
+            var sdb = db;
+
+            var controller = new TestEntityController(sdb);
+            var name = "NeuroSpeech.EntityAccessControl.Tests.Model.Post";
+
+            var m = System.Text.Json.JsonSerializer.Serialize(new object[] {
+                new object[] {"include", "x => x.Authors" },
+                new object[] {"thenInclude", "x => x.Account" },
+                new object[] {"include", "x => x.Authors" },
+                    new object[] {"thenInclude", "x => x.Post.Tags" },
+                new object[] {"select", "x => new { x.PostID, x.Tags }" }
+            });
+
+            var r = await controller.Methods(name,
+                methods: m
+                );
+
+            Assert.IsNotNull(r);
+
+        }
+
+
+        [TestMethod]
         public async Task SelectContainsAsync()
         {
             using var scope = CreateScope();

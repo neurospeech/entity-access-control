@@ -1,13 +1,31 @@
 ﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NeuroSpeech.EntityAccessControl.Tests.Model;
 using Org.BouncyCastle.Crypto.Paddings;
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Text;
 
 namespace NeuroSpeech.EntityAccessControl.Tests.Insert
 {
+
+    [TestClass]
+    public class ExpressionMatches
+    {
+
+        [TestMethod]
+        public void Match()
+        {
+            Expression<Func<Post, long>> e1 = e => e.Author.AccountID;
+            Expression<Func<Post, long>> e2= x => x.Author.AccountID;
+
+            Assert.AreEqual(e1.ToExpressionPath(), e2.ToExpressionPath());
+        }
+
+    }
+
     [TestClass]
     public class TypeTests
     {
