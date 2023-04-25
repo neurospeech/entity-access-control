@@ -7,12 +7,13 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace NeuroSpeech.EntityAccessControl.Extensions
 {
     internal class DbFunctionInvoker
     {
-        public static IQueryable<T> CallFunction<T>(ISecureQueryProvider db, string function, JsonElement parameters)
+        public static Task<IQueryable<T>> CallFunction<T>(ISecureQueryProvider db, string function, JsonElement parameters)
             where T : class
         {
             int lenght = parameters.GetArrayLength();
@@ -27,21 +28,21 @@ namespace NeuroSpeech.EntityAccessControl.Extensions
             return Generic.InvokeAs(db.GetType(), typeof(T), CallTypedFunction<DbContext, T>, db, function, list);
         }
 
-        private static IQueryable<T> NotFunction<TDb,T>(TDb db, QueryParameter[] args)
+        private static Task<IQueryable<T>> NotFunction<TDb,T>(TDb db, QueryParameter[] args)
             where TDb: DbContext
         {
             throw new MethodAccessException();
         }
 
-        private static IQueryable<T> NotExternalFunction<TDb,T>(TDb db, QueryParameter[] args)
+        private static Task<IQueryable<T>> NotExternalFunction<TDb,T>(TDb db, QueryParameter[] args)
         {
             throw new MethodAccessException($"Method exists but ExternalFunction attribute not applied.");
         }
 
-        static Func<TDb,QueryParameter[],IQueryable<T>> FromExpressionFunction<TDb,T>(MethodInfo method)
+        static Func<TDb,QueryParameter[],Task<IQueryable<T>>> FromExpressionFunction<TDb,T>(MethodInfo method)
             where TDb: DbContext
         {
-            IQueryable<T> FromExpression(TDb db, QueryParameter[] args)
+            Task<IQueryable<T>> FromExpression(TDb db, QueryParameter[] args)
             {
                 var pe = Expression.Constant(args);
 
@@ -62,12 +63,12 @@ namespace NeuroSpeech.EntityAccessControl.Extensions
 
                 var exp = Expression.Lambda<Func<IQueryable<T>>>(body);
 
-                return db.FromExpression<T>(exp);
+                return Task.FromResult(db.FromExpression<T>(exp));
             }
             return FromExpression;
         }
 
-        static Func<TDb, QueryParameter[], IQueryable<T>> Function<TDb, T>(MethodInfo method)
+        static Func<TDb, QueryParameter[], Task<IQueryable<T>>> Function<TDb, T>(MethodInfo method)
             where TDb : DbContext
         {
             var dbP = Expression.Parameter(typeof(TDb));
@@ -88,14 +89,26 @@ namespace NeuroSpeech.EntityAccessControl.Extensions
 
             Expression body = Expression.Call(dbP, method, plist);
 
+            body = ToTask<T>(body);
 
-            var exp = Expression.Lambda<Func<TDb, QueryParameter[], IQueryable<T>>>(body, dbP, pe);
+            var exp = Expression.Lambda<Func<TDb, QueryParameter[], Task<IQueryable<T>>>>(body, dbP, pe);
 
             return exp.Compile();
         }
 
+        private static Expression ToTask<T>(Expression body)
+        {
+            if(body.Type.IsConstructedGenericType && body.Type.GetGenericTypeDefinition() == typeof(Task<>))
+            {
+                return body;
+            }
+            // create Task.FromResult...
+            Func<object, Task<object>> method = Task.FromResult<object>;
+            var fromResult = method.Method.GetGenericMethodDefinition().MakeGenericMethod(typeof(IQueryable<T>));
+            return body = Expression.Call(null, fromResult, body);
+        }
 
-        static Func<TDb, QueryParameter[], IQueryable<T>> EventFunction<TDb, T>(MethodInfo method)
+        static Func<TDb, QueryParameter[], Task<IQueryable<T>>> EventFunction<TDb, T>(MethodInfo method)
             where TDb : DbContext
         {
             var dbP = Expression.Parameter(typeof(TDb));
@@ -123,14 +136,14 @@ namespace NeuroSpeech.EntityAccessControl.Extensions
 
             Expression body = Expression.Call(callee, method, plist);
 
+            body = ToTask<T>(body);
 
-            var exp = Expression.Lambda<Func<TDb,QueryParameter[],IQueryable<T>>>(body, dbP, pe);
-
+            var exp = Expression.Lambda<Func<TDb, QueryParameter[], Task<IQueryable<T>>>>(body, dbP, pe);
             return exp.Compile();
         }
 
 
-        public static IQueryable<T> CallTypedFunction<Db,T>(ISecureQueryProvider sdb, string function, QueryParameter[] list)
+        public static Task<IQueryable<T>> CallTypedFunction<Db,T>(ISecureQueryProvider sdb, string function, QueryParameter[] list)
             where T : class
             where Db: DbContext
         {

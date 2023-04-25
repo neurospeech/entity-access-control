@@ -16,6 +16,13 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Model.Events
             return db.Posts.Where(x => x.PostID > n);
         }
 
+
+        [ExternalFunction]
+        public async Task<IQueryable<Post>> PublicPosts2(long n)
+        {
+            return db.Posts.Where(x => x.PostID > n);
+        }
+
         public override IQueryable<Post> Filter(IQueryable<Post> q)
         {
             return q.Where(x => x.AuthorID == db.UserID);

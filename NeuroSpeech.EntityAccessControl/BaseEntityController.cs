@@ -617,7 +617,7 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
             where T : class
         {
             var q = options.Function != null
-                ? DbFunctionInvoker.CallFunction<T>(db, options.Function, options.Parameters)
+                ? await DbFunctionInvoker.CallFunction<T>(db, options.Function, options.Parameters)
                 : db.FilteredQuery<T>();
             var type = db.GetType();
             options.Type = type;

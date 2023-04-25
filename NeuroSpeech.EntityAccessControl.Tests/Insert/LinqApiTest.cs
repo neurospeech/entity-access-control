@@ -113,6 +113,40 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
                 );
 
             Assert.IsNotNull(r);
+        }        
+        
+        
+        [TestMethod]
+        public async Task SelectAsyncEventFunctionExecute()
+        {
+            using var scope = CreateScope();
+
+            var db = scope.GetRequiredService<AppDbContext>();
+
+            db.UserID = 2;
+            var sdb = db;
+
+            var controller = new TestEntityController(sdb);
+            var name = typeof(Post).FullName;
+
+            var m = System.Text.Json.JsonSerializer.Serialize(new object[] {
+                new object[] { "orderByDescending", "x => x.PostID"},
+            });
+
+            var parser = JsonDocument.Parse("[1]");
+
+            var methods = JsonDocument.Parse(m);
+
+            var r = await controller.PostMethod(name,
+                new BaseEntityController.MethodOptions
+                {
+                    Function = "PublicPosts2",
+                    Args = parser.RootElement,
+                    Methods = methods.RootElement
+                }
+                );
+
+            Assert.IsNotNull(r);
         }
     }
 
