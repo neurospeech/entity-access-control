@@ -13,7 +13,7 @@ namespace NeuroSpeech.EntityAccessControl.Extensions
 {
     internal class DbFunctionInvoker
     {
-        public static Task<IQueryable<T>> CallFunction<T>(ISecureQueryProvider db, string function, JsonElement parameters)
+        public static async Task<IQueryable<T>> CallFunction<T>(ISecureQueryProvider db, string function, JsonElement parameters)
             where T : class
         {
             int lenght = parameters.GetArrayLength();
@@ -25,7 +25,9 @@ namespace NeuroSpeech.EntityAccessControl.Extensions
                     list[i] = new QueryParameter(parameters[i]);
                 }
             }
-            return Generic.InvokeAs(db.GetType(), typeof(T), CallTypedFunction<DbContext, T>, db, function, list);
+            var q = await Generic.InvokeAs(db.GetType(), typeof(T), CallTypedFunction<DbContext, T>, db, function, list);
+            q.Expression.DoNotVisit();
+            return new SecureQueryable<T>(db, q);
         }
 
         private static Task<IQueryable<T>> NotFunction<TDb,T>(TDb db, QueryParameter[] args)
