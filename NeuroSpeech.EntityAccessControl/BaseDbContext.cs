@@ -455,17 +455,18 @@ namespace NeuroSpeech.EntityAccessControl
             });
         }
 
-        public IQueryable<T> Apply<T>(IQueryable<T> qec, bool asInclude = false)
+        public IQueryable<T> Apply<T>(IQueryable<T> qec, bool asInclude = false, PropertyInfo? property = null)
             where T: class
         {
-            return ApplyFilter<T>(EntityState.Unchanged, qec, asInclude);
+            return ApplyFilter<T>(EntityState.Unchanged, qec, asInclude, property);
         }
 
         [EditorBrowsable(EditorBrowsableState.Never)]
         public IQueryable<T> ApplyFilter<T>(
             EntityState state,
             IQueryable<T> qec,
-            bool asInclude = false)
+            bool asInclude = false,
+            PropertyInfo? propertyInfo = null)
             where T: class
         {
             var type = typeof(T);
@@ -475,7 +476,7 @@ namespace NeuroSpeech.EntityAccessControl
                 throw new EntityAccessException($"Access denied to {type.FullName}");
             }
             if (asInclude)
-                return eh.IncludeFilter(qec);
+                return eh.IncludeFilter(qec, propertyInfo);
             switch(state)
             {
                 case EntityState.Modified:

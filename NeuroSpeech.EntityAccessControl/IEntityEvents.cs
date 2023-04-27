@@ -20,8 +20,6 @@ namespace NeuroSpeech.EntityAccessControl
         IQueryable ModifyFilter(IQueryable q);
         IQueryable DeleteFilter(IQueryable q);
 
-        IQueryable IncludeFilter(IQueryable q);
-
         List<PropertyInfo> GetIgnoreConditions(string typeCacheKey);
 
         List<PropertyInfo> GetReadOnlyProperties(string typeCacheKey);
@@ -46,7 +44,7 @@ namespace NeuroSpeech.EntityAccessControl
     {
         IQueryable<T> DeleteFilter(IQueryable<T> q);
         IQueryable<T> Filter(IQueryable<T> q);
-        IQueryable<T> IncludeFilter(IQueryable<T> q);
+        IQueryable<T> IncludeFilter(IQueryable<T> q, PropertyInfo? property);
         IQueryable<T> ModifyFilter(IQueryable<T> q);
     }
 }

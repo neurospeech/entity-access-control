@@ -29,7 +29,7 @@ namespace NeuroSpeech.EntityAccessControl
         List<PropertyInfo> GetIgnoredProperties(Type type);
 
         List<PropertyInfo> GetReadonlyProperties(Type type);
-        IQueryable<T> Apply<T>(IQueryable<T> qec, bool asInclude = false) where T : class;
+        IQueryable<T> Apply<T>(IQueryable<T> qec, bool asInclude = false, PropertyInfo? property = null) where T : class;
         Task SaveChangesAsync(CancellationToken cancellationToken = default);
         Task<object?> FindByKeysAsync(IEntityType t, JsonElement item, CancellationToken cancellation = default);
 
@@ -79,16 +79,16 @@ namespace NeuroSpeech.EntityAccessControl
             return eh.DeleteFilter(db.Set<T>());
         }
 
-        internal static IQueryable<T> CreateIncludeFilterQueryContext<T>(this ISecureQueryProvider db)
-            where T : class
-        {
-            var eh = db.GetEntityEvents<T>();
-            if (eh == null)
-            {
-                throw new EntityAccessException($"No security rule defined for entity {typeof(T).Name}");
-            }
-            eh.EnforceSecurity = db.EnforceSecurity;
-            return eh.IncludeFilter(db.Set<T>());
-        }
+        //internal static IQueryable<T> CreateIncludeFilterQueryContext<T>(this ISecureQueryProvider db)
+        //    where T : class
+        //{
+        //    var eh = db.GetEntityEvents<T>();
+        //    if (eh == null)
+        //    {
+        //        throw new EntityAccessException($"No security rule defined for entity {typeof(T).Name}");
+        //    }
+        //    eh.EnforceSecurity = db.EnforceSecurity;
+        //    return eh.IncludeFilter(db.Set<T>());
+        //}
     }
 }

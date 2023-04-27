@@ -307,7 +307,7 @@ namespace NeuroSpeech.EntityAccessControl
                 var itemType = nav.TargetEntityType.ClrType;
 
                 // apply where...
-                var result = this.InvokeAs(itemType, Apply<object>, node);
+                var result = this.InvokeAs(itemType, Apply<object>, node, property);
                 result.DoNotVisit();
                 return result;
             }
@@ -315,12 +315,12 @@ namespace NeuroSpeech.EntityAccessControl
         }
 
 
-        public Expression Apply<T1>(Expression expression)
+        public Expression Apply<T1>(Expression expression, PropertyInfo? property)
             where T1 : class
         {
             
             var qec = db.Set<T1>();
-            var r = db.Apply<T1>(qec, true);
+            var r = db.Apply<T1>(qec, true, property);
             if (r == qec) {
                 return expression;
             }

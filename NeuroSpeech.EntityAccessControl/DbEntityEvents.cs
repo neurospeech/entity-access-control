@@ -142,7 +142,7 @@ namespace NeuroSpeech.EntityAccessControl
             return ModifyFilter(q);
         }
 
-        public virtual IQueryable<T> IncludeFilter(IQueryable<T> q)
+        public virtual IQueryable<T> IncludeFilter(IQueryable<T> q, PropertyInfo? property)
         {
             return Filter(q);
         }
@@ -163,10 +163,10 @@ namespace NeuroSpeech.EntityAccessControl
             return Filter((IQueryable<T>)q);
         }
 
-        IQueryable IEntityEvents.IncludeFilter(IQueryable q)
-        {
-            return IncludeFilter((IQueryable<T>)q);
-        }
+        //IQueryable IEntityEvents.IncludeFilter(IQueryable q)
+        //{
+        //    return IncludeFilter((IQueryable<T>)q);
+        //}
 
 
         IQueryable IEntityEvents.ModifyFilter(IQueryable q)
