@@ -29,6 +29,7 @@ namespace NeuroSpeech.EntityAccessControl
         public BaseController(ISecureQueryProvider db)
         {
             this.db = db;
+            db.EnforceSecurity = true;
         }
 
         //public virtual IQueryable<T?> GetQuery<T>() 

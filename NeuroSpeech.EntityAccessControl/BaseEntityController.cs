@@ -200,7 +200,6 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
         {
             try
             {
-                db.EnforceSecurity = true;
                 if (body.ValueKind == JsonValueKind.Array)
                     return await SaveMultiple(body, cancellationToken);
                 var e = await LoadOrCreateAsync(null, body, cancellationToken: cancellationToken);
@@ -224,7 +223,6 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
         {
             try
             {
-                db.EnforceSecurity = true;
                 List<object> results = new();
                 foreach (var body in model.EnumerateArray())
                 {
@@ -248,7 +246,6 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
         {
             try
             {
-                db.EnforceSecurity = true;
                 var t = FindEntityType(entity);
                 var d = await db.FindByKeysAsync(t, entity);
                 if (d != null)
@@ -271,7 +268,6 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
             CancellationToken cancellation
             )
         {
-            db.EnforceSecurity = true;
             if (model.Keys == null)
                 return BadRequest();
             try
@@ -315,7 +311,6 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
             CancellationToken cancellation
             )
         {
-            db.EnforceSecurity = true;
             if (model.Keys == null
                 || model.Update.ValueKind == JsonValueKind.Undefined
                 || model.Update.ValueKind == JsonValueKind.Null)
@@ -618,7 +613,7 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
         {
             var q = options.Function != null
                 ? await DbFunctionInvoker.CallFunction<T>(db, options.Function, options.Parameters)
-                : db.FilteredQuery<T>();
+                : (db.EnforceSecurity ? db.FilteredQuery<T>() : db.Set<T>());
             var type = db.GetType();
             options.Type = type;
             var result = await MethodParser.Instance.Parse<T>(q, options);
