@@ -552,7 +552,8 @@ namespace NeuroSpeech.EntityAccessControl
                 return (copy, false);
             }
             var lambda = Expression.Lambda<Func<T?, bool>>(start, tx);
-            var q = FilteredQuery<T>().Where(lambda);
+            var querySet = this.EnforceSecurity ? FilteredQuery<T>() : Set<T>();
+            var q = querySet.Where(lambda);
             var result = await q.FirstOrDefaultAsync(token);
             return (result ?? copy, result != null);
         }
