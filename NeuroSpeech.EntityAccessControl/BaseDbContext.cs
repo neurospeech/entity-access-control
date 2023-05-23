@@ -115,7 +115,7 @@ namespace NeuroSpeech.EntityAccessControl
 
         public virtual string TypeCacheKey => "Global";
 
-        IQueryable<T> ISecureQueryProvider.Set<T>() => this.Set<T>();
+        IQueryable<T> ISecureQueryProvider.Set<T>() => new SecureQueryable<T>(this, this.Set<T>());
 
         public IQueryable<T> FilteredQuery<T>()
             where T: class
