@@ -549,6 +549,7 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
                             lm.Method = "JoinDateRange";
                             lm.Expression = "@0, @1, @2";
                             break;
+
                         case "join":
                             typeName = method[1].GetString();
                             left = method[2].GetString();
@@ -560,6 +561,7 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
                             lm.Method = $"Container().JoinWith<{typeName}>().Join({left}, {right})";
                             lm.Expression = null;
                             break;
+
                         case "leftJoin":
                             typeName = method[1].GetString();
                             left = method[2].GetString();
@@ -571,6 +573,7 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
                             lm.Method = $"Container().JoinWith<{typeName}>().LeftJoin({left}, {right})";
                             lm.Expression = null;
                             break;
+
                         case "selectWith":
                             typeName = method[1].GetString();
 
