@@ -560,7 +560,7 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
                             lm.Method = $"Container().JoinWith<{typeName}>().Join({left}, {right})";
                             lm.Expression = null;
                             break;
-                        case "leftjoin":
+                        case "leftJoin":
                             typeName = method[1].GetString();
                             left = method[2].GetString();
                             right = method[3].GetString();
