@@ -41,4 +41,11 @@ namespace NeuroSpeech.EntityAccessControl
         public T1 Inner { get; set; }
     }
 
+    public class WithInnerMultiple<T, T1>
+    {
+        public T Entity { get; set; }
+
+        public IEnumerable<T1> Inner { get; set; }
+    }
+
 }

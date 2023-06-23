@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.Query;
 using NeuroSpeech.EntityAccessControl.Parser;
 using System;
@@ -55,6 +56,25 @@ namespace NeuroSpeech.EntityAccessControl
                 keySelector,
                 joinKeySelector,
                 (x, y) => new WithInner<T, TInner> { Entity = x, Inner = y });
+        }
+
+
+        public static IQueryable<WithInner<T, TInner>> LeftJoin<T, TInner, TKey>(
+            this (IQueryable<T> entity, IQueryable<TInner> inner) @this,
+            Expression<Func<T, TKey>> keySelector,
+            Expression<Func<TInner, TKey>> joinKeySelector)
+        {
+
+            return @this.entity.GroupJoin(
+                @this.inner,
+                keySelector,
+                joinKeySelector, (x, y) => new WithInnerMultiple <T, TInner>{ Entity = x, Inner = y })
+                .SelectMany(x => x.Inner.DefaultIfEmpty(),
+                    (x, y) => new WithInner<T, TInner>
+                    {
+                        Entity = x.Entity,
+                        Inner = y
+                    });
         }
 
         public static InternalContainer<T> Container<T>(this IQueryable<T> @this)

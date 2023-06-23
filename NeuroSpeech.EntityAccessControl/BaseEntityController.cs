@@ -477,6 +477,9 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
             options.SplitInclude = model.SplitInclude;
             options.CancelToken = cancellationToken;
             // default is true if not supplied...
+            string? typeName;
+            string? left;
+            string? right;
             options.Count = model.Count ?? true;
             if (model.Trace)
             {
@@ -547,14 +550,25 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
                             lm.Expression = "@0, @1, @2";
                             break;
                         case "join":
-                            var typeName = method[1].GetString();
-                            var left = method[2].GetString();
-                            var right = method[3].GetString();
+                            typeName = method[1].GetString();
+                            left = method[2].GetString();
+                            right = method[3].GetString();
 
                             // this will ensure that the type exits..
                             FindEntityType(typeName);
 
                             lm.Method = $"Container().JoinWith<{typeName}>().Join({left}, {right})";
+                            lm.Expression = null;
+                            break;
+                        case "leftjoin":
+                            typeName = method[1].GetString();
+                            left = method[2].GetString();
+                            right = method[3].GetString();
+
+                            // this will ensure that the type exits..
+                            FindEntityType(typeName);
+
+                            lm.Method = $"Container().JoinWith<{typeName}>().LeftJoin({left}, {right})";
                             lm.Expression = null;
                             break;
                         case "selectWith":
