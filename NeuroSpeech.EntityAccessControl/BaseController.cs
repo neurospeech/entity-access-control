@@ -11,6 +11,7 @@ using NeuroSpeech.EntityAccessControl.Internal;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Text.Json.Nodes;
+using NetTopologySuite.Geometries;
 
 namespace NeuroSpeech.EntityAccessControl
 {
@@ -125,7 +126,14 @@ namespace NeuroSpeech.EntityAccessControl
                     property.SetValue(entity, null);
                     continue;
                 }
-                if (p.Value.ValueKind != JsonValueKind.Array && p.Value.ValueKind != JsonValueKind.Object)
+                if(typeof(Geometry).IsAssignableFrom(property.PropertyType))
+                {
+                    property.SaveJsonOrValue(entity, p.Value);
+                    continue;
+                }
+                if (
+                    p.Value.ValueKind != JsonValueKind.Array
+                    && p.Value.ValueKind != JsonValueKind.Object)
                 {
                     property.SaveJsonOrValue(entity, p.Value);
                     continue;

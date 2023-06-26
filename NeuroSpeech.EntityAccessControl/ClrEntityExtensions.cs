@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using NetTopologySuite.Geometries;
 using NeuroSpeech;
 using NeuroSpeech.EntityAccessControl.Parser;
 using System;
@@ -19,13 +20,6 @@ namespace NeuroSpeech.EntityAccessControl
             var type = property.PropertyType;
             type = Nullable.GetUnderlyingType(type) ?? type;
             var isNullable = type != property.PropertyType;
-            switch (value.ValueKind)
-            {
-                case JsonValueKind.Object:
-                    throw new ArgumentException($"Cannot convert object to {type.FullName}");
-                case JsonValueKind.Array:
-                    throw new ArgumentException($"Cannot convert array to {type.FullName}");
-            }
             var v = value.DeserializeJsonElement(type, isNullable);
             property.SetValue(target, v);
             return v;
@@ -60,6 +54,13 @@ namespace NeuroSpeech.EntityAccessControl
             switch (target.ValueKind)
             {
                 case JsonValueKind.Object:
+
+                    if (type == typeof(Geometry))
+                    {
+                        var qp = new QueryParameter(target);
+                        return (Geometry?)qp;
+                    }
+
                     throw new ArgumentException($"Cannot convert object to {type.FullName}");
                 case JsonValueKind.Array:
                     throw new ArgumentException($"Cannot convert array to {type.FullName}");
