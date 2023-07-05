@@ -298,8 +298,8 @@ namespace NeuroSpeech.EntityAccessControl
                         if (g is Point point)
                         {
                             writer.WriteStartObject();
-                            writer.WriteNumber("latitude", point.X);
-                            writer.WriteNumber("longitude", point.Y);
+                            writer.WriteNumber("latitude", point.Y);
+                            writer.WriteNumber("longitude", point.X);
                             writer.WriteString("wktString", point.AsText());
                             writer.WriteNumber("srid", point.SRID);
                             writer.WriteEndObject();
@@ -307,8 +307,8 @@ namespace NeuroSpeech.EntityAccessControl
                         }
                         writer.WriteStartObject();
                         point = g.Centroid;
-                        writer.WriteNumber("latitude", point.X);
-                        writer.WriteNumber("longitude", point.Y);
+                        writer.WriteNumber("latitude", point.Y);
+                        writer.WriteNumber("longitude", point.X);
                         writer.WriteString("wktString", g.AsText());
                         writer.WriteNumber("srid", point.SRID);
                         writer.WriteEndObject();
