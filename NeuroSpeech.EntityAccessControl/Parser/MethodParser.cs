@@ -70,6 +70,7 @@ namespace NeuroSpeech.EntityAccessControl.Parser
                 if(code == null)
                 {
                     exec.AppendLine($".{m.Method}");
+                    methodIndex++;
                     continue; ;
                 }
                 sb.AppendLine($"method = methods.Methods[{methodIndex++}];");
