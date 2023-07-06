@@ -108,7 +108,13 @@ public static async Task<object> Query(
 
 return Query;
 ";
-            return Microsoft.CodeAnalysis.CSharp.Scripting.CSharpScript.EvaluateAsync<LinqMethodDelegate<T>>(finalCode, options);
+            try
+            {
+                return Microsoft.CodeAnalysis.CSharp.Scripting.CSharpScript.EvaluateAsync<LinqMethodDelegate<T>>(finalCode, options);
+            }catch (System.Exception ex)
+            {
+                throw new System.InvalidOperationException($"Failed to parse {finalCode}", ex);
+            }
         }
 
 
