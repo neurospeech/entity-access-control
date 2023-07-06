@@ -74,11 +74,11 @@ namespace NeuroSpeech.EntityAccessControl.Parser
                 sb.AppendLine($"method = methods.Methods[{methodIndex++}];");
                 for (int i = 0; i < m.Parameters.Count; i++)
                 {
-                    // var finalIndex = index++;
+                    var finalIndex = index++;
                     var pn = $"@{i}";
-                    var vn = $"var p{i} = method.Parameters[{i}];";
+                    var vn = $"var p{finalIndex} = method.Parameters[{i}];";
                     sb.AppendLine(vn);
-                    code = code.Replace(pn, $"p{i}");
+                    code = code.Replace(pn, $"p{finalIndex}");
                     code = code.Replace("CastAs.String(", "CastAs.String((int)");
                 }
                 exec.AppendLine($".{m.Method}({code})");
