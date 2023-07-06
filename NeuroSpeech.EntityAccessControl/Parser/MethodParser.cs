@@ -55,7 +55,8 @@ namespace NeuroSpeech.EntityAccessControl.Parser
 
             var options = ScriptOptions.Default
                             .AddReferences(list)
-                            .WithOptimizationLevel(OptimizationLevel.Debug);
+                            .WithOptimizationLevel(OptimizationLevel.Debug)
+                            .WithEmitDebugInformation(true);
 
             var type = typeof(T);
 
