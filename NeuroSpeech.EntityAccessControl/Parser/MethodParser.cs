@@ -72,7 +72,7 @@ namespace NeuroSpeech.EntityAccessControl.Parser
                     continue; ;
                 }
                 sb.AppendLine($"method = methods.Methods[{methodIndex++}];");
-                for (int i = 0; i < m.Length; i++)
+                for (int i = 0; i < m.Parameters.Count; i++)
                 {
                     var finalIndex = index++;
                     var pn = $"@{i}";
