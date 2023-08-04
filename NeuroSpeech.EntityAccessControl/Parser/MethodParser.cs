@@ -1,6 +1,7 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Scripting;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -31,11 +32,18 @@ namespace NeuroSpeech.EntityAccessControl.Parser
             return await d(queryContext, args);
         }
 
-        private Task<LinqMethodDelegate<T>> Parse<T>(LinqMethodOptions args)
+        private async Task<LinqMethodDelegate<T>> Parse<T>(LinqMethodOptions args)
         {
             var methods = new CacheKeyBuilder(typeof(T), args.Methods);
             var key = methods.CacheKey;
-            return (Task<LinqMethodDelegate<T>>)cache.GetOrAdd(key, k => ParseQuery<T>(args, methods.Methods));
+            var task = (Task<LinqMethodDelegate<T>>)cache.GetOrAdd(key, k => ParseQuery<T>(args, methods.Methods));
+            try
+            {
+                return await task;
+            } catch (Exception) {
+                cache.Remove(key, out var none);
+                throw;
+            }
         }
 
 
@@ -116,6 +124,9 @@ return Query;
             }catch (System.Exception ex)
             {
                 throw new System.InvalidOperationException($"Failed to parse {finalCode}", ex);
+            } finally
+            {
+                GC.Collect();
             }
         }
 
