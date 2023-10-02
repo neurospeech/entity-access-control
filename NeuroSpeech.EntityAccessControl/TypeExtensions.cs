@@ -118,11 +118,12 @@ namespace NeuroSpeech.EntityAccessControl.Internal
         public static string GetJsonPropertyName(this PropertyInfo p, JsonNamingPolicy? policy = null)
         {
             return p.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name
-                ?? (policy ??= JavaScriptNamingPolicy.JavaScript).ConvertName(p.Name);
+                ?? (policy ?? JavaScriptNamingPolicy.JavaScript).ConvertName(p.Name);
         }
         public static string GetJsonPropertyName(this IPropertyBase p, JsonNamingPolicy? policy = null)
         {
-            return p.PropertyInfo.GetJsonPropertyName(policy);
+            return p.PropertyInfo?.GetJsonPropertyName(policy)
+                ?? (policy ?? JavaScriptNamingPolicy.JavaScript).ConvertName(p.Name);
         }
 
         public static MethodInfo GetStaticMethod(
