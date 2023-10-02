@@ -7,20 +7,18 @@ on:
     branches: [ main ]
 
 jobs:
-  services:
-    mssql:
-      image: mcr.microsoft.com/mssql/server:2019-latest
-      env:
-        ACCEPT_EULA: Y
-        MSSQL_SA_PASSWORD: $EntityAccess2023
-        MSSQL_PID: Express
-      ports:
-        - 1433:1433
-
   build:
 
     runs-on: ubuntu-latest
-
+    services:
+      mssql:
+        image: mcr.microsoft.com/mssql/server:2019-latest
+        env:
+          ACCEPT_EULA: Y
+          MSSQL_SA_PASSWORD: $EntityAccess2023
+          MSSQL_PID: Express
+        ports:
+          - 1433:1433
     steps:
     - uses: actions/checkout@v2
       with:
