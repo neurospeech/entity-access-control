@@ -78,7 +78,7 @@ namespace NeuroSpeech.EntityAccessControl.Tests
         public System.Text.Json.JsonSerializerOptions jsonSerializerOptions 
             = new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web) { 
                 DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
-                PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase
+                PropertyNamingPolicy = JavaScriptNamingPolicy.JavaScript
             };
 
         public string JsonSerialize<T>(T value)

@@ -209,7 +209,7 @@ namespace NeuroSpeech.EntityAccessControl
         //    var serializer = new EntityJsonSerializer(new EntitySerializationSettings
         //    {
         //        GetTypeName = (x) => db.Model.FindEntityType(x)?.Name ?? (x.IsAnonymous() ? x.Name : x.FullName!),
-        //        NamingPolicy = JsonNamingPolicy.CamelCase,
+        //        NamingPolicy = JavaScriptNamingPolicy.JavaScript,
         //        GetIgnoreCondition = db.GetIgnoreCondition
         //    });
         //    var result = new JsonArray();

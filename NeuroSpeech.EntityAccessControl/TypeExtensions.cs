@@ -10,6 +10,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -112,6 +113,16 @@ namespace NeuroSpeech.EntityAccessControl.Internal
                 && type.IsGenericType && type.Name.Contains("AnonymousType")
                 && (type.Name.StartsWith("<>") || type.Name.StartsWith("VB$"))
                 && type.Attributes.HasFlag(TypeAttributes.NotPublic);
+        }
+
+        public static string GetJsonPropertyName(this PropertyInfo p, JsonNamingPolicy? policy = null)
+        {
+            return p.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name
+                ?? (policy ??= JavaScriptNamingPolicy.JavaScript).ConvertName(p.Name);
+        }
+        public static string GetJsonPropertyName(this IPropertyBase p, JsonNamingPolicy? policy = null)
+        {
+            return p.PropertyInfo.GetJsonPropertyName(policy);
         }
 
         public static MethodInfo GetStaticMethod(

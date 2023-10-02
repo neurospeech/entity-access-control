@@ -22,6 +22,20 @@ using NeuroSpeech.EntityAccessControl.Extensions;
 namespace NeuroSpeech.EntityAccessControl
 {
 
+    public class JavaScriptNamingPolicy : JsonNamingPolicy
+    {
+
+        public static JavaScriptNamingPolicy JavaScript = new JavaScriptNamingPolicy();
+
+        public override string ConvertName(string name)
+        {
+            var chars = name.ToCharArray();
+            ref var ch = ref chars[0];
+            ch = char.ToLower(ch);
+            return new string(chars);
+        }
+    }
+
     public class IgnoreAuthorizationFilter : IAsyncAuthorizationFilter
     {
         public Task OnAuthorizationAsync(AuthorizationFilterContext context)
@@ -48,7 +62,7 @@ namespace NeuroSpeech.EntityAccessControl
         [HttpGet("model")]
         public IActionResult Entities()
         {
-            var naming = JsonNamingPolicy.CamelCase;
+            var naming = JavaScriptNamingPolicy.JavaScript;
             return Ok(db.Model.GetEntityTypes().Select(x =>
             {
                 var ignoreConditions = db.GetIgnoredProperties(x.ClrType);
@@ -61,13 +75,13 @@ namespace NeuroSpeech.EntityAccessControl
                     x.Name,
                     Keys = x.GetProperties().Where(x => x.IsKey()).Select(p => new
                     {
-                        Name = naming.ConvertName(p.Name),
+                        Name = p.GetJsonPropertyName(),
                         Type = (Nullable.GetUnderlyingType(p.ClrType) ?? p.ClrType).FullName,
                         Identity = p.GetValueGenerationStrategy() == SqlServerValueGenerationStrategy.IdentityColumn
                     }),
                     Properties = x.GetProperties().Where(x => !x.IsKey() && !IsIgnored(x)).Select(p => new
                     {
-                        Name = naming.ConvertName(p.Name),
+                        Name = p.GetJsonPropertyName(),
                         Type = (Nullable.GetUnderlyingType(p.ClrType) ?? p.ClrType).FullName,
                         p.IsNullable
                     }),
@@ -89,7 +103,7 @@ namespace NeuroSpeech.EntityAccessControl
                 return n.Split('.').Last();
             }
 
-            var naming = JsonNamingPolicy.CamelCase;
+            var naming = JavaScriptNamingPolicy.JavaScript;
             var sw = new System.IO.StringWriter();
             var i = new IndentedTextWriter(sw);
 
@@ -127,7 +141,7 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
                         {
                             typeName += " | null";
                         }
-                        i.WriteLine($"{naming.ConvertName(p.Name)}?: {typeName};");
+                        i.WriteLine($"{p.GetJsonPropertyName()}?: {typeName};");
                         continue;
                     }
                     var type = p.ClrType.ToTypeScript();
@@ -135,7 +149,7 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
                     {
                         type += " | null";
                     }
-                    i.WriteLine($"{naming.ConvertName(p.Name)}?: {type};");
+                    i.WriteLine($"{p.GetJsonPropertyName()}?: {type};");
                 }
 
                 foreach(var p in e.ClrType.GetProperties().Where(x => x.GetCustomAttribute<ModelPropertyAttribute>() != null))
@@ -151,7 +165,7 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
                         {
                             typeName += " | null";
                         }
-                        i.WriteLine($"{naming.ConvertName(p.Name)}?: {typeName};");
+                        i.WriteLine($"{p.GetJsonPropertyName()}?: {typeName};");
                         continue;
                     }
                     var type = p.PropertyType.ToTypeScript();
@@ -159,7 +173,7 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
                     {
                         type += " | null";
                     }
-                    i.WriteLine($"{naming.ConvertName(p.Name)}?: {type};");
+                    i.WriteLine($"{p.GetJsonPropertyName()}?: {type};");
                 }
 
                 foreach (var np in e.GetDeclaredNavigations())

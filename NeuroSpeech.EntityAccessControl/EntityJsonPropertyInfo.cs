@@ -17,7 +17,7 @@ namespace NeuroSpeech.EntityAccessControl
         public EntityJsonTypeInfo(EntitySerializationSettings settings, Type type, JsonNamingPolicy? policy)
         {
             this.Name = settings.GetTypeName(type);
-            var namingPolicy = policy ?? JsonNamingPolicy.CamelCase;
+            var namingPolicy = policy ?? JavaScriptNamingPolicy.JavaScript;
             var ignoreProperties = settings.GetIgnoredProperties(type);
             var properties = type.GetProperties();
             Properties = new List<EntityJsonPropertyInfo>(properties.Length);
@@ -26,9 +26,10 @@ namespace NeuroSpeech.EntityAccessControl
                 if (!p.CanRead) continue;
                 if (p.GetIndexParameters().Length > 0) continue;
                 var propertyType = Nullable.GetUnderlyingType(p.PropertyType) ?? p.PropertyType;
+                var name = p.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name;
                 Properties.Add(new EntityJsonPropertyInfo(
                     PropertyType: propertyType,
-                    Name: namingPolicy.ConvertName(p.Name),
+                    Name: p.GetJsonPropertyName(namingPolicy),
                     PropertyInfo: p,
                     TypeCode: Type.GetTypeCode(propertyType),
                     jsonIgnoreCondition: ignoreProperties
