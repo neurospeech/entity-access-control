@@ -125,7 +125,6 @@ namespace NeuroSpeech.EntityAccessControl.Internal
             return p.PropertyInfo?.GetJsonPropertyName(policy)
                 ?? (policy ?? JavaScriptNamingPolicy.JavaScript).ConvertName(p.Name);
         }
-
         public static MethodInfo GetStaticMethod(
             this Type type, 
             string name, 
