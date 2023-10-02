@@ -15,7 +15,8 @@ namespace NeuroSpeech.EntityAccessControl.Tests
             tempFiles.Add(DbFile);
             tempFiles.Add(LogFile);
 
-            Execute($"CREATE DATABASE [{DBName}] ON PRIMARY (NAME = {DBName}_data, FILENAME='{DbFile}') LOG ON (NAME={DBName}_Log, FILENAME='{LogFile}')");
+            Execute($"CREATE DATABASE [{DBName}];");
+            // Execute($"CREATE DATABASE [{DBName}] ON PRIMARY (NAME = {DBName}_data, FILENAME='{DbFile}') LOG ON (NAME={DBName}_Log, FILENAME='{LogFile}')");
 
             CreateDateRangeView(DBName);
 
@@ -83,7 +84,8 @@ RETURN (
 
         private void Execute(string command, string? db = null)
         {
-            using (var c = new SqlConnection($"server=(localdb)\\MSSQLLocalDB"))
+            var cnstr = CreateConnectionStringBuilder();
+            using (var c = new SqlConnection(cnstr.ConnectionString))
             {
                 if (db != null)
                 {
@@ -112,6 +114,23 @@ RETURN (
 
     public abstract class BaseDbSessionTest: IDisposable
     {
+
+        public static SqlConnectionStringBuilder CreateConnectionStringBuilder(string? name = null)
+            => name == null ? new SqlConnectionStringBuilder() {
+                DataSource = "127.0.0.1",
+                UserID = "sa",
+                Password = "$EntityAccess2023",
+                TrustServerCertificate = true
+            }: new SqlConnectionStringBuilder()
+            {
+                DataSource = "127.0.0.1",
+                UserID = "sa",
+                Password = "$EntityAccess2023",
+                TrustServerCertificate = true,
+                InitialCatalog = name
+            };
+
+
         public readonly string ConnectionString;
         private readonly string DBName;
         public readonly ServiceProvider Services;
@@ -123,13 +142,7 @@ RETURN (
 
             CreateDatabase(DBName);
 
-            ConnectionString = (new SqlConnectionStringBuilder()
-            {
-                DataSource = "(localdb)\\MSSQLLocalDB",
-                InitialCatalog = DBName,
-                IntegratedSecurity = true,
-                ApplicationName = "EntityFramework"
-            }).ToString();
+            ConnectionString = CreateConnectionStringBuilder(DBName).ToString();
 
 
             ServiceCollection services = new ServiceCollection();

@@ -89,6 +89,7 @@ namespace NeuroSpeech.EntityAccessControl
             Converter = new EntityJsonConverter(this);
             Options = new JsonSerializerOptions
             {
+                PropertyNamingPolicy = JavaScriptNamingPolicy.JavaScript,
                 Converters =
                 {
                     this
@@ -104,6 +105,7 @@ namespace NeuroSpeech.EntityAccessControl
             Converter = new EntityJsonConverter(this);
             Options = new JsonSerializerOptions
             {
+                PropertyNamingPolicy = JavaScriptNamingPolicy.JavaScript,
                 Converters =
                 {
                     this
@@ -119,6 +121,7 @@ namespace NeuroSpeech.EntityAccessControl
             Converter = new EntityJsonConverter(this);
             Options = new JsonSerializerOptions
             {
+                PropertyNamingPolicy = JavaScriptNamingPolicy.JavaScript,
                 Converters =
                 {
                     this
