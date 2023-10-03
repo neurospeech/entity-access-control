@@ -8,6 +8,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace NeuroSpeech.EntityAccessControl.Parser
@@ -19,6 +20,8 @@ namespace NeuroSpeech.EntityAccessControl.Parser
     public class MethodParser
     {
 
+
+        public static Regex PropertyRegex = new Regex("\\.[a-z][a-z0-0_]+", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
 
         public static MethodParser Instance = new();
@@ -81,6 +84,13 @@ namespace NeuroSpeech.EntityAccessControl.Parser
                     methodIndex++;
                     continue; ;
                 }
+                code = PropertyRegex.Replace(code, (match) => {
+                    if (args.Names.TryGetValue(match.Value.ToLower(), out var v))
+                    {
+                        return v;
+                    }
+                    return match.Value;
+                });
                 sb.AppendLine($"method = methods.Methods[{methodIndex++}];");
                 for (int i = 0; i < m.Parameters.Count; i++)
                 {
@@ -90,10 +100,6 @@ namespace NeuroSpeech.EntityAccessControl.Parser
                     sb.AppendLine(vn);
                     code = code.Replace(pn, $"p{finalIndex}");
                     code = code.Replace("CastAs.String(", "CastAs.String((int)");
-                }
-                foreach (var p in args.Names)
-                {
-                    code = code.Replace("." + p.Key, "." + p.Value, StringComparison.InvariantCultureIgnoreCase);
                 }
                 exec.AppendLine($".{m.Method}({code})");
             }

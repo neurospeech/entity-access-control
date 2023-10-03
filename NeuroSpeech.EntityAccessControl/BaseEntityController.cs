@@ -53,11 +53,11 @@ namespace NeuroSpeech.EntityAccessControl
             {
                 foreach(var p in m.GetProperties())
                 {
-                    d[p.GetJsonPropertyName()] = p.PropertyInfo?.Name ?? p.Name;
+                    d["." + p.GetJsonPropertyName().ToLower()] = "." + (p.PropertyInfo?.Name ?? p.Name);
                     continue;
                 }
                 foreach(var np  in m.GetNavigations()) {
-                    d[np.GetJsonPropertyName()] = np.PropertyInfo?.Name ?? np.Name;
+                    d["." + np.GetJsonPropertyName().ToLower()] = "." + (np.PropertyInfo?.Name ?? np.Name);
                 }
             }
             return d;
