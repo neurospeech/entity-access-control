@@ -356,7 +356,7 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
             var name = "NeuroSpeech.EntityAccessControl.Tests.Model.Post";
 
             var m = System.Text.Json.JsonSerializer.Serialize(new object[] {
-                new object[] { "where", "x => x.PostID > @0 && @1.Contains(x.postID)", 0 , new long[] {
+                new object[] { "where", "x => x.PostID > @0 && @1.Contains(x.pOstID)", 0 , new long[] {
                         1,2,3,4
                     } },
                 new object[] {"include", "x => x.Tags" },
