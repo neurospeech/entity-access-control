@@ -17,7 +17,7 @@ namespace NeuroSpeech.EntityAccessControl
         public EntityJsonTypeInfo(EntitySerializationSettings settings, Type type, JsonNamingPolicy? policy)
         {
             this.Name = settings.GetTypeName(type);
-            var namingPolicy = policy ?? JavaScriptNamingPolicy.JavaScript;
+            var namingPolicy = policy ?? JsonNamingPolicy.CamelCase;
             var ignoreProperties = settings.GetIgnoredProperties(type);
             var properties = type.GetProperties();
             Properties = new List<EntityJsonPropertyInfo>(properties.Length);

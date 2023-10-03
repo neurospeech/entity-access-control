@@ -7,6 +7,7 @@ namespace NeuroSpeech.EntityAccessControl.Parser
 {
     public class LinqMethodOptions
     {
+        public Dictionary<string, string> Names;
         public List<LinqMethod> Methods { get; set; }
         public int Start { get; set; }
         public int Size { get; set; }

@@ -343,6 +343,34 @@ namespace NeuroSpeech.EntityAccessControl.Tests.Insert
         }
 
         [TestMethod]
+        public async Task SelectContainsCaseInsensitiveAsync()
+        {
+            using var scope = CreateScope();
+
+            var db = scope.GetRequiredService<AppDbContext>();
+            db.UserID = 2;
+
+            var sdb = db;
+
+            var controller = new TestEntityController(sdb);
+            var name = "NeuroSpeech.EntityAccessControl.Tests.Model.Post";
+
+            var m = System.Text.Json.JsonSerializer.Serialize(new object[] {
+                new object[] { "where", "x => x.PostID > @0 && @1.Contains(x.postID)", 0 , new long[] {
+                        1,2,3,4
+                    } },
+                new object[] {"include", "x => x.Tags" },
+                new object[] {"select", "x => new { x.PostID, x.Tags }" }
+            });
+
+            var r = await controller.Methods(name,
+                methods: m
+                );
+
+            Assert.IsNotNull(r);
+        }
+
+        [TestMethod]
         public async Task SelectDateRangeAsync()
         {
             using var scope = CreateScope();

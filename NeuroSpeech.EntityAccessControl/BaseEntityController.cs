@@ -22,20 +22,6 @@ using NeuroSpeech.EntityAccessControl.Extensions;
 namespace NeuroSpeech.EntityAccessControl
 {
 
-    public class JavaScriptNamingPolicy : JsonNamingPolicy
-    {
-
-        public static JavaScriptNamingPolicy JavaScript = new JavaScriptNamingPolicy();
-
-        public override string ConvertName(string name)
-        {
-            var chars = name.ToCharArray();
-            ref var ch = ref chars[0];
-            ch = char.ToLower(ch);
-            return new string(chars);
-        }
-    }
-
     public class IgnoreAuthorizationFilter : IAsyncAuthorizationFilter
     {
         public Task OnAuthorizationAsync(AuthorizationFilterContext context)
@@ -57,12 +43,30 @@ namespace NeuroSpeech.EntityAccessControl
 
         public BaseEntityController(ISecureQueryProvider db) : base(db)
         {
+            names ??= CreateNameMap();
+        }
+
+        private Dictionary<string, string>? CreateNameMap()
+        {
+            var d = new Dictionary<string, string>();
+            foreach(var m in db.Model.GetEntityTypes())
+            {
+                foreach(var p in m.GetProperties())
+                {
+                    d[p.GetJsonPropertyName()] = p.PropertyInfo?.Name ?? p.Name;
+                    continue;
+                }
+                foreach(var np  in m.GetNavigations()) {
+                    d[np.GetJsonPropertyName()] = np.PropertyInfo?.Name ?? np.Name;
+                }
+            }
+            return d;
         }
 
         [HttpGet("model")]
         public IActionResult Entities()
         {
-            var naming = JavaScriptNamingPolicy.JavaScript;
+            var naming = JsonNamingPolicy.CamelCase;
             return Ok(db.Model.GetEntityTypes().Select(x =>
             {
                 var ignoreConditions = db.GetIgnoredProperties(x.ClrType);
@@ -103,7 +107,7 @@ namespace NeuroSpeech.EntityAccessControl
                 return n.Split('.').Last();
             }
 
-            var naming = JavaScriptNamingPolicy.JavaScript;
+            var naming = JsonNamingPolicy.CamelCase;
             var sw = new System.IO.StringWriter();
             var i = new IndentedTextWriter(sw);
 
@@ -649,9 +653,12 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
                 : (db.EnforceSecurity ? db.FilteredQuery<T>() : db.Set<T>());
             var type = db.GetType();
             options.Type = type;
+            options.Names = names!;
             var result = await MethodParser.Instance.Parse<T>(q, options);
             return Serialize(result);
         }
+
+        private static Dictionary<string, string>? names;
 
 
         //[HttpGet("query/{entity}")]

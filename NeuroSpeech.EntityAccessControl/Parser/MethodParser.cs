@@ -91,6 +91,9 @@ namespace NeuroSpeech.EntityAccessControl.Parser
                     code = code.Replace(pn, $"p{finalIndex}");
                     code = code.Replace("CastAs.String(", "CastAs.String((int)");
                 }
+                foreach(var p in args.Names) {
+                    code = code.Replace(p.Key, p.Value);
+                }
                 exec.AppendLine($".{m.Method}({code})");
             }
 
