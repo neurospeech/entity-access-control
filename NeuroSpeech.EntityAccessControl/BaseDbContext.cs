@@ -19,7 +19,6 @@ using System.Linq.Expressions;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore.Metadata;
 using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.EntityFrameworkCore.Query;
 
 namespace NeuroSpeech.EntityAccessControl
 {
@@ -79,6 +78,8 @@ namespace NeuroSpeech.EntityAccessControl
                 });
 
             CastAs.Register(modelBuilder);
+
+            Sql.Register(modelBuilder);
 
             modelBuilder.HasDbFunction(this.GetType().GetMethod(nameof(DateRangeView), new Type[] {
                 typeof(DateTime),

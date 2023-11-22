@@ -25,6 +25,7 @@ namespace NeuroSpeech.EntityAccessControl.Tests
         UNION ALL
         SELECT 'Label' as [Label], @n as [Value]
 )", DBName);
+
         }
 
         private void CreateDateRangeView(string dBName)
