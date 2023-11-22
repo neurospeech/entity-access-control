@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,6 +28,14 @@ namespace NeuroSpeech.EntityAccessControl
 
         public static string Greatest(string l, string r) => l.CompareTo(r) > 0 ? l : r;
 
+        public static double? IIF(bool test, double? l, double? r) => test ? l : r;
+        public static long? IIF(bool test, long? l, long? r) => test ? l : r;
+
+        public static float? IIF(bool test, float? l, float? r) => test ? l : r;
+
+        public static int? IIF(bool test, int? l, int? r) => test ? l : r;
+
+
         internal static void Register(Microsoft.EntityFrameworkCore.ModelBuilder modelBuilder)
         {
 
@@ -37,6 +46,16 @@ namespace NeuroSpeech.EntityAccessControl
                 {
                     case nameof(Least):
                     case nameof(Greatest):
+                        break;
+                    case nameof(IIF):
+                        modelBuilder.HasDbFunction(method)
+                            .HasName(method.Name)
+                            .HasTranslation((x) => new CaseExpression(
+                                new CaseWhenClause[] {
+                                    new CaseWhenClause(x.ElementAt(0), x.ElementAt(1))
+                                },
+                                x.ElementAt(2)
+                                ));
                         break;
                     default:
                         continue;
