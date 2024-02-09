@@ -90,6 +90,7 @@ namespace NeuroSpeech.EntityAccessControl
             Options = new JsonSerializerOptions
             {
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                MaxDepth = 1024,
                 Converters =
                 {
                     this
@@ -106,6 +107,7 @@ namespace NeuroSpeech.EntityAccessControl
             Options = new JsonSerializerOptions
             {
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                MaxDepth = 1024,
                 Converters =
                 {
                     this
@@ -122,6 +124,7 @@ namespace NeuroSpeech.EntityAccessControl
             Options = new JsonSerializerOptions
             {
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                MaxDepth = 1024,
                 Converters =
                 {
                     this
