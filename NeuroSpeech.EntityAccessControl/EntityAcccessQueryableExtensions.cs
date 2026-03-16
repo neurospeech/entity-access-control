@@ -231,14 +231,6 @@ namespace NeuroSpeech.EntityAccessControl
                 string text = $"{source}\r\n{q.Expression}\r\n{q.ToQueryString()}";
                 options.Trace?.Invoke(text);
             }
-            if (count)
-            {
-                return new LinqResult<T>
-                {
-                    Total = await @this.CountAsync(cancellationToken),
-                    Items = (await q.ToListAsync(cancellationToken)),
-                };
-            }
             if (more)
             {
                 more = await @this.Skip(start + size).AnyAsync();
@@ -246,6 +238,14 @@ namespace NeuroSpeech.EntityAccessControl
                 {
                     Items = (await q.ToListAsync(cancellationToken)),
                     More = more
+                };
+            }
+            if (count)
+            {
+                return new LinqResult<T>
+                {
+                    Total = await @this.CountAsync(cancellationToken),
+                    Items = (await q.ToListAsync(cancellationToken)),
                 };
             }
             return new LinqResult<T>
