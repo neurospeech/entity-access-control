@@ -7,5 +7,7 @@ namespace NeuroSpeech.EntityAccessControl
         public IEnumerable<T>? Items { get; set; }
 
         public long Total { get; set; }
+
+        public bool More { get; set; }
     }
 }

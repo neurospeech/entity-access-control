@@ -411,6 +411,8 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
             public bool Split { get => SplitInclude; set => SplitInclude = value; }
             public bool Trace { get; set; }
 
+            public bool More { get; set; }
+
             public int CacheSeconds { get; set; }
             public int Cache { get => CacheSeconds; set => CacheSeconds = value; }
             public bool? Count { get; set; }
@@ -425,7 +427,8 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
             [FromQuery] bool split = true,
             [FromQuery] bool trace = false,
             [FromQuery] int cache = 0,
-            [FromQuery] bool count = true,
+            [FromQuery] bool count = false,
+            [FromQuery] bool more = false,
             [FromQuery] string? function = null,
             [FromQuery] string args = "[]",
             CancellationToken cancellationToken = default
@@ -437,6 +440,7 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
                 Start = start,
                 Size = size,
                 Count = count,
+                More = more,
                 SplitInclude = split,
                 Trace = trace,
                 Cache = cache,
@@ -529,6 +533,7 @@ import { ICollection, IGeometry, IModel, Model } from ""@web-atoms/entity/dist/s
             options.Function = model.Function;
             options.Parameters = model.Args;
             options.SplitInclude = model.SplitInclude;
+            options.More = model.More;
             options.CancelToken = cancellationToken;
             // default is true if not supplied...
             string? typeName;

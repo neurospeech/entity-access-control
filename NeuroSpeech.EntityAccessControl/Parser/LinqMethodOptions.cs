@@ -18,6 +18,7 @@ namespace NeuroSpeech.EntityAccessControl.Parser
         public CancellationToken CancelToken { get; set; }
         public string? Function { get; internal set; }
         public JsonElement Parameters { get; internal set; }
+        public bool More { get; set; }
         internal Type Type { get; set; }
 
     }

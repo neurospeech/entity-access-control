@@ -213,6 +213,7 @@ namespace NeuroSpeech.EntityAccessControl
             var cancellationToken = options.CancelToken;
             var q = @this;
             bool count = options.Count;
+            var more = options.More;
             if (start > 0)
             {
                 q = q.Skip(start);
@@ -236,6 +237,15 @@ namespace NeuroSpeech.EntityAccessControl
                 {
                     Total = await @this.CountAsync(cancellationToken),
                     Items = (await q.ToListAsync(cancellationToken)),
+                };
+            }
+            if (more)
+            {
+                more = await @this.Skip(start + size).AnyAsync();
+                return new LinqResult<T>
+                {
+                    Items = (await q.ToListAsync(cancellationToken)),
+                    More = more
                 };
             }
             return new LinqResult<T>
